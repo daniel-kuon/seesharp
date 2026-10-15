@@ -1,0 +1,13 @@
+bin/
+obj/
+nupkg/
+.idea/
+.vs/
+*.user
+*.suo
+TestResults/
+
+# Reference material, not part of the tool (public repo)
+csharp14.pdf
+csharp14.zip
+samples/

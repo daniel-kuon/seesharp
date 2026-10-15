@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SeeSharp.App/SeeSharp.App.csproj" />
+    <Project Path="src/SeeSharp.Cli/SeeSharp.Cli.csproj" />
+    <Project Path="src/SeeSharp.Content/SeeSharp.Content.csproj" />
+    <Project Path="src/SeeSharp.Core/SeeSharp.Core.csproj" />
+    <Project Path="src/SeeSharp.Grading/SeeSharp.Grading.csproj" />
+    <Project Path="src/SeeSharp.Ide/SeeSharp.Ide.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SeeSharp.App.Tests/SeeSharp.App.Tests.csproj" />
+    <Project Path="tests/SeeSharp.Cli.Tests/SeeSharp.Cli.Tests.csproj" />
+    <Project Path="tests/SeeSharp.Content.Tests/SeeSharp.Content.Tests.csproj" />
+    <Project Path="tests/SeeSharp.Core.Tests/SeeSharp.Core.Tests.csproj" />
+    <Project Path="tests/SeeSharp.Grading.Tests/SeeSharp.Grading.Tests.csproj" />
+    <Project Path="tests/SeeSharp.Ide.Tests/SeeSharp.Ide.Tests.csproj" />
+  </Folder>
+</Solution>

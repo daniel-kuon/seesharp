@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <Version>0.1.0</Version>
+    <IsPackable>true</IsPackable>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>seesharp</ToolCommandName>
+    <PackageOutputPath>$(MSBuildThisFileDirectory)../../nupkg</PackageOutputPath>
+    <Authors>CargoNerds</Authors>
+    <Description>Interactive C# training tool.</Description>
+    <PackageLicenseExpression>CC-BY-NC-SA-4.0</PackageLicenseExpression>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../SeeSharp.App/SeeSharp.App.csproj" />
+    <ProjectReference Include="../SeeSharp.Content/SeeSharp.Content.csproj" />
+    <ProjectReference Include="../SeeSharp.Core/SeeSharp.Core.csproj" />
+    <ProjectReference Include="../SeeSharp.Grading/SeeSharp.Grading.csproj" />
+    <ProjectReference Include="../SeeSharp.Ide/SeeSharp.Ide.csproj" />
+  </ItemGroup>
+</Project>
