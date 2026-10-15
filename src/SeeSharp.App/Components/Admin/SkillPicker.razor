@@ -1,0 +1,44 @@
+@inject CourseState State
+
+@* Skill ids come from skills.yaml only: the datalist offers them and Add refuses anything else (never free text). *@
+<ul class="skills">
+    @foreach (var skill in Skills.ToList())
+    {
+        <li><code>@skill</code> @State.SkillLabel(skill) <button type="button" @onclick="() => Skills.Remove(skill)" title="@Strings.Remove">×</button></li>
+    }
+</ul>
+<input type="text" list="@_listId" placeholder="@Strings.SkillPickerPlaceholder" @bind="_input" @bind:event="oninput" />
+<datalist id="@_listId">
+    @foreach (var skill in State.Course!.Skills.Skills)
+    {
+        <option value="@skill.Id">@State.SkillLabel(skill.Id)</option>
+    }
+</datalist>
+<button type="button" @onclick="Add">@Strings.AddSkill</button>
+@if (_error is not null)
+{
+    <span class="bad">@_error</span>
+}
+
+@code {
+    /// <summary>Mutated in place; the owner serialises it on save.</summary>
+    [Parameter, EditorRequired] public List<string> Skills { get; set; } = null!;
+
+    private readonly string _listId = "skills-" + Guid.NewGuid().ToString("N");
+    private string _input = "";
+    private string? _error;
+
+    private void Add()
+    {
+        var id = _input.Trim();
+        if (State.Course!.Skills.Skills.All(s => s.Id != id))
+        {
+            _error = string.Format(Strings.SkillUnknown, id);
+            return;
+        }
+        if (!Skills.Contains(id))
+            Skills.Add(id);
+        _input = "";
+        _error = null;
+    }
+}

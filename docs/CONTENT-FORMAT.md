@@ -189,4 +189,4 @@ totals, the dangling list and the dead-end list.
   documented in the course repo's `docs/SKILLS.md`; fill them in as the earlier
   levels get written.
 - `requiredTests` names are unverified.
-- No `--json` output for `validate`; add when the admin UI (task 7) needs it.
+- No `--json` output for `validate`; the admin UI (task 7) calls the validator in-process instead.

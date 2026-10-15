@@ -10,11 +10,15 @@ namespace SeeSharp.App;
 /// The one loaded course plus the progress store, shared by every circuit. Reloading swaps the
 /// course reference; pages read it fresh on every render.
 /// </summary>
-public sealed class CourseState(ProgressStore store, string? courseArgument) : IDisposable
+public sealed class CourseState(ProgressStore store, string? courseArgument, bool admin = false) : IDisposable
 {
     private static readonly MarkdownPipeline Markdown = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
 
     public ProgressStore Store { get; } = store;
+    /// <summary><c>seesharp --admin</c>: the editor pages under <c>/admin</c> exist only then (AppHost returns 404 and Routes renders nothing otherwise).</summary>
+    public bool Admin { get; } = admin;
+    /// <summary>Skill graph summary of the last load, for the admin skills view.</summary>
+    public SkillGraphSummary Summary { get; private set; } = new(0, 0, [], [], []);
     public Settings Settings { get; private set; } = Settings.Load();
     public string? CoursePath { get; private set; }
     public Course? Course { get; private set; }
@@ -53,6 +57,7 @@ public sealed class CourseState(ProgressStore store, string? courseArgument) : I
         var book = CoursePaths.BookPdf(Settings.BookPdfPath, CoursePath);
         BookPdfPath = File.Exists(book) ? book : null;
         Findings = report.Findings;
+        Summary = report.Summary;
         Course = report.Course;
     }
 
@@ -109,8 +114,9 @@ public sealed class CourseState(ProgressStore store, string? courseArgument) : I
         bookPdfPath is null ? null : $"book.pdf#page={reading.PhysicalPage}";
 
     /// <summary>Course Markdown is trusted content from the trainee's own checkout, so it is rendered unsanitised.</summary>
-    public static MarkupString RenderMarkdown(string path) =>
-        new(File.Exists(path) ? Markdig.Markdown.ToHtml(File.ReadAllText(path), Markdown) : "");
+    public static MarkupString RenderMarkdown(string path) => MarkdownText(File.Exists(path) ? File.ReadAllText(path) : "");
+
+    public static MarkupString MarkdownText(string markdown) => new(Markdig.Markdown.ToHtml(markdown, Markdown));
 
     public void Dispose() => Store.Dispose();
 }

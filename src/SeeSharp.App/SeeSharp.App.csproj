@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <ItemGroup>
     <PackageReference Include="Markdig" Version="0.45.0" />
+    <PackageReference Include="LibGit2Sharp" Version="0.31.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../SeeSharp.Content/SeeSharp.Content.csproj" />

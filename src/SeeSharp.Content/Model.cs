@@ -47,13 +47,17 @@ public sealed class Reading
     public Dictionary<string, string> Title { get; set; } = new();
     public int PrintedPage { get; set; }
 
+    [YamlDotNet.Serialization.YamlIgnore]
     public int PhysicalPage => PrintedPage + PrintedToPhysicalOffset;
 }
 
 /// <summary>Base of every item; <c>type</c> picks the subclass. New item types are new subclasses plus a line in <see cref="ItemTypes"/>.</summary>
 public abstract class ExerciseItem
 {
+    // Order keeps the discriminator first when the editor writes a manifest back.
+    [YamlDotNet.Serialization.YamlMember(Order = -2)]
     public string Type { get; set; } = "";
+    [YamlDotNet.Serialization.YamlMember(Order = -1)]
     public string Id { get; set; } = "";
 }
 

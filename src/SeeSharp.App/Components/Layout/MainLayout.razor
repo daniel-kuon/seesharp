@@ -7,6 +7,14 @@
     <NavLink href="" Match="NavLinkMatch.All">@Strings.NavHome</NavLink>
     <NavLink href="modules">@Strings.NavModules</NavLink>
     <NavLink href="settings">@Strings.NavSettings</NavLink>
+    @if (State.Admin)
+    {
+        <span class="admin">@Strings.NavAdmin</span>
+        <NavLink href="admin" Match="NavLinkMatch.All">@Strings.NavAdminCourse</NavLink>
+        <NavLink href="admin/skills">@Strings.NavAdminSkills</NavLink>
+        <NavLink href="admin/git">@Strings.NavAdminGit</NavLink>
+        <NavLink href="admin/review">@Strings.NavAdminReview</NavLink>
+    }
     <span class="lang" title="@Strings.LanguageLabel">
         @foreach (var locale in Locale.Supported)
         {

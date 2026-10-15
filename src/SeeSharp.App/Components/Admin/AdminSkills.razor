@@ -1,0 +1,46 @@
+@page "/admin/skills"
+@inject CourseState State
+
+<PageTitle>@Strings.AdminSkillsTitle</PageTitle>
+<h1>@Strings.AdminSkillsTitle</h1>
+<p><a href="admin/skills/edit">@Strings.EditSkillsLink</a></p>
+
+@{
+    var summary = State.Summary;
+    var taught = State.Course!.ExercisesInOrder.SelectMany(e => e.Manifest.Teaches).ToHashSet(StringComparer.Ordinal);
+    var untaught = State.Course.Skills.Skills.Where(s => !taught.Contains(s.Id)).Select(s => s.Id).ToList();
+    var findings = State.Findings.Where(f => f.Code.ToString().StartsWith("Skill", StringComparison.Ordinal)).ToList();
+}
+<p>@string.Format(Strings.SkillsCoverage, summary.SkillsTaught, summary.SkillsInCatalog)</p>
+<table>
+    <thead><tr><th>@Strings.ColumnLevel</th><th>@Strings.ColumnModule</th><th>@Strings.ColumnExercises</th><th>@Strings.ColumnTaught</th><th>@Strings.ColumnNew</th><th>@Strings.ColumnRequired</th></tr></thead>
+    <tbody>
+        @foreach (var m in summary.Modules)
+        {
+            <tr><td>@m.Order.ToString("00")</td><td>@m.Id</td><td>@m.Exercises</td><td>@m.SkillsTaught</td><td>@m.SkillsNew</td><td>@m.SkillsRequired</td></tr>
+        }
+    </tbody>
+</table>
+
+<h2>@Strings.DanglingLabel</h2>
+<p class="@(summary.Dangling.Count > 0 ? "bad" : "")">@Join(summary.Dangling)</p>
+<h2>@Strings.DeadEndsLabel</h2>
+<p>@Join(summary.DeadEnds)</p>
+<h2>@Strings.NotTaughtLabel</h2>
+<p>@Join(untaught)</p>
+
+@if (findings.Count > 0)
+{
+    <h2>@Strings.SkillFindings</h2>
+    <ul class="errors">
+        @foreach (var f in findings)
+        {
+            <li class="@(f.Severity == Severity.Error ? "bad" : "hint")">@f.Location: @f.Message</li>
+        }
+    </ul>
+}
+
+@code {
+    private string Join(IEnumerable<string> ids) =>
+        ids.Select(id => $"{id} ({State.SkillLabel(id)})").DefaultIfEmpty(Strings.None).Aggregate((a, b) => a + ", " + b);
+}

@@ -8,7 +8,8 @@ away; everything not spelled out there is marked **Decision**.
 
 ```
 seesharp                                   # same as `seesharp start`
-seesharp start [--course <path>] [--port <n>] [--no-browser]
+seesharp start [--course <path>] [--port <n>] [--no-browser] [--admin]
+seesharp --admin                           # supervisor editor, see "Admin mode (task 7)"
 dotnet run --project src/SeeSharp.App -- [<course-path>]   # dev, no browser
 ```
 
@@ -232,9 +233,92 @@ sibling, explicit-but-missing path, book default, and the `#page=` link using
 the physical page. No bUnit; the components have no logic beyond what the store
 and the runner already test.
 
+## Admin mode (task 7)
+
+`seesharp --admin` (or `seesharp start --admin`; the dev entry point takes
+`--admin` too) turns the app into the supervisor's editor over the course
+working copy. Without the flag nothing admin-related exists: `AppHost` answers
+every `/admin*` request with 404 before routing, `Routes.razor` refuses to
+render a page from the `SeeSharp.App.Components.Admin` namespace inside a
+circuit, and the nav shows no admin links. `AppHost.BuildAsync` returns the
+configured, unstarted app so a test can host it on a temp progress store;
+`AdminTests` asserts 404/200 per route and the absence/presence of the links.
+
+**Decision — the editor works on files, the course object is read-only.** Every
+admin edit goes through `SeeSharp.Content/CourseEditor` (create, swap, save,
+save skills) or writes a file directly, then calls `State.LoadAsync()`, so the
+trainee pages and the structural findings follow the disk. The exercise editor
+deserialises a fresh `ExerciseManifest` from `manifest.yaml`, never the loaded
+course's instance.
+
+Screens (German default, every string in both resx files):
+
+- `/admin` course tree: modules and exercises with ↑/↓ (`CourseEditor.Swap`
+  renames the two `NN-` prefixes — the module number is also the level), delete
+  with a browser `confirm`, "Neues Modul" (`module.yaml` + `summary.de.md`) and
+  "Neue Übung" (`manifest.yaml` with id/title/teaches/requires,
+  `instructions.de.md`, `rubric.md`, and a `starter/<Project>` console project
+  plus `tests/<Project>.Tests` xunit project; the starter throws
+  `NotImplementedException`, so the template compiles and fails its one test —
+  `seesharp validate` with the starter check passes on it, tested). The project
+  name is the slug in PascalCase (`hallo-welt` → `HalloWelt`).
+- `/admin/exercise/{id}`: id, title, optional reading, teaches/requires via
+  `SkillPicker` (a `<datalist>` of `skills.yaml` ids; "Hinzufügen" refuses
+  anything not in the catalog — never free text), item cards per type with
+  ↑/↓/remove and "Aufgabe hinzufügen", the instructions textarea with a live
+  Markdig preview (`CourseState.MarkdownText` on `oninput`), the rubric
+  textarea, "Speichern". After saving the course reloads and the page lists the
+  findings whose location starts with the exercise folder.
+  **Decision — German fields only** (`DeText` edits the `de` key); English
+  titles and `instructions.en.md` are written by hand as in task 10.
+  **Decision — saved manifests are in the serializer's canonical form** (block
+  mappings, `type` and `id` first via `YamlMember(Order)`, null fields omitted);
+  hand-written flow style is not preserved. `Reading.PhysicalPage` is
+  `[YamlIgnore]` so the derived page is never written.
+- `/admin/skills`: the validator's `SkillGraphSummary` (per level: exercises,
+  skills taught, new, required; coverage; dangling; dead ends), skills in the
+  catalog that nothing teaches, and the `Skill*` findings. The link
+  "skills.yaml bearbeiten" opens `/admin/skills/edit`, a plain textarea;
+  `CourseEditor.SaveSkills` parses first and refuses to write an unparseable
+  file, then the course reloads and the skill findings are shown. Nothing
+  else writes `skills.yaml` (SKILL-MODEL §5).
+- `/admin/git` (`CourseGit`, LibGit2Sharp, one `Repository` per call): branch
+  and remote, status table, the patch (index + working directory, untracked
+  included) in a `<details>`, "Validieren" (full `CourseValidator` run
+  including the starter check, findings listed), the commit message and
+  "Validieren und committen", Push, Pull. **The rule lives in
+  `CourseGit.CommitAsync`:** it validates with the starter check and returns no
+  commit when the report has errors; the page shows "Commit blockiert" with the
+  findings (`AdminTests` covers the blocked and the clean path against a scratch
+  repo with a local bare remote). Push goes to the first remote with the
+  current branch; Pull needs an upstream and reports up to date / fast-forward
+  / merge commit; `MergeStatus.Conflicts` shows the "resolve in Rider" message —
+  there is no conflict UI. **Decision — HTTPS credentials come from
+  `settings.json`** (`gitUserName`, `gitToken`, no UI); LibGit2Sharp's bundled
+  native library has no SSH, so SSH remotes must be pushed from the terminal.
+  The commit signature comes from the repo's `user.name`/`user.email`; a
+  missing one surfaces as the LibGit2Sharp error.
+- `/admin/review`: `<InputFile>` for a bundle from `seesharp export-review`
+  (`ReviewBundle.Read` in `SeeSharp.Progress` parses `attempts.csv` and
+  `skills.csv`, round-trip tested with quotes, commas and newlines). For every
+  exercise in published order with answers to `open` or `review` items the
+  answers (timestamp + text) are shown in a two-column grid next to the
+  rendered `rubric.md`; the skill matrix follows as a table. Attempts for
+  exercises missing from the course are only counted.
+
+Verified 2026-10-16 against a scratch copy of the course (git init, local bare
+remote): reorder, create exercise through the form (unknown skill refused),
+edit it (new multiple-choice item, instructions with preview), save with no
+findings, commit blocked on an injected unknown skill plus a solved starter
+(2 errors), commit `956cf69` after fixing both, push landed on the bare
+remote, pull reported up to date, review bundle rendered next to the rubric.
+
 ## Not done, on purpose
 
-- No admin mode, no exam mode.
+- No exam mode.
+- Admin: no English fields in the editor, no conflict resolution, no SSH, no
+  undo (Git is the undo), no edit of module titles/summaries beyond the files
+  in the IDE.
 - No inline PDF viewer; the link is enough (SKILL-MODEL §4: "ship the link first").
 - No per-attempt history view; the last attempt is shown, the export has the rest.
 - Navigating away during a test run still records the attempt (the store is a

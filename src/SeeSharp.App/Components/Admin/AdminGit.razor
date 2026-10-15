@@ -1,0 +1,132 @@
+@page "/admin/git"
+@inject CourseState State
+
+<PageTitle>@Strings.AdminGitTitle</PageTitle>
+<h1>@Strings.AdminGitTitle</h1>
+
+@if (!CourseGit.IsRepository(State.CoursePath!))
+{
+    <p class="bad">@string.Format(Strings.GitNotRepo, State.CoursePath)</p>
+}
+else
+{
+    var status = _status ??= CourseGit.GetStatus(State.CoursePath!);
+    <p>@string.Format(Strings.GitBranch, status.Branch) · @(status.Remote is null ? Strings.GitNoRemote : string.Format(Strings.GitRemote, status.Remote))</p>
+
+    <h2>@Strings.GitChanges</h2>
+    @if (status.Files.Count == 0)
+    {
+        <p class="hint">@Strings.GitClean</p>
+    }
+    else
+    {
+        <table>
+            @foreach (var (path, state) in status.Files)
+            {
+                <tr><td><code>@path</code></td><td>@state</td></tr>
+            }
+        </table>
+        <details>
+            <summary>@Strings.GitDiff</summary>
+            <pre class="diff">@status.Patch</pre>
+        </details>
+    }
+
+    <h2>@Strings.Validate</h2>
+    <p>
+        <button @onclick="Validate" disabled="@_busy">@Strings.Validate</button>
+        @if (_busy)
+        {
+            <span class="hint">@Strings.Working</span>
+        }
+    </p>
+    @if (_report is { } report)
+    {
+        var errors = report.Findings.Count(f => f.Severity == Severity.Error);
+        <p class="@(errors > 0 ? "bad" : "ok")">@string.Format(Strings.ValidationResult, errors, report.Findings.Count - errors)</p>
+        <ul class="errors">
+            @foreach (var f in report.Findings.OrderByDescending(f => f.Severity).ThenBy(f => f.Location, StringComparer.Ordinal))
+            {
+                <li class="@(f.Severity == Severity.Error ? "bad" : "hint")">@f.Location: @f.Message</li>
+            }
+        </ul>
+    }
+
+    <h2>@Strings.CommitButton</h2>
+    <p><label>@Strings.CommitMessage<br /><textarea rows="3" @bind="_message" @bind:event="oninput"></textarea></label></p>
+    <p>
+        <button @onclick="Commit" disabled="@(_busy || string.IsNullOrWhiteSpace(_message) || status.Files.Count == 0)">@Strings.CommitButton</button>
+        <button @onclick="Push" disabled="@(_busy || status.Remote is null)">@Strings.Push</button>
+        <button @onclick="Pull" disabled="@(_busy || status.Remote is null)">@Strings.Pull</button>
+    </p>
+    @if (_result is not null)
+    {
+        <p class="@(_resultOk ? "ok" : "bad")">@_result</p>
+    }
+}
+
+@code {
+    private CourseGit.Status? _status;
+    private ValidationReport? _report;
+    private string _message = "";
+    private string? _result;
+    private bool _resultOk, _busy;
+
+    // The starter check runs one `dotnet test` per coding exercise; awaiting it keeps the circuit responsive.
+    private async Task Validate()
+    {
+        _busy = true;
+        _report = await CourseValidator.ValidateAsync(State.CoursePath!, new ValidationOptions(RunStarterCheck: true));
+        _busy = false;
+    }
+
+    private async Task Commit()
+    {
+        _busy = true;
+        _result = null;
+        try
+        {
+            var (report, commit) = await CourseGit.CommitAsync(State.CoursePath!, _message.Trim());
+            _report = report;
+            _resultOk = commit is not null;
+            _result = commit is null ? Strings.CommitBlocked : string.Format(Strings.Committed, commit.Sha[..7]);
+            if (commit is not null)
+                _message = "";
+        }
+        catch (Exception e) when (e is LibGit2Sharp.LibGit2SharpException or InvalidOperationException)
+        {
+            (_result, _resultOk) = (string.Format(Strings.GitError, e.Message), false);
+        }
+        _status = null;
+        _busy = false;
+    }
+
+    private Task Push() => Run(() => { CourseGit.Push(State.CoursePath!, State.Settings); return Strings.Pushed; });
+
+    private Task Pull() => Run(() => CourseGit.Pull(State.CoursePath!, State.Settings) switch
+    {
+        LibGit2Sharp.MergeStatus.Conflicts => throw new InvalidOperationException(Strings.PullConflict),
+        LibGit2Sharp.MergeStatus.UpToDate => string.Format(Strings.PullResult, Strings.GitUpToDate),
+        LibGit2Sharp.MergeStatus.FastForward => string.Format(Strings.PullResult, Strings.GitFastForward),
+        _ => string.Format(Strings.PullResult, Strings.GitMerged),
+    });
+
+    /// <summary>Network calls are synchronous in LibGit2Sharp; run them off the circuit thread and show the outcome either way.</summary>
+    private async Task Run(Func<string> action)
+    {
+        _busy = true;
+        _result = null;
+        try
+        {
+            _result = await Task.Run(action);
+            _resultOk = true;
+        }
+        catch (Exception e) when (e is LibGit2Sharp.LibGit2SharpException or InvalidOperationException)
+        {
+            (_result, _resultOk) = (e.Message == Strings.PullConflict ? e.Message : string.Format(Strings.GitError, e.Message), false);
+        }
+        _status = null;
+        await State.LoadAsync();
+        _busy = false;
+    }
+}

@@ -90,8 +90,7 @@ public static class CourseLoader
         }
         try
         {
-            using var reader = new StreamReader(path);
-            return Yaml.Deserialize<T>(reader) ?? throw new YamlException("empty document");
+            return Deserialize<T>(File.ReadAllText(path));
         }
         catch (YamlException e)
         {
@@ -101,6 +100,10 @@ public static class CourseLoader
             return null;
         }
     }
+
+    /// <summary>One document of the content format; throws <see cref="YamlException"/> on anything the loader would report as invalid.</summary>
+    public static T Deserialize<T>(string yaml) where T : class =>
+        Yaml.Deserialize<T>(yaml) ?? throw new YamlException("empty document");
 
     /// <summary>Course-relative path with forward slashes, so findings read the same on every OS.</summary>
     public static string Relative(string root, string path) =>

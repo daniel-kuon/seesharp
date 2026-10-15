@@ -1,0 +1,18 @@
+@* One locale-keyed text field of a manifest (title, prompt, option, explanation); edits the "de" entry in place. *@
+@if (Rows > 1)
+{
+    <textarea rows="@Rows" value="@Value" @oninput="Set"></textarea>
+}
+else
+{
+    <input type="text" value="@Value" @oninput="Set" />
+}
+
+@code {
+    [Parameter, EditorRequired] public Dictionary<string, string> Text { get; set; } = null!;
+    [Parameter] public int Rows { get; set; } = 1;
+
+    private string Value => Text.GetValueOrDefault(CourseLoader.DefaultLocale) ?? "";
+
+    private void Set(ChangeEventArgs e) => Text[CourseLoader.DefaultLocale] = (string?)e.Value ?? "";
+}

@@ -1,0 +1,189 @@
+@page "/admin/exercise/{Id}"
+@inject CourseState State
+@inject NavigationManager Nav
+
+@if (_exercise is not { } exercise || _manifest is not { } manifest)
+{
+    <PageTitle>@Strings.Title</PageTitle>
+    <p class="bad">@Strings.NotFound</p>
+}
+else
+{
+    <PageTitle>@string.Format(Strings.AdminExerciseTitle, manifest.Id)</PageTitle>
+    <p class="crumbs"><a href="admin">@Strings.AdminTreeTitle</a> › @CourseState.Text(manifest.Title)</p>
+    <h1>@string.Format(Strings.AdminExerciseTitle, manifest.Id)</h1>
+    <p class="hint">@string.Format(Strings.Folder, CourseLoader.Relative(State.CoursePath!, exercise.Directory))</p>
+
+    <section class="card">
+        <p><label>@Strings.IdLabel<br /><input type="text" @bind="manifest.Id" /></label></p>
+        <p><label>@Strings.TitleLabel<br /><DeText Text="manifest.Title" /></label></p>
+        @if (manifest.Reading is { } reading)
+        {
+            <p>@Strings.ReadingLabel <button @onclick="() => manifest.Reading = null">@Strings.RemoveReading</button></p>
+            <p><label>@Strings.ReadingSection<br /><input type="text" @bind="reading.Section" /></label></p>
+            <p><label>@Strings.ReadingTitle<br /><DeText Text="reading.Title" /></label></p>
+            <p><label>@Strings.ReadingPage<br /><input type="number" min="1" @bind="reading.PrintedPage" /></label></p>
+        }
+        else
+        {
+            <p><button @onclick="() => manifest.Reading = new Reading()">@Strings.AddReading</button></p>
+        }
+        <p>@Strings.Teaches</p>
+        <SkillPicker Skills="manifest.Teaches" />
+        <p>@Strings.Requires</p>
+        <SkillPicker Skills="manifest.Requires" />
+    </section>
+
+    <h2>@Strings.Items</h2>
+    @for (var i = 0; i < manifest.Items.Count; i++)
+    {
+        var index = i;
+        var item = manifest.Items[i];
+        <section class="item">
+            <p>
+                <strong>@ItemTypes.ByName.First(p => p.Value == item.GetType()).Key</strong>
+                <button @onclick="() => MoveItem(manifest, index, -1)" disabled="@(index == 0)" title="@Strings.MoveUp">↑</button>
+                <button @onclick="() => MoveItem(manifest, index, 1)" disabled="@(index == manifest.Items.Count - 1)" title="@Strings.MoveDown">↓</button>
+                <button @onclick="() => manifest.Items.RemoveAt(index)">@Strings.Remove</button>
+            </p>
+            <p><label>@Strings.IdLabel<br /><input type="text" @bind="item.Id" /></label></p>
+            @switch (item)
+            {
+                case MultipleChoiceItem choice:
+                    <p><label>@Strings.PromptLabel<br /><DeText Text="choice.Prompt" Rows="2" /></label></p>
+                    <p>@Strings.OptionsLabel</p>
+                    @for (var o = 0; o < choice.Options.Count; o++)
+                    {
+                        var option = o;
+                        <p class="option">
+                            <input type="checkbox" checked="@choice.Correct.Contains(option)" @onchange="e => SetCorrect(choice, option, (bool)e.Value!)" />
+                            <DeText Text="choice.Options[option]" />
+                            <button @onclick="() => RemoveOption(choice, option)" title="@Strings.Remove">×</button>
+                        </p>
+                    }
+                    <p><button @onclick="() => choice.Options.Add(new())">@Strings.AddOption</button></p>
+                    <p><label>@Strings.ExplanationLabel<br /><DeText Text="@(choice.Explanation ??= new())" Rows="2" /></label></p>
+                    break;
+                case OpenItem open:
+                    <p><label>@Strings.PromptLabel<br /><DeText Text="open.Prompt" Rows="2" /></label></p>
+                    break;
+                case ReviewItem review:
+                    <p><label>@Strings.PromptLabel<br /><DeText Text="review.Prompt" Rows="2" /></label></p>
+                    <p><label>@Strings.OpenFileField<br /><input type="text" value="@review.OpenFile" @onchange="e => review.OpenFile = Blank((string?)e.Value)" /></label></p>
+                    break;
+                case CodingItem coding:
+                    <p><label>@Strings.OpenFileField<br /><input type="text" @bind="coding.OpenFile" /></label></p>
+                    <p><label>@Strings.OpenLineField<br /><input type="number" min="1" value="@coding.OpenLine" @onchange="e => coding.OpenLine = int.TryParse((string?)e.Value, out var line) ? line : null" /></label></p>
+                    <p><label>@Strings.TestProjectField<br /><input type="text" @bind="coding.TestProject" /></label></p>
+                    <p><label>@Strings.RequiredTestsField<br />
+                        <input type="text" value="@string.Join(", ", coding.RequiredTests ?? [])"
+                               @onchange="e => coding.RequiredTests = ((string?)e.Value ?? string.Empty).Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } names ? names.ToList() : null" />
+                    </label></p>
+                    break;
+            }
+        </section>
+    }
+    <p>
+        <select @bind="_newItemType">
+            @foreach (var type in ItemTypes.ByName.Keys)
+            {
+                <option value="@type">@type</option>
+            }
+        </select>
+        <button @onclick="() => AddItem(manifest)">@Strings.AddItem</button>
+    </p>
+
+    <h2>@Strings.InstructionsLabel</h2>
+    <div class="split">
+        <textarea rows="24" @bind="_instructions" @bind:event="oninput"></textarea>
+        <article class="md preview">@CourseState.MarkdownText(_instructions)</article>
+    </div>
+
+    <h2>@Strings.RubricLabel</h2>
+    <textarea rows="10" @bind="_rubric"></textarea>
+
+    <p>
+        <button @onclick="() => Save(exercise, manifest)">@Strings.Save</button>
+        @if (_saved)
+        {
+            <span class="ok">@Strings.Saved</span>
+        }
+    </p>
+    @if (_saved)
+    {
+        var location = CourseLoader.Relative(State.CoursePath!, exercise.Directory);
+        var findings = State.Findings.Where(f => f.Location.StartsWith(location, StringComparison.Ordinal)).ToList();
+        <p>@Strings.FindingsForExercise</p>
+        @if (findings.Count == 0)
+        {
+            <p class="ok">@Strings.NoFindings</p>
+        }
+        else
+        {
+            <ul class="errors">
+                @foreach (var f in findings)
+                {
+                    <li class="@(f.Severity == Severity.Error ? "bad" : "hint")">@f.Location: @f.Message</li>
+                }
+            </ul>
+        }
+    }
+}
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+
+    private Exercise? _exercise;
+    private ExerciseManifest? _manifest;
+    private string _instructions = "", _rubric = "", _newItemType = "multipleChoice";
+    private bool _saved;
+
+    // Fresh copies from disk, so editing never touches the course the trainee pages render.
+    protected override void OnParametersSet()
+    {
+        _exercise = State.FindExercise(Id);
+        if (_exercise is not { } exercise)
+            return;
+        _manifest = CourseLoader.Deserialize<ExerciseManifest>(File.ReadAllText(Path.Combine(exercise.Directory, CourseLoader.ExerciseManifestFileName)));
+        _instructions = File.Exists(exercise.InstructionsPath) ? File.ReadAllText(exercise.InstructionsPath) : "";
+        _rubric = File.Exists(exercise.RubricPath) ? File.ReadAllText(exercise.RubricPath) : "";
+    }
+
+    private static string? Blank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
+
+    private static void SetCorrect(MultipleChoiceItem choice, int option, bool correct)
+    {
+        choice.Correct.Remove(option);
+        if (correct)
+            choice.Correct.Add(option);
+        choice.Correct.Sort();
+    }
+
+    private static void RemoveOption(MultipleChoiceItem choice, int option)
+    {
+        choice.Options.RemoveAt(option);
+        choice.Correct = choice.Correct.Where(c => c != option).Select(c => c > option ? c - 1 : c).ToList();
+    }
+
+    private static void MoveItem(ExerciseManifest manifest, int index, int delta) =>
+        (manifest.Items[index], manifest.Items[index + delta]) = (manifest.Items[index + delta], manifest.Items[index]);
+
+    private void AddItem(ExerciseManifest manifest) =>
+        manifest.Items.Add((ExerciseItem)Activator.CreateInstance(ItemTypes.ByName[_newItemType])!);
+
+    private async Task Save(Exercise exercise, ExerciseManifest manifest)
+    {
+        foreach (var choice in manifest.Items.OfType<MultipleChoiceItem>())
+            if (choice.Explanation is { } explanation && string.IsNullOrWhiteSpace(explanation.GetValueOrDefault(CourseLoader.DefaultLocale)))
+                choice.Explanation = null;
+        CourseEditor.SaveExercise(exercise, manifest);
+        File.WriteAllText(exercise.InstructionsPath, _instructions);
+        File.WriteAllText(exercise.RubricPath, _rubric);
+        await State.LoadAsync();
+        _saved = true;
+        if (manifest.Id != Id)
+            Nav.NavigateTo($"admin/exercise/{manifest.Id}");
+        else
+            OnParametersSet();
+    }
+}

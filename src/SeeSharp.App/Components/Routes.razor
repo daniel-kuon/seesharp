@@ -1,5 +1,15 @@
+@inject CourseState State
+
 <Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+        @* Admin pages live in Components/Admin; without --admin they are not routable even from inside a circuit. *@
+        @if (routeData.PageType.Namespace!.EndsWith(".Admin", StringComparison.Ordinal) && !State.Admin)
+        {
+            <LayoutView Layout="typeof(Layout.MainLayout)"><p class="bad">@Strings.NotFound</p></LayoutView>
+        }
+        else
+        {
+            <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+        }
     </Found>
 </Router>

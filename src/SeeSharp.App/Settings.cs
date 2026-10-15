@@ -21,6 +21,9 @@ public sealed class Settings
     public string? VisualStudioPath { get; set; }
     /// <summary>UI language (<c>de</c> or <c>en</c>); null = German. <c>SEESHARP_LOCALE</c> overrides it at start.</summary>
     public string? Locale { get; set; }
+    /// <summary>Admin mode: credentials for push/pull over HTTPS (a personal access token as the password). Unset = anonymous.</summary>
+    public string? GitUserName { get; set; }
+    public string? GitToken { get; set; }
 
     public static Settings Load(string? path = null)
     {

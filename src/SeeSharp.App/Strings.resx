@@ -98,4 +98,106 @@
   <data name="SettingsFileHint" xml:space="preserve"><value>Gespeichert in {0}. Die Option --course und die Umgebungsvariable SEESHARP_COURSE haben Vorrang.</value></data>
   <data name="Save" xml:space="preserve"><value>Speichern</value></data>
   <data name="Reload" xml:space="preserve"><value>Kurs neu laden</value></data>
+  <data name="NavAdmin" xml:space="preserve"><value>Admin:</value></data>
+  <data name="NavAdminCourse" xml:space="preserve"><value>Kurs</value></data>
+  <data name="NavAdminSkills" xml:space="preserve"><value>Skills</value></data>
+  <data name="NavAdminGit" xml:space="preserve"><value>Git</value></data>
+  <data name="NavAdminReview" xml:space="preserve"><value>Review</value></data>
+  <data name="AdminTreeTitle" xml:space="preserve"><value>Kurs bearbeiten</value></data>
+  <data name="ReorderHint" xml:space="preserve"><value>Die Reihenfolge ist die Nummer im Ordnernamen (NN-). Verschieben benennt die Ordner um; die Modulnummer ist zugleich das Level.</value></data>
+  <data name="MoveUp" xml:space="preserve"><value>Nach oben</value></data>
+  <data name="MoveDown" xml:space="preserve"><value>Nach unten</value></data>
+  <data name="Delete" xml:space="preserve"><value>Löschen</value></data>
+  <data name="ConfirmDelete" xml:space="preserve"><value>„{0}“ wirklich löschen? Der Ordner {1} wird samt Inhalt entfernt.</value></data>
+  <data name="NewModule" xml:space="preserve"><value>Neues Modul</value></data>
+  <data name="NewExercise" xml:space="preserve"><value>Neue Übung</value></data>
+  <data name="SlugLabel" xml:space="preserve"><value>Ordnername ohne Nummer (z. B. konstruktoren)</value></data>
+  <data name="IdLabel" xml:space="preserve"><value>Id</value></data>
+  <data name="TitleLabel" xml:space="preserve"><value>Titel (de)</value></data>
+  <data name="ModuleLabel" xml:space="preserve"><value>Modul</value></data>
+  <data name="Create" xml:space="preserve"><value>Anlegen</value></data>
+  <data name="CreateError" xml:space="preserve"><value>Fehlgeschlagen: {0}</value></data>
+  <data name="Teaches" xml:space="preserve"><value>Vermittelt (teaches)</value></data>
+  <data name="Requires" xml:space="preserve"><value>Setzt voraus (requires)</value></data>
+  <data name="AddSkill" xml:space="preserve"><value>Hinzufügen</value></data>
+  <data name="SkillPickerPlaceholder" xml:space="preserve"><value>Skill-Id aus skills.yaml</value></data>
+  <data name="SkillUnknown" xml:space="preserve"><value>Unbekannter Skill: {0}</value></data>
+  <data name="Remove" xml:space="preserve"><value>Entfernen</value></data>
+  <data name="AdminExerciseTitle" xml:space="preserve"><value>Übung bearbeiten: {0}</value></data>
+  <data name="Folder" xml:space="preserve"><value>Ordner: {0}</value></data>
+  <data name="ReadingLabel" xml:space="preserve"><value>Buchverweis</value></data>
+  <data name="ReadingSection" xml:space="preserve"><value>Abschnitt</value></data>
+  <data name="ReadingTitle" xml:space="preserve"><value>Abschnittstitel (de)</value></data>
+  <data name="ReadingPage" xml:space="preserve"><value>Gedruckte Seite</value></data>
+  <data name="AddReading" xml:space="preserve"><value>Buchverweis hinzufügen</value></data>
+  <data name="RemoveReading" xml:space="preserve"><value>Buchverweis entfernen</value></data>
+  <data name="InstructionsLabel" xml:space="preserve"><value>Anleitung (instructions.de.md)</value></data>
+  <data name="RubricLabel" xml:space="preserve"><value>Rubrik (rubric.md, nur für die Betreuung)</value></data>
+  <data name="AddItem" xml:space="preserve"><value>Aufgabe hinzufügen</value></data>
+  <data name="PromptLabel" xml:space="preserve"><value>Frage (de)</value></data>
+  <data name="OptionsLabel" xml:space="preserve"><value>Antwortoptionen (Häkchen = richtig)</value></data>
+  <data name="AddOption" xml:space="preserve"><value>Option hinzufügen</value></data>
+  <data name="ExplanationLabel" xml:space="preserve"><value>Erklärung (de, optional)</value></data>
+  <data name="OpenFileField" xml:space="preserve"><value>Datei (relativ zu starter/)</value></data>
+  <data name="OpenLineField" xml:space="preserve"><value>Zeile (optional)</value></data>
+  <data name="TestProjectField" xml:space="preserve"><value>Testprojekt (relativ zu tests/)</value></data>
+  <data name="RequiredTestsField" xml:space="preserve"><value>Pflichttests, kommagetrennt (leer = alle)</value></data>
+  <data name="Saved" xml:space="preserve"><value>Gespeichert.</value></data>
+  <data name="FindingsForExercise" xml:space="preserve"><value>Validierung dieser Übung:</value></data>
+  <data name="NoFindings" xml:space="preserve"><value>Keine Befunde.</value></data>
+  <data name="AdminSkillsTitle" xml:space="preserve"><value>Skill-Graph</value></data>
+  <data name="EditSkillsLink" xml:space="preserve"><value>skills.yaml bearbeiten</value></data>
+  <data name="SkillsCoverage" xml:space="preserve"><value>{0} von {1} Skills im Katalog werden vermittelt.</value></data>
+  <data name="ColumnLevel" xml:space="preserve"><value>Level</value></data>
+  <data name="ColumnModule" xml:space="preserve"><value>Modul</value></data>
+  <data name="ColumnExercises" xml:space="preserve"><value>Übungen</value></data>
+  <data name="ColumnTaught" xml:space="preserve"><value>vermittelt</value></data>
+  <data name="ColumnNew" xml:space="preserve"><value>davon neu</value></data>
+  <data name="ColumnRequired" xml:space="preserve"><value>vorausgesetzt</value></data>
+  <data name="DanglingLabel" xml:space="preserve"><value>Vorausgesetzt, aber nirgends vermittelt (dangling)</value></data>
+  <data name="DeadEndsLabel" xml:space="preserve"><value>Vermittelt, aber nie vorausgesetzt (dead ends)</value></data>
+  <data name="NotTaughtLabel" xml:space="preserve"><value>Im Katalog, aber nicht vermittelt</value></data>
+  <data name="None" xml:space="preserve"><value>–</value></data>
+  <data name="SkillFindings" xml:space="preserve"><value>Befunde zum Skill-Graphen</value></data>
+  <data name="AdminSkillsEditTitle" xml:space="preserve"><value>skills.yaml bearbeiten</value></data>
+  <data name="SkillsEditHint" xml:space="preserve"><value>Ids sind dauerhaft – nie umbenennen, stattdessen neue Id mit aliases. Gespeichert wird nur, wenn die Datei parsebar ist; danach wird der Kurs neu validiert.</value></data>
+  <data name="SaveError" xml:space="preserve"><value>Nicht gespeichert: {0}</value></data>
+  <data name="AdminGitTitle" xml:space="preserve"><value>Git</value></data>
+  <data name="GitNotRepo" xml:space="preserve"><value>Der Kursordner ist kein Git-Repository: {0}</value></data>
+  <data name="GitBranch" xml:space="preserve"><value>Branch: {0}</value></data>
+  <data name="GitRemote" xml:space="preserve"><value>Remote: {0}</value></data>
+  <data name="GitNoRemote" xml:space="preserve"><value>Kein Remote konfiguriert.</value></data>
+  <data name="GitNoUpstream" xml:space="preserve"><value>Der Branch hat keinen Upstream-Branch.</value></data>
+  <data name="GitChanges" xml:space="preserve"><value>Änderungen</value></data>
+  <data name="GitClean" xml:space="preserve"><value>Keine Änderungen.</value></data>
+  <data name="GitDiff" xml:space="preserve"><value>Diff anzeigen</value></data>
+  <data name="Validate" xml:space="preserve"><value>Validieren</value></data>
+  <data name="Working" xml:space="preserve"><value>Bitte warten – inkl. Starter-Check kann das einige Minuten dauern …</value></data>
+  <data name="ValidationResult" xml:space="preserve"><value>{0} Fehler, {1} Warnungen</value></data>
+  <data name="CommitMessage" xml:space="preserve"><value>Commit-Nachricht (Pflicht)</value></data>
+  <data name="CommitButton" xml:space="preserve"><value>Validieren und committen</value></data>
+  <data name="CommitBlocked" xml:space="preserve"><value>Commit blockiert – erst die Validierungsfehler beheben.</value></data>
+  <data name="Committed" xml:space="preserve"><value>Commit {0} erstellt.</value></data>
+  <data name="Push" xml:space="preserve"><value>Push</value></data>
+  <data name="Pushed" xml:space="preserve"><value>Push erfolgreich.</value></data>
+  <data name="Pull" xml:space="preserve"><value>Pull</value></data>
+  <data name="PullResult" xml:space="preserve"><value>Pull: {0}</value></data>
+  <data name="GitUpToDate" xml:space="preserve"><value>bereits aktuell</value></data>
+  <data name="GitFastForward" xml:space="preserve"><value>Fast-Forward</value></data>
+  <data name="GitMerged" xml:space="preserve"><value>Merge-Commit erstellt</value></data>
+  <data name="PullConflict" xml:space="preserve"><value>Der Pull hat Konflikte erzeugt. Bitte in der IDE (Rider) auflösen und dann committen – SeeSharp bietet keine Konfliktauflösung.</value></data>
+  <data name="GitError" xml:space="preserve"><value>Git-Fehler: {0}</value></data>
+  <data name="AdminReviewTitle" xml:space="preserve"><value>Review</value></data>
+  <data name="ImportBundle" xml:space="preserve"><value>Review-Bundle importieren (Zip aus seesharp export-review)</value></data>
+  <data name="BundleLoaded" xml:space="preserve"><value>{0} Versuche und {1} Skills geladen.</value></data>
+  <data name="BundleError" xml:space="preserve"><value>Bundle konnte nicht gelesen werden: {0}</value></data>
+  <data name="UnknownExercises" xml:space="preserve"><value>{0} Versuche gehören zu Übungen, die es in diesem Kurs nicht gibt.</value></data>
+  <data name="OpenAnswers" xml:space="preserve"><value>Freitext-Antworten neben der Rubrik</value></data>
+  <data name="NoAnswers" xml:space="preserve"><value>Keine Freitext-Antworten im Bundle.</value></data>
+  <data name="RubricMissingNote" xml:space="preserve"><value>Keine rubric.md vorhanden.</value></data>
+  <data name="SkillMatrix" xml:space="preserve"><value>Skill-Matrix</value></data>
+  <data name="ColumnSkill" xml:space="preserve"><value>Skill</value></data>
+  <data name="ColumnState" xml:space="preserve"><value>Status</value></data>
+  <data name="ColumnLastExercised" xml:space="preserve"><value>Zuletzt geübt</value></data>
+  <data name="ColumnExercise" xml:space="preserve"><value>Übung</value></data>
 </root>

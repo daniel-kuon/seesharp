@@ -12,8 +12,9 @@ if (args is ["--version"])
     return 0;
 }
 
-if (args is [] or ["start", ..])
-    return await StartCommand.RunAsync(args is [] ? args : args[1..]);
+// `seesharp --admin` is `seesharp start --admin`: a bare option list goes to start.
+if (args is [] or ["start", ..] || args[0].StartsWith("--"))
+    return await StartCommand.RunAsync(args is ["start", ..] ? args[1..] : args);
 
 if (args is ["grade", ..])
     return await GradeCommand.RunAsync(args[1..]);

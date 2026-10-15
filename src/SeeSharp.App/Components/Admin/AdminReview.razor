@@ -1,0 +1,95 @@
+@page "/admin/review"
+@inject CourseState State
+
+<PageTitle>@Strings.AdminReviewTitle</PageTitle>
+<h1>@Strings.AdminReviewTitle</h1>
+<p><label>@Strings.ImportBundle<br /><InputFile OnChange="Import" accept=".zip" /></label></p>
+@if (_error is not null)
+{
+    <p class="bad">@string.Format(Strings.BundleError, _error)</p>
+}
+
+@if (_bundle is { } bundle)
+{
+    var known = State.Course!.ExercisesInOrder.Select(e => e.Manifest.Id).ToHashSet(StringComparer.Ordinal);
+    <p class="ok">@string.Format(Strings.BundleLoaded, bundle.Attempts.Count, bundle.Skills.Count)</p>
+    @if (bundle.Attempts.Count(a => !known.Contains(a.Exercise)) is > 0 and var unknown)
+    {
+        <p class="hint">@string.Format(Strings.UnknownExercises, unknown)</p>
+    }
+
+    <h2>@Strings.OpenAnswers</h2>
+    var any = false;
+    @foreach (var exercise in State.Course.ExercisesInOrder)
+    {
+        var textItems = exercise.Manifest.Items.Where(i => i is OpenItem or ReviewItem).ToList();
+        var answers = bundle.Attempts.Where(a => a.Exercise == exercise.Manifest.Id && textItems.Any(i => i.Id == a.Item) && !string.IsNullOrWhiteSpace(a.Answer)).ToList();
+        if (answers.Count == 0)
+            continue;
+        any = true;
+        <section class="card">
+            <h3><a href="exercise/@exercise.Manifest.Id">@CourseState.Text(exercise.Manifest.Title)</a> <span class="hint">@exercise.Manifest.Id</span></h3>
+            <div class="split">
+                <div>
+                    @foreach (var item in textItems.Where(i => answers.Any(a => a.Item == i.Id)))
+                    {
+                        <p><strong>@item.Id</strong> – @CourseState.Text(item is OpenItem o ? o.Prompt : ((ReviewItem)item).Prompt)</p>
+                        @foreach (var a in answers.Where(a => a.Item == item.Id))
+                        {
+                            <p class="hint">@a.Timestamp</p>
+                            <pre class="answer">@a.Answer</pre>
+                        }
+                    }
+                </div>
+                <article class="md preview">
+                    @if (File.Exists(exercise.RubricPath))
+                    {
+                        @CourseState.RenderMarkdown(exercise.RubricPath)
+                    }
+                    else
+                    {
+                        <p class="hint">@Strings.RubricMissingNote</p>
+                    }
+                </article>
+            </div>
+        </section>
+    }
+    @if (!any)
+    {
+        <p class="hint">@Strings.NoAnswers</p>
+    }
+
+    <h2>@Strings.SkillMatrix</h2>
+    <table>
+        <thead><tr><th>@Strings.ColumnSkill</th><th>@Strings.ColumnState</th><th>@Strings.ColumnLastExercised</th><th>@Strings.ColumnExercise</th></tr></thead>
+        <tbody>
+            @foreach (var s in bundle.Skills)
+            {
+                <tr><td><code>@s.Skill</code> @State.SkillLabel(s.Skill)</td><td>@s.State</td><td>@s.LastExercised</td><td>@s.Exercise</td></tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private const long MaxBundleBytes = 512L * 1024 * 1024; // bundles carry every submitted source tree
+
+    private ReviewBundle? _bundle;
+    private string? _error;
+
+    private async Task Import(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            using var memory = new MemoryStream();
+            await e.File.OpenReadStream(MaxBundleBytes).CopyToAsync(memory);
+            memory.Position = 0;
+            _bundle = ReviewBundle.Read(memory);
+            _error = null;
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or FormatException)
+        {
+            _error = ex.Message;
+        }
+    }
+}

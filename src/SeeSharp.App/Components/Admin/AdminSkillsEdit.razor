@@ -1,0 +1,53 @@
+@page "/admin/skills/edit"
+@inject CourseState State
+
+@* Deliberately its own page: skills.yaml never changes as a side effect of editing an exercise (SKILL-MODEL §5). *@
+<PageTitle>@Strings.AdminSkillsEditTitle</PageTitle>
+<p class="crumbs"><a href="admin/skills">@Strings.AdminSkillsTitle</a> › @Strings.AdminSkillsEditTitle</p>
+<h1>@Strings.AdminSkillsEditTitle</h1>
+<p class="hint">@Strings.SkillsEditHint</p>
+<textarea rows="40" spellcheck="false" @bind="_text"></textarea>
+<p>
+    <button @onclick="Save">@Strings.Save</button>
+    @if (_error is not null)
+    {
+        <span class="bad">@string.Format(Strings.SaveError, _error)</span>
+    }
+    else if (_saved)
+    {
+        <span class="ok">@Strings.Saved</span>
+    }
+</p>
+@if (_saved)
+{
+    var findings = State.Findings.Where(f => f.Location.StartsWith(CourseLoader.SkillsFileName, StringComparison.Ordinal) || f.Code.ToString().StartsWith("Skill", StringComparison.Ordinal)).ToList();
+    @if (findings.Count == 0)
+    {
+        <p class="ok">@Strings.NoFindings</p>
+    }
+    else
+    {
+        <ul class="errors">
+            @foreach (var f in findings)
+            {
+                <li class="@(f.Severity == Severity.Error ? "bad" : "hint")">@f.Location: @f.Message</li>
+            }
+        </ul>
+    }
+}
+
+@code {
+    private string _text = "";
+    private string? _error;
+    private bool _saved;
+
+    protected override void OnInitialized() => _text = File.ReadAllText(Path.Combine(State.CoursePath!, CourseLoader.SkillsFileName));
+
+    private async Task Save()
+    {
+        _error = CourseEditor.SaveSkills(State.CoursePath!, _text);
+        _saved = _error is null;
+        if (_saved)
+            await State.LoadAsync();
+    }
+}

@@ -1,0 +1,125 @@
+@page "/admin"
+@inject CourseState State
+@inject IJSRuntime JS
+
+<PageTitle>@Strings.AdminTreeTitle</PageTitle>
+<h1>@Strings.AdminTreeTitle</h1>
+<p class="hint">@Strings.ReorderHint</p>
+@if (_error is not null)
+{
+    <p class="bad">@_error</p>
+}
+
+@{ var modules = State.Course!.Modules; }
+@for (var m = 0; m < modules.Count; m++)
+{
+    var module = modules[m];
+    var before = m > 0 ? modules[m - 1] : null;
+    var after = m + 1 < modules.Count ? modules[m + 1] : null;
+    <section class="card">
+        <h2>
+            @string.Format(Strings.LevelTitle, module.Order, CourseState.Text(module.Manifest.Title))
+            <button @onclick="() => Swap(module.Directory, before!.Directory)" disabled="@(before is null)" title="@Strings.MoveUp">↑</button>
+            <button @onclick="() => Swap(module.Directory, after!.Directory)" disabled="@(after is null)" title="@Strings.MoveDown">↓</button>
+            <button @onclick="() => Delete(module.Directory, module.Manifest.Id)">@Strings.Delete</button>
+        </h2>
+        <p class="hint"><code>@CourseLoader.Relative(State.CoursePath!, module.Directory)</code></p>
+        <table>
+            @for (var e = 0; e < module.Exercises.Count; e++)
+            {
+                var exercise = module.Exercises[e];
+                var prev = e > 0 ? module.Exercises[e - 1] : null;
+                var next = e + 1 < module.Exercises.Count ? module.Exercises[e + 1] : null;
+                <tr>
+                    <td><code>@Path.GetFileName(exercise.Directory)</code></td>
+                    <td><a href="admin/exercise/@exercise.Manifest.Id">@CourseState.Text(exercise.Manifest.Title)</a></td>
+                    <td>
+                        <button @onclick="() => Swap(exercise.Directory, prev!.Directory)" disabled="@(prev is null)" title="@Strings.MoveUp">↑</button>
+                        <button @onclick="() => Swap(exercise.Directory, next!.Directory)" disabled="@(next is null)" title="@Strings.MoveDown">↓</button>
+                        <button @onclick="() => Delete(exercise.Directory, exercise.Manifest.Id)">@Strings.Delete</button>
+                    </td>
+                </tr>
+            }
+        </table>
+    </section>
+}
+
+<section class="card">
+    <h2>@Strings.NewModule</h2>
+    <p><label>@Strings.SlugLabel<br /><input type="text" @bind="_moduleSlug" /></label></p>
+    <p><label>@Strings.IdLabel<br /><input type="text" @bind="_moduleId" /></label></p>
+    <p><label>@Strings.TitleLabel<br /><input type="text" @bind="_moduleTitle" /></label></p>
+    <button @onclick="CreateModule" disabled="@(string.IsNullOrWhiteSpace(_moduleSlug) || string.IsNullOrWhiteSpace(_moduleId) || string.IsNullOrWhiteSpace(_moduleTitle))">@Strings.Create</button>
+</section>
+
+<section class="card">
+    <h2>@Strings.NewExercise</h2>
+    <p><label>@Strings.ModuleLabel<br />
+        <select @bind="_exerciseModule">
+            @foreach (var module in modules)
+            {
+                <option value="@module.Directory">@string.Format(Strings.LevelTitle, module.Order, CourseState.Text(module.Manifest.Title))</option>
+            }
+        </select></label></p>
+    <p><label>@Strings.SlugLabel<br /><input type="text" @bind="_exerciseSlug" /></label></p>
+    <p><label>@Strings.IdLabel<br /><input type="text" @bind="_exerciseId" /></label></p>
+    <p><label>@Strings.TitleLabel<br /><input type="text" @bind="_exerciseTitle" /></label></p>
+    <p>@Strings.Teaches</p>
+    <SkillPicker Skills="_teaches" />
+    <p>@Strings.Requires</p>
+    <SkillPicker Skills="_requires" />
+    <button @onclick="CreateExercise" disabled="@(string.IsNullOrWhiteSpace(_exerciseModule) || string.IsNullOrWhiteSpace(_exerciseSlug) || string.IsNullOrWhiteSpace(_exerciseId) || string.IsNullOrWhiteSpace(_exerciseTitle))">@Strings.Create</button>
+</section>
+
+@code {
+    private string? _error;
+    private string _moduleSlug = "", _moduleId = "", _moduleTitle = "";
+    private string _exerciseModule = "", _exerciseSlug = "", _exerciseId = "", _exerciseTitle = "";
+    private readonly List<string> _teaches = [], _requires = [];
+
+    protected override void OnInitialized() => _exerciseModule = State.Course!.Modules.LastOrDefault()?.Directory ?? "";
+
+    private Task Swap(string a, string b) => Run(() => CourseEditor.Swap(a, b));
+
+    private async Task Delete(string directory, string id)
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", string.Format(Strings.ConfirmDelete, id, CourseLoader.Relative(State.CoursePath!, directory))))
+            return;
+        await Run(() => Directory.Delete(directory, recursive: true));
+    }
+
+    private async Task CreateModule()
+    {
+        await Run(() => CourseEditor.CreateModule(State.CoursePath!, _moduleSlug.Trim(), _moduleId.Trim(), _moduleTitle.Trim()));
+        if (_error is null)
+            _moduleSlug = _moduleId = _moduleTitle = "";
+    }
+
+    private async Task CreateExercise()
+    {
+        await Run(() => CourseEditor.CreateExercise(_exerciseModule, _exerciseSlug.Trim(), _exerciseId.Trim(), _exerciseTitle.Trim(), _teaches, _requires));
+        if (_error is null)
+        {
+            _exerciseSlug = _exerciseId = _exerciseTitle = "";
+            _teaches.Clear();
+            _requires.Clear();
+        }
+    }
+
+    /// <summary>Every edit touches the folder tree, so the course is reloaded afterwards; a failure is shown, not thrown.</summary>
+    private async Task Run(Action edit)
+    {
+        try
+        {
+            edit();
+            _error = null;
+        }
+        catch (Exception e) when (e is IOException or ArgumentException or UnauthorizedAccessException)
+        {
+            _error = string.Format(Strings.CreateError, e.Message);
+        }
+        await State.LoadAsync();
+        if (State.Course!.Modules.All(m => m.Directory != _exerciseModule))
+            _exerciseModule = State.Course.Modules.LastOrDefault()?.Directory ?? "";
+    }
+}
