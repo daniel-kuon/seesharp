@@ -52,4 +52,10 @@ of free-text answers.
 - `csharp14.pdf` is the book. Printed page = physical page − 32 (verified). Its
   table of contents is stale in chapters 4, 17, 18 and 20 — take page numbers from
   the body text. Licence CC BY-NC-SA 4.0: attribute the authors, share-alike.
-- Inventory, module map and gaps live in `docs/`.
+- Inventory, module map and gaps live in `docs/`; per-task design notes in
+  `docs/CONTENT-FORMAT.md`, `docs/PROGRESS-STORE.md`, `docs/UI.md`.
+- The course content repo is the sibling folder `../seesharp-course` (own git repo,
+  no remote). Model answers live in `<exercise>/solution/`, supervisor-only.
+- Work lands on branch `dev`; `main` is merged only after the user's review.
+- Run the app: `dotnet run --project src/SeeSharp.Cli -- start` (course and book
+  paths come from `%LOCALAPPDATA%\SeeSharp\settings.json`).
