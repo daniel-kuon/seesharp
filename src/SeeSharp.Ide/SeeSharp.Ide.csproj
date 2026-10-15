@@ -1,5 +1,3 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <ItemGroup>
-    <ProjectReference Include="../SeeSharp.Core/SeeSharp.Core.csproj" />
-  </ItemGroup>
+  <!-- Finds and launches the trainee's IDE. References nothing but the BCL. -->
 </Project>

@@ -88,7 +88,8 @@ there is no override flag. Delete the file to start over.
 - Review: optional note, "Als erledigt markieren" records `Attempts.Review`.
 - Coding: absolute path of `starter/<openFile>` (normalised to backslashes)
   with line number and a copy button (`navigator.clipboard.writeText` through
-  `IJSRuntime`; Rider launch is task 6). "Prüfen" runs
+  `IJSRuntime`), then one "In … öffnen" button per detected IDE (see
+  *IDE launch* below). "Prüfen" runs
   `GradingRunner.RunAsync(exercise.TestsDirectory, exercise.StarterDirectory)`
   — the same call as `seesharp validate` — awaited inside the Blazor event
   handler, so the circuit stays responsive and the button shows "Tests laufen …"
@@ -100,6 +101,62 @@ there is no override flag. Delete the file to start over.
 
 Time spent per attempt is a `Stopwatch` started when the item card was created
 and restarted after each submission.
+
+## IDE launch (task 6)
+
+`src/SeeSharp.Ide` (BCL only): `IdeKind { Rider, VsCode, VisualStudio }`,
+`IdeResolver.Resolve(kind, configured, probe)` and `IdeLauncher`.
+**Decision — the enum is `IdeKind`, not `Ide`**: inside `SeeSharp.App` the
+name `Ide` resolves to the sibling namespace first.
+
+**Resolution order** per IDE: the settings value (`riderPath`, `vsCodePath`,
+`visualStudioPath`) when the file still exists, else the known install
+locations, else PATH (honouring `PATHEXT`). Rider: newest
+`%LOCALAPPDATA%\JetBrains\Toolbox\apps\Rider\**\bin\rider64.exe`,
+`%LOCALAPPDATA%\Programs\Rider\bin\rider64.exe` (where Toolbox installs
+today), `%LOCALAPPDATA%\JetBrains\Toolbox\scripts\rider.cmd`,
+`%ProgramFiles%\JetBrains\**\rider64.exe`, then `rider64`/`rider` on PATH.
+VS Code: `%LOCALAPPDATA%\Programs\Microsoft VS Code\Code.exe`,
+`%ProgramFiles%\Microsoft VS Code\Code.exe`, `code` on PATH. Visual Studio:
+`vswhere.exe -latest -products * -property productPath`, then `devenv` on PATH.
+`Resolve` never throws; any probe failure means "not found". The machine
+probes (`Env`, `FileExists`, `FindFiles`, `OnPath`, `VsWhere`) are an
+`IdeProbe` record of delegates with real defaults, so the tests fake a whole
+machine without an interface per probe.
+
+**Decision — the settings file *is* the cache.** `CourseState.DetectIdes`
+runs once at app start (`AppHost`, after `LoadAsync`) and writes the three
+resolved paths back to `settings.json`; later starts only check that those
+files still exist. A stale path (Rider updated, Toolbox moved it) falls through
+to detection automatically. "Nicht gefunden" is not cached, so a machine
+without an IDE re-probes at every start — three `File.Exists` plus one
+`vswhere` run, cheap. The settings page lists every IDE with its path or
+"nicht gefunden" and a "Neu erkennen" button (`DetectIdes(force: true)` in a
+`Task.Run`, because `vswhere` is a child process). Editing the path by hand in
+`settings.json` works too; there is no text field for it.
+
+**Launch** (`IdeLauncher.Launch`): `Process.Start` with
+`UseShellExecute = false`, arguments through `ArgumentList` (spaces, umlauts
+and commas in paths are quoted by the runtime), never awaited; the process
+handle is disposed right away and a failure comes back as a message that the
+card shows in red. The project is the nearest `.csproj` walking up from the
+file (`IdeLauncher.NearestProject`); without one the file's folder is used.
+
+| IDE | Command line |
+|---|---|
+| Rider | `rider64.exe "<csproj>" --line <n> "<file>"` |
+| VS Code | `Code.exe "<project dir>" -g "<file>:<n>"` |
+| Visual Studio | `devenv.exe "<csproj>" "<file>" /Command "Edit.GoTo <n>"` |
+
+Without `openLine` the line arguments are left out. When no IDE is found the
+card keeps the path and copy button and adds a hint (resx `IdeNoneFoundHint`)
+pointing at Rider's Tools → Create Command-line Launcher and VS Code's Shell
+Command, then "Neu erkennen".
+
+**Tests** (`tests/SeeSharp.Ide.Tests`): argument lists for all three IDEs over
+a real temp tree with spaces, umlauts and a comma; nearest-`.csproj` lookup;
+resolver precedence with a faked `IdeProbe`; a throwing probe yields null; a
+missing executable yields a message instead of an exception.
 
 ## Rendering
 
@@ -130,7 +187,7 @@ and the runner already test.
 
 ## Not done, on purpose
 
-- No Rider launch (task 6), no admin mode, no exam mode, no English.
+- No admin mode, no exam mode, no English.
 - No inline PDF viewer; the link is enough (SKILL-MODEL §4: "ship the link first").
 - No per-attempt history view; the last attempt is shown, the export has the rest.
 - Navigating away during a test run still records the attempt (the store is a

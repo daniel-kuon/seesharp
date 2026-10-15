@@ -20,6 +20,15 @@ else
 <button @onclick="Save">@Strings.Save</button>
 <button @onclick="State.LoadAsync">@Strings.Reload</button>
 
+<h2>@Strings.IdesTitle</h2>
+<ul>
+    @foreach (var ide in Enum.GetValues<IdeKind>())
+    {
+        <li>@Strings.ForIde(ide): <code>@(State.Ides.GetValueOrDefault(ide) ?? Strings.IdeNotFound)</code></li>
+    }
+</ul>
+<button @onclick="Redetect">@Strings.RedetectIdes</button>
+
 @code {
     private string _course = "";
     private string _book = "";
@@ -38,4 +47,7 @@ else
         settings.Save();
         await State.LoadAsync();
     }
+
+    // vswhere is a child process; keep the circuit responsive while it runs.
+    private Task Redetect() => Task.Run(() => State.DetectIdes(force: true));
 }

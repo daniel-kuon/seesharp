@@ -13,6 +13,20 @@
     }
     <button @onclick="Copy">@(_copied ? Strings.Copied : Strings.Copy)</button>
 </p>
+<p>
+    @foreach (var (ide, executable) in State.Ides)
+    {
+        <button @onclick="() => Open(ide, executable, file)">@Strings.OpenIn(ide)</button>
+    }
+    @if (State.Ides.Count == 0)
+    {
+        <span class="hint">@Strings.IdeNoneFoundHint</span>
+    }
+</p>
+@if (_launchError is not null)
+{
+    <p class="bad">@_launchError</p>
+}
 <button @onclick="Grade" disabled="@_running">@(_running ? Strings.GradingRunning : Strings.Grade)</button>
 @if (_error is not null)
 {
@@ -72,7 +86,7 @@
 
     private readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
     private GradingResult? _result;
-    private string? _error;
+    private string? _error, _launchError;
     private bool _running, _passed, _copied;
 
     protected override void OnInitialized()
@@ -90,6 +104,12 @@
         await JS.InvokeVoidAsync("navigator.clipboard.writeText", Path.GetFullPath(Path.Combine(Exercise.StarterDirectory, Item.OpenFile)));
         _copied = true;
     }
+
+    /// <summary>Fire-and-forget; the IDE process is never awaited.</summary>
+    private void Open(IdeKind ide, string executable, string file) =>
+        _launchError = IdeLauncher.Launch(ide, executable, file, Item.OpenLine) is { } error
+            ? string.Format(Strings.IdeLaunchError, Strings.ForIde(ide), error)
+            : null;
 
     /// <summary>Runs in the circuit's own async flow, so the UI stays responsive while <c>dotnet test</c> works.</summary>
     private async Task Grade()

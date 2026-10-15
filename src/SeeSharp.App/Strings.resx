@@ -55,7 +55,18 @@
   <data name="ReviewDone" xml:space="preserve"><value>Als erledigt markieren</value></data>
   <data name="ReviewDoneAlready" xml:space="preserve"><value>Erledigt – wird mit dem Betreuer besprochen.</value></data>
   <data name="NoteLabel" xml:space="preserve"><value>Notiz (optional)</value></data>
-  <data name="OpenFileLabel" xml:space="preserve"><value>Diese Datei in Rider öffnen und bearbeiten:</value></data>
+  <data name="OpenFileLabel" xml:space="preserve"><value>Diese Datei in der IDE öffnen und bearbeiten:</value></data>
+  <data name="OpenInRider" xml:space="preserve"><value>In Rider öffnen</value></data>
+  <data name="OpenInVsCode" xml:space="preserve"><value>In VS Code öffnen</value></data>
+  <data name="OpenInVisualStudio" xml:space="preserve"><value>In Visual Studio öffnen</value></data>
+  <data name="IdeLaunchError" xml:space="preserve"><value>{0} konnte nicht gestartet werden: {1}</value></data>
+  <data name="IdeNoneFoundHint" xml:space="preserve"><value>Keine IDE gefunden. In Rider lässt sich der Kommandozeilen-Starter unter Tools → Create Command-line Launcher anlegen, in VS Code über „Shell Command: Install 'code' command in PATH“ – danach in den Einstellungen „Neu erkennen“ wählen.</value></data>
+  <data name="IdeRider" xml:space="preserve"><value>Rider</value></data>
+  <data name="IdeVsCode" xml:space="preserve"><value>VS Code</value></data>
+  <data name="IdeVisualStudio" xml:space="preserve"><value>Visual Studio</value></data>
+  <data name="IdesTitle" xml:space="preserve"><value>IDEs</value></data>
+  <data name="IdeNotFound" xml:space="preserve"><value>nicht gefunden</value></data>
+  <data name="RedetectIdes" xml:space="preserve"><value>Neu erkennen</value></data>
   <data name="LineLabel" xml:space="preserve"><value>Zeile {0}</value></data>
   <data name="Copy" xml:space="preserve"><value>Pfad kopieren</value></data>
   <data name="Copied" xml:space="preserve"><value>Kopiert</value></data>

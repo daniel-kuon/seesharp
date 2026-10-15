@@ -13,6 +13,10 @@ public sealed class Settings
     public string? CoursePath { get; set; }
     /// <summary>The bundled book; null means <c>../csharp14.pdf</c> next to the course folder.</summary>
     public string? BookPdfPath { get; set; }
+    /// <summary>Resolved IDE executables, cached by <see cref="CourseState.DetectIdes"/>; null = not found.</summary>
+    public string? RiderPath { get; set; }
+    public string? VsCodePath { get; set; }
+    public string? VisualStudioPath { get; set; }
 
     public static Settings Load(string? path = null)
     {

@@ -1,6 +1,7 @@
 using System.Resources;
 using SeeSharp.Core;
 using SeeSharp.Grading;
+using SeeSharp.Ide;
 
 namespace SeeSharp.App;
 
@@ -29,6 +30,20 @@ internal static class Strings
         TestOutcome.Passed => TestPassed,
         TestOutcome.Failed => TestFailed,
         _ => TestSkipped,
+    };
+
+    public static string ForIde(IdeKind ide) => ide switch
+    {
+        IdeKind.Rider => IdeRider,
+        IdeKind.VsCode => IdeVsCode,
+        _ => IdeVisualStudio,
+    };
+
+    public static string OpenIn(IdeKind ide) => ide switch
+    {
+        IdeKind.Rider => OpenInRider,
+        IdeKind.VsCode => OpenInVsCode,
+        _ => OpenInVisualStudio,
     };
 
     public static string Title => Resources.GetString(nameof(Title))!;
@@ -84,6 +99,17 @@ internal static class Strings
     public static string NoteLabel => Resources.GetString(nameof(NoteLabel))!;
     public static string OpenFileLabel => Resources.GetString(nameof(OpenFileLabel))!;
     public static string LineLabel => Resources.GetString(nameof(LineLabel))!;
+    public static string OpenInRider => Resources.GetString(nameof(OpenInRider))!;
+    public static string OpenInVsCode => Resources.GetString(nameof(OpenInVsCode))!;
+    public static string OpenInVisualStudio => Resources.GetString(nameof(OpenInVisualStudio))!;
+    public static string IdeLaunchError => Resources.GetString(nameof(IdeLaunchError))!;
+    public static string IdeNoneFoundHint => Resources.GetString(nameof(IdeNoneFoundHint))!;
+    public static string IdeRider => Resources.GetString(nameof(IdeRider))!;
+    public static string IdeVsCode => Resources.GetString(nameof(IdeVsCode))!;
+    public static string IdeVisualStudio => Resources.GetString(nameof(IdeVisualStudio))!;
+    public static string IdesTitle => Resources.GetString(nameof(IdesTitle))!;
+    public static string IdeNotFound => Resources.GetString(nameof(IdeNotFound))!;
+    public static string RedetectIdes => Resources.GetString(nameof(RedetectIdes))!;
     public static string Copy => Resources.GetString(nameof(Copy))!;
     public static string Copied => Resources.GetString(nameof(Copied))!;
     public static string Grade => Resources.GetString(nameof(Grade))!;

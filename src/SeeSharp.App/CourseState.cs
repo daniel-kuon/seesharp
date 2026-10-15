@@ -1,6 +1,7 @@
 using Markdig;
 using Microsoft.AspNetCore.Components;
 using SeeSharp.Content;
+using SeeSharp.Ide;
 using SeeSharp.Progress;
 
 namespace SeeSharp.App;
@@ -20,6 +21,8 @@ public sealed class CourseState(ProgressStore store, string? courseArgument) : I
     public IReadOnlyList<Finding> Findings { get; private set; } = [];
     /// <summary>Absolute path of the book, or null when the file is not there (links fall back to text).</summary>
     public string? BookPdfPath { get; private set; }
+    /// <summary>The IDEs found on this machine with their executables; see <see cref="DetectIdes"/>.</summary>
+    public IReadOnlyDictionary<IdeKind, string> Ides { get; private set; } = new Dictionary<IdeKind, string>();
 
     private Dictionary<string, Skill> _skills = new();
     private Dictionary<string, Module> _taughtIn = new();
@@ -51,6 +54,27 @@ public sealed class CourseState(ProgressStore store, string? courseArgument) : I
         BookPdfPath = File.Exists(book) ? book : null;
         Findings = report.Findings;
         Course = report.Course;
+    }
+
+    /// <summary>
+    /// Resolves each IDE and writes the result to settings.json, so the next start only checks that the cached
+    /// executables still exist. <paramref name="force"/> drops the cache first ("neu erkennen").
+    /// </summary>
+    public void DetectIdes(bool force = false)
+    {
+        var settings = Settings.Load();
+        if (force)
+            settings.RiderPath = settings.VsCodePath = settings.VisualStudioPath = null;
+        settings.RiderPath = IdeResolver.Resolve(IdeKind.Rider, settings.RiderPath);
+        settings.VsCodePath = IdeResolver.Resolve(IdeKind.VsCode, settings.VsCodePath);
+        settings.VisualStudioPath = IdeResolver.Resolve(IdeKind.VisualStudio, settings.VisualStudioPath);
+        settings.Save();
+        Settings = settings;
+        var found = new Dictionary<IdeKind, string>();
+        if (settings.RiderPath is { } rider) found[IdeKind.Rider] = rider;
+        if (settings.VsCodePath is { } code) found[IdeKind.VsCode] = code;
+        if (settings.VisualStudioPath is { } devenv) found[IdeKind.VisualStudio] = devenv;
+        Ides = found;
     }
 
     public CourseProgress Progress() => Store.Query(Course!);

@@ -21,6 +21,7 @@ public static class AppHost
         var app = builder.Build();
         var state = app.Services.GetRequiredService<CourseState>();
         await state.LoadAsync();
+        state.DetectIdes();
 
         app.UseAntiforgery();
         app.MapRazorComponents<Components.App>().AddInteractiveServerRenderMode();
