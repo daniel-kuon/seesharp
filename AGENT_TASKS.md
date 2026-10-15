@@ -16,7 +16,7 @@ questions and coding exercises. Coding exercises are graded by running unit
 tests. The trainee writes code in JetBrains Rider; SeeSharp opens the relevant
 file for them. A supervisor reviews completed work with the trainee afterwards.
 
-**Audience and scale.** 1–5 trainees at a time, all at CargoNerds. Everything
+**Audience and scale.** 1–5 trainees at a time, in one small team. Everything
 runs locally on the trainee's own Windows machine. There is no server, no user
 accounts, no authentication, no multi-tenancy. Do not add any.
 

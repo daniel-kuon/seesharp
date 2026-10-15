@@ -1,9 +1,10 @@
 # SeeSharp
 
-Interactive C# training tool for CargoNerds trainees. Installed as a .NET global
+Interactive C# training tool for small teams of trainees. Installed as a .NET global
 tool (`seesharp`), it launches a local Blazor Server UI, reads course content
 from a separate repository on disk, and grades coding exercises by running unit
-tests. Trainees write code in JetBrains Rider; SeeSharp opens the right file.
+tests. Trainees write code in JetBrains Rider, VS Code or Visual Studio; SeeSharp
+opens the right file at the right line.
 
 Course content lives in a separate repository and is never compiled into this
 tool.

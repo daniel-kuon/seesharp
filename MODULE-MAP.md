@@ -128,7 +128,7 @@ samples are demo-only.
 | Veröffentlichung | 23 | — | review only |
 
 Attribute/Reflexion and EF Core are the two electives closest to everyday
-CargoNerds work, so they're the ones worth authoring properly first. Chapter 17
+business-application work, so they're the ones worth authoring properly first. Chapter 17
 is large and deceptively hard — async exercises need deterministic tests, which
 means no `Thread.Sleep` in assertions and no wall-clock timing. Budget extra
 time or make it review-only.

@@ -6,7 +6,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>seesharp</ToolCommandName>
     <PackageOutputPath>$(MSBuildThisFileDirectory)../../nupkg</PackageOutputPath>
-    <Authors>CargoNerds</Authors>
+    <Authors>Daniel Kuon</Authors>
     <Description>Interactive C# training tool.</Description>
     <PackageLicenseExpression>CC-BY-NC-SA-4.0</PackageLicenseExpression>
   </PropertyGroup>
