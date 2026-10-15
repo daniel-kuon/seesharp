@@ -20,6 +20,7 @@ it can be revisited before the UI (task 5) builds on it.
         manifest.yaml
         instructions.de.md    rendered to the trainee
         rubric.md             supervisor only, never rendered
+        solution/             optional model answer, same layout as starter/; supervisor only, ignored by loader and grading
         starter/              the project the trainee edits (coding exercises only)
         tests/                the authoritative test project (exactly one .csproj)
 ```
