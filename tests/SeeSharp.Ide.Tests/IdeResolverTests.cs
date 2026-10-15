@@ -9,17 +9,31 @@ public class IdeResolverTests
     private static readonly string UserCode = Path.Combine(Local, @"Programs\Microsoft VS Code\Code.exe");
 
     /// <summary>A machine where exactly <paramref name="files"/> exist and <paramref name="onPath"/> is on PATH.</summary>
-    private static IdeProbe Machine(IEnumerable<string> files, IDictionary<string, string>? onPath = null, string? vsWhere = null)
+    private static IdeProbe Machine(IEnumerable<string> files, IDictionary<string, string>? onPath = null, string? vsWhere = null, bool windows = true)
     {
         var set = files.ToHashSet(StringComparer.OrdinalIgnoreCase);
         return new IdeProbe
         {
-            Env = name => name == "LOCALAPPDATA" ? Local : name == "ProgramFiles" ? Programs : null,
+            Windows = windows,
+            Env = name => name switch { "LOCALAPPDATA" => Local, "ProgramFiles" => Programs, "HOME" => "/home/jörg", _ => null },
             FileExists = set.Contains,
-            FindFiles = (dir, pattern) => set.Where(f => f.StartsWith(dir, StringComparison.OrdinalIgnoreCase) && Path.GetFileName(f) == pattern),
+            // Split on both separators: these fixtures run on Linux too, where Path.GetFileName ignores backslashes.
+            FindFiles = (dir, pattern) => set.Where(f => f.StartsWith(dir, StringComparison.OrdinalIgnoreCase) && f.Split('\\', '/')[^1] == pattern),
             OnPath = name => onPath?.TryGetValue(name, out var p) == true ? p : null,
             VsWhere = () => vsWhere,
         };
+    }
+
+    [Fact]
+    public void Linux_prefers_toolbox_then_opt_then_snap_then_path_and_has_no_visual_studio()
+    {
+        const string toolbox = "/home/jörg/.local/share/JetBrains/Toolbox/apps/rider/bin/rider.sh";
+        var onPath = new Dictionary<string, string> { ["rider"] = "/usr/local/bin/rider", ["code"] = "/usr/bin/code" };
+        Assert.Equal(toolbox, IdeResolver.Resolve(IdeKind.Rider, null, Machine([toolbox, "/snap/bin/rider"], onPath, windows: false)));
+        Assert.Equal("/snap/bin/rider", IdeResolver.Resolve(IdeKind.Rider, null, Machine(["/snap/bin/rider"], onPath, windows: false)));
+        Assert.Equal("/usr/local/bin/rider", IdeResolver.Resolve(IdeKind.Rider, null, Machine([], onPath, windows: false)));
+        Assert.Equal("/usr/bin/code", IdeResolver.Resolve(IdeKind.VsCode, null, Machine([], onPath, windows: false)));
+        Assert.Null(IdeResolver.Resolve(IdeKind.VisualStudio, null, Machine([], onPath, windows: false)));
     }
 
     [Fact]
