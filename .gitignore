@@ -11,3 +11,6 @@ TestResults/
 csharp14.pdf
 csharp14.zip
 samples/
+
+# Local Claude Code launch config
+.claude/

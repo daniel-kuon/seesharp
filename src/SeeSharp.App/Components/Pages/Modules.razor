@@ -37,7 +37,9 @@
         {
             <p>@Strings.MissingSkillsLabel</p>
             <ul class="skills">
-                @foreach (var skill in m.Exercises.SelectMany(e => e.MissingSkills).Distinct())
+                @* Skills the module teaches itself are not what keeps it locked. *@
+                @foreach (var skill in m.Exercises.SelectMany(e => e.MissingSkills).Distinct()
+                                                  .Except(m.Exercises.SelectMany(e => e.Exercise.Manifest.Teaches)))
                 {
                     <li>@State.SkillLabel(skill) <span class="state"><SkillSource SkillId="@skill" /></span></li>
                 }
