@@ -33,6 +33,7 @@
   <data name="InstructionsMissing" xml:space="preserve"><value>instructions.{0}.md fehlt</value></data>
   <data name="RubricMissing" xml:space="preserve"><value>rubric.md fehlt</value></data>
   <data name="ReadingInvalid" xml:space="preserve"><value>Leseverweis unvollständig: section, title ({0}) und printedPage ≥ 1 sind erforderlich</value></data>
+  <data name="TranslationMissing" xml:space="preserve"><value>Übersetzung fehlt: {0} in Sprache „{1}“ (andere Module oder Übungen liefern sie)</value></data>
 
   <data name="ItemsEmpty" xml:space="preserve"><value>Die Übung enthält keine Items</value></data>
   <data name="ItemIdInvalid" xml:space="preserve"><value>Ungültige Item-Id „{0}“ (erwartet: Kleinbuchstaben, Ziffern, Bindestriche)</value></data>

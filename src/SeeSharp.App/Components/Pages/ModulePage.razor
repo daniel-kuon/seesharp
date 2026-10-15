@@ -22,7 +22,12 @@ else
         <p>@Strings.BookLabel <BookLink Reading="reading" /></p>
     }
 
-    <article class="md">@CourseState.RenderMarkdown(module.SummaryPath)</article>
+    var summary = module.Summary(Locale.Current);
+    @if (summary.FellBack)
+    {
+        <p class="hint fallback">@Strings.TranslationFallback</p>
+    }
+    <article class="md">@CourseState.RenderMarkdown(summary.Path)</article>
 
     <h2>@Strings.SkillsTaught</h2>
     <ul class="skills">

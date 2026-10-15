@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Title" xml:space="preserve"><value>SeeSharp</value></data>
+  <data name="LanguageLabel" xml:space="preserve"><value>Language</value></data>
+  <data name="LanguageDe" xml:space="preserve"><value>Deutsch</value></data>
+  <data name="LanguageEn" xml:space="preserve"><value>English</value></data>
+  <data name="TranslationFallback" xml:space="preserve"><value>No English version yet, showing German.</value></data>
+  <data name="Listening" xml:space="preserve"><value>SeeSharp is running at {0} – press Ctrl+C to stop.</value></data>
+  <data name="NavHome" xml:space="preserve"><value>Overview</value></data>
+  <data name="NavModules" xml:space="preserve"><value>Modules</value></data>
+  <data name="NavSettings" xml:space="preserve"><value>Settings</value></data>
+  <data name="NoCourse" xml:space="preserve"><value>No course loaded.</value></data>
+  <data name="GoToSettings" xml:space="preserve"><value>Go to settings</value></data>
+  <data name="NotFound" xml:space="preserve"><value>Not found.</value></data>
+  <data name="DashboardTitle" xml:space="preserve"><value>Overview</value></data>
+  <data name="ModulesDone" xml:space="preserve"><value>{0} of {1} modules completed</value></data>
+  <data name="ExercisesDone" xml:space="preserve"><value>{0} of {1} exercises passed</value></data>
+  <data name="SkillsHeld" xml:space="preserve"><value>{0} skills practiced, {1} of them applied</value></data>
+  <data name="NextUp" xml:space="preserve"><value>Next up</value></data>
+  <data name="NothingNext" xml:space="preserve"><value>Nothing open – every unlocked exercise is passed.</value></data>
+  <data name="Done" xml:space="preserve"><value>Done</value></data>
+  <data name="NothingDone" xml:space="preserve"><value>No exercise passed yet.</value></data>
+  <data name="ModulesTitle" xml:space="preserve"><value>Modules</value></data>
+  <data name="LevelTitle" xml:space="preserve"><value>Level {0:00}: {1}</value></data>
+  <data name="Locked" xml:space="preserve"><value>locked</value></data>
+  <data name="Passed" xml:space="preserve"><value>passed</value></data>
+  <data name="ExerciseProgress" xml:space="preserve"><value>{0} of {1} exercises passed</value></data>
+  <data name="MissingSkillsLabel" xml:space="preserve"><value>Missing skills:</value></data>
+  <data name="TaughtIn" xml:space="preserve"><value>taught in</value></data>
+  <data name="TaughtNowhere" xml:space="preserve"><value>taught in no module</value></data>
+  <data name="ValidationErrors" xml:space="preserve"><value>The course has validation errors (seesharp validate shows details):</value></data>
+  <data name="BookLabel" xml:space="preserve"><value>In the book:</value></data>
+  <data name="BookReference" xml:space="preserve"><value>Section {0} “{1}”, page {2}</value></data>
+  <data name="BookMissing" xml:space="preserve"><value>Book PDF not found – sections are shown as text only.</value></data>
+  <data name="BookFound" xml:space="preserve"><value>Book PDF: {0}</value></data>
+  <data name="SkillsTaught" xml:space="preserve"><value>Skills in this level</value></data>
+  <data name="SkillStateNone" xml:space="preserve"><value>not yet</value></data>
+  <data name="SkillStateIntroduced" xml:space="preserve"><value>introduced</value></data>
+  <data name="SkillStatePracticed" xml:space="preserve"><value>practiced</value></data>
+  <data name="SkillStateApplied" xml:space="preserve"><value>applied</value></data>
+  <data name="SummaryRead" xml:space="preserve"><value>Read</value></data>
+  <data name="SummaryReadDone" xml:space="preserve"><value>Marked as read</value></data>
+  <data name="Exercises" xml:space="preserve"><value>Exercises</value></data>
+  <data name="ItemProgress" xml:space="preserve"><value>{0} of {1} tasks done</value></data>
+  <data name="ExerciseLocked" xml:space="preserve"><value>This exercise is still locked. Missing:</value></data>
+  <data name="BuildsOn" xml:space="preserve"><value>Builds on</value></data>
+  <data name="Items" xml:space="preserve"><value>Tasks</value></data>
+  <data name="ItemPassed" xml:space="preserve"><value>done</value></data>
+  <data name="ExercisePassed" xml:space="preserve"><value>Exercise passed – the skills are credited.</value></data>
+  <data name="Submit" xml:space="preserve"><value>Submit</value></data>
+  <data name="AnswerCorrect" xml:space="preserve"><value>Correct.</value></data>
+  <data name="AnswerWrong" xml:space="preserve"><value>Not quite – try again.</value></data>
+  <data name="Answered" xml:space="preserve"><value>Answer saved.</value></data>
+  <data name="AnswerEmpty" xml:space="preserve"><value>Please enter an answer.</value></data>
+  <data name="ReviewDone" xml:space="preserve"><value>Mark as done</value></data>
+  <data name="ReviewDoneAlready" xml:space="preserve"><value>Done – to be discussed with your supervisor.</value></data>
+  <data name="NoteLabel" xml:space="preserve"><value>Note (optional)</value></data>
+  <data name="OpenFileLabel" xml:space="preserve"><value>Open and edit this file in your IDE:</value></data>
+  <data name="OpenInRider" xml:space="preserve"><value>Open in Rider</value></data>
+  <data name="OpenInVsCode" xml:space="preserve"><value>Open in VS Code</value></data>
+  <data name="OpenInVisualStudio" xml:space="preserve"><value>Open in Visual Studio</value></data>
+  <data name="IdeLaunchError" xml:space="preserve"><value>{0} could not be started: {1}</value></data>
+  <data name="IdeNoneFoundHint" xml:space="preserve"><value>No IDE found. In Rider, create the command-line launcher under Tools → Create Command-line Launcher; in VS Code use “Shell Command: Install 'code' command in PATH” – then choose “Detect again” in the settings.</value></data>
+  <data name="IdeRider" xml:space="preserve"><value>Rider</value></data>
+  <data name="IdeVsCode" xml:space="preserve"><value>VS Code</value></data>
+  <data name="IdeVisualStudio" xml:space="preserve"><value>Visual Studio</value></data>
+  <data name="IdesTitle" xml:space="preserve"><value>IDEs</value></data>
+  <data name="IdeNotFound" xml:space="preserve"><value>not found</value></data>
+  <data name="RedetectIdes" xml:space="preserve"><value>Detect again</value></data>
+  <data name="LineLabel" xml:space="preserve"><value>Line {0}</value></data>
+  <data name="Copy" xml:space="preserve"><value>Copy path</value></data>
+  <data name="Copied" xml:space="preserve"><value>Copied</value></data>
+  <data name="Grade" xml:space="preserve"><value>Check</value></data>
+  <data name="GradingRunning" xml:space="preserve"><value>Tests running …</value></data>
+  <data name="GradingError" xml:space="preserve"><value>The check could not be run: {0}</value></data>
+  <data name="OutcomePassed" xml:space="preserve"><value>Passed</value></data>
+  <data name="OutcomeFailed" xml:space="preserve"><value>Failed</value></data>
+  <data name="OutcomeBuildFailed" xml:space="preserve"><value>Build failed</value></data>
+  <data name="OutcomeTimedOut" xml:space="preserve"><value>Timed out</value></data>
+  <data name="DurationSeconds" xml:space="preserve"><value>{0:0.0} s</value></data>
+  <data name="TestsHeader" xml:space="preserve"><value>Tests: {0} passed, {1} failed</value></data>
+  <data name="TestPassed" xml:space="preserve"><value>passed</value></data>
+  <data name="TestFailed" xml:space="preserve"><value>failed</value></data>
+  <data name="TestSkipped" xml:space="preserve"><value>skipped</value></data>
+  <data name="ColumnTest" xml:space="preserve"><value>Test</value></data>
+  <data name="ColumnOutcome" xml:space="preserve"><value>Outcome</value></data>
+  <data name="ColumnMessage" xml:space="preserve"><value>Message</value></data>
+  <data name="SettingsTitle" xml:space="preserve"><value>Settings</value></data>
+  <data name="NoCourseFound" xml:space="preserve"><value>No course found. Enter the path to the folder of the seesharp-course repository.</value></data>
+  <data name="CourseNotFoundAt" xml:space="preserve"><value>Course folder not found: {0}</value></data>
+  <data name="CourseLoadedFrom" xml:space="preserve"><value>Course loaded from {0}</value></data>
+  <data name="CoursePathLabel" xml:space="preserve"><value>Course path</value></data>
+  <data name="BookPdfLabel" xml:space="preserve"><value>Book PDF (empty = ../csharp14.pdf next to the course folder)</value></data>
+  <data name="SettingsFileHint" xml:space="preserve"><value>Saved in {0}. The --course option and the SEESHARP_COURSE environment variable take precedence.</value></data>
+  <data name="Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Reload" xml:space="preserve"><value>Reload course</value></data>
+</root>

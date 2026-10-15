@@ -12,6 +12,7 @@ public static class AppHost
     /// </summary>
     public static async Task<int> RunAsync(string? courseArgument, int port, bool openBrowser, TextWriter console)
     {
+        Locale.Apply(Locale.Resolve(Environment.GetEnvironmentVariable(Locale.EnvironmentVariable), Settings.Load().Locale));
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls($"http://127.0.0.1:{port}");
         builder.Logging.SetMinimumLevel(LogLevel.Warning);

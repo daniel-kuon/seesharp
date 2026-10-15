@@ -37,6 +37,7 @@ public static class CourseValidator
 
         var aliases = catalogLoaded ? ValidateSkills(course, findings) : new Dictionary<string, string>();
         ValidateStructure(course, findings);
+        ValidateTranslations(course, findings);
         var summary = catalogLoaded
             ? ValidateSkillGraph(course, aliases, findings)
             : new SkillGraphSummary(0, 0, [], [], []);
@@ -206,6 +207,48 @@ public static class CourseValidator
         var prefix = Path.GetFullPath(directory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
         return full.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && File.Exists(full);
     }
+
+    // ----- translations ------------------------------------------------------------------------
+
+    /// <summary>
+    /// Every non-default locale that any module or exercise provides (a <c>summary.xx.md</c>, <c>instructions.xx.md</c>
+    /// or title key) must be provided everywhere; gaps are warnings. A course without translations gets none.
+    /// </summary>
+    private static void ValidateTranslations(Course course, List<Finding> findings)
+    {
+        var locales = new SortedSet<string>(StringComparer.Ordinal);
+        foreach (var module in course.Modules)
+        {
+            locales.UnionWith(module.Manifest.Title.Keys);
+            locales.UnionWith(FileLocales(module.Directory, "summary"));
+            foreach (var exercise in module.Exercises)
+            {
+                locales.UnionWith(exercise.Manifest.Title.Keys);
+                locales.UnionWith(FileLocales(exercise.Directory, "instructions"));
+            }
+        }
+        locales.Remove(CourseLoader.DefaultLocale);
+
+        foreach (var locale in locales)
+            foreach (var module in course.Modules)
+            {
+                Check(module.Directory, module.Manifest.Title, "summary", locale);
+                foreach (var exercise in module.Exercises)
+                    Check(exercise.Directory, exercise.Manifest.Title, "instructions", locale);
+            }
+
+        void Check(string directory, Dictionary<string, string> title, string baseName, string locale)
+        {
+            var location = CourseLoader.Relative(course.Root, directory);
+            if (!File.Exists(Localized.FilePath(directory, baseName, locale)))
+                Add(findings, Severity.Warning, FindingCode.TranslationMissing, location, $"{baseName}.{locale}.md", locale);
+            if (!title.TryGetValue(locale, out var value) || string.IsNullOrWhiteSpace(value))
+                Add(findings, Severity.Warning, FindingCode.TranslationMissing, location, "title", locale);
+        }
+    }
+
+    private static IEnumerable<string> FileLocales(string directory, string baseName) =>
+        Directory.GetFiles(directory, $"{baseName}.*.md").Select(f => Path.GetFileName(f).Split('.')[1]);
 
     // ----- skill graph -------------------------------------------------------------------------
 

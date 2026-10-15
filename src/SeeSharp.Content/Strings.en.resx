@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="SkillsFileMissing" xml:space="preserve"><value>skills.yaml is missing</value></data>
+  <data name="SkillsFileInvalid" xml:space="preserve"><value>skills.yaml cannot be read: {0}</value></data>
+  <data name="SkillIdInvalid" xml:space="preserve"><value>Invalid skill id "{0}" (expected: category.name in lower case, e.g. oop.constructor-explicit)</value></data>
+  <data name="SkillIdDuplicate" xml:space="preserve"><value>Skill id "{0}" is defined more than once</value></data>
+  <data name="SkillCategoryMissing" xml:space="preserve"><value>Skill "{0}" has no category</value></data>
+  <data name="SkillLabelMissingDefaultLocale" xml:space="preserve"><value>Skill "{0}" has no label in the default locale "{1}"</value></data>
+  <data name="SkillSupersedesUnknown" xml:space="preserve"><value>Skill "{0}" supersedes the unknown skill "{1}"</value></data>
+  <data name="SkillAliasConflict" xml:space="preserve"><value>Alias "{1}" of skill "{0}" collides with another id or alias</value></data>
+
+  <data name="ModulesFolderMissing" xml:space="preserve"><value>Folder modules/ is missing</value></data>
+  <data name="ModuleFolderNameInvalid" xml:space="preserve"><value>Module folder "{0}" does not match the pattern NN-slug</value></data>
+  <data name="ModuleManifestMissing" xml:space="preserve"><value>module.yaml is missing</value></data>
+  <data name="ModuleManifestInvalid" xml:space="preserve"><value>module.yaml cannot be read: {0}</value></data>
+  <data name="ModuleIdInvalid" xml:space="preserve"><value>Invalid module id "{0}" (expected: lower-case letters, digits, hyphens)</value></data>
+  <data name="ModuleIdDuplicate" xml:space="preserve"><value>Module id "{0}" is used more than once</value></data>
+  <data name="ModuleTitleMissingDefaultLocale" xml:space="preserve"><value>Module title is missing in the default locale "{0}"</value></data>
+  <data name="ModuleSummaryMissing" xml:space="preserve"><value>summary.{0}.md is missing</value></data>
+  <data name="ModuleWithoutExercises" xml:space="preserve"><value>Module contains no exercises</value></data>
+
+  <data name="ExerciseFolderNameInvalid" xml:space="preserve"><value>Exercise folder "{0}" does not match the pattern NN-slug</value></data>
+  <data name="ExerciseManifestMissing" xml:space="preserve"><value>manifest.yaml is missing</value></data>
+  <data name="ExerciseManifestInvalid" xml:space="preserve"><value>manifest.yaml cannot be read: {0}</value></data>
+  <data name="ExerciseIdInvalid" xml:space="preserve"><value>Invalid exercise id "{0}" (expected: lower-case letters, digits, hyphens)</value></data>
+  <data name="ExerciseIdDuplicate" xml:space="preserve"><value>Exercise id "{0}" is used more than once</value></data>
+  <data name="ExerciseTitleMissingDefaultLocale" xml:space="preserve"><value>Exercise title is missing in the default locale "{0}"</value></data>
+  <data name="InstructionsMissing" xml:space="preserve"><value>instructions.{0}.md is missing</value></data>
+  <data name="RubricMissing" xml:space="preserve"><value>rubric.md is missing</value></data>
+  <data name="ReadingInvalid" xml:space="preserve"><value>Reading pointer incomplete: section, title ({0}) and printedPage ≥ 1 are required</value></data>
+  <data name="TranslationMissing" xml:space="preserve"><value>Translation missing: {0} in locale "{1}" (other modules or exercises provide it)</value></data>
+
+  <data name="ItemsEmpty" xml:space="preserve"><value>The exercise contains no items</value></data>
+  <data name="ItemIdInvalid" xml:space="preserve"><value>Invalid item id "{0}" (expected: lower-case letters, digits, hyphens)</value></data>
+  <data name="ItemIdDuplicate" xml:space="preserve"><value>Item id "{0}" is used more than once in this exercise</value></data>
+  <data name="ItemTextMissingDefaultLocale" xml:space="preserve"><value>{0} is missing in the default locale "{1}"</value></data>
+  <data name="ChoiceOptionsTooFew" xml:space="preserve"><value>A multiple-choice item needs at least two options</value></data>
+  <data name="ChoiceCorrectInvalid" xml:space="preserve"><value>"correct" must contain at least one valid option index (0–{0})</value></data>
+  <data name="CodingStarterMissing" xml:space="preserve"><value>Folder starter/ is missing</value></data>
+  <data name="CodingTestsMissing" xml:space="preserve"><value>Folder tests/ is missing</value></data>
+  <data name="CodingTestsNotSingleProject" xml:space="preserve"><value>tests/ must contain exactly one .csproj, found: {0}</value></data>
+  <data name="CodingOpenFileMissing" xml:space="preserve"><value>openFile "{0}" does not exist under starter/</value></data>
+  <data name="CodingTestProjectMissing" xml:space="preserve"><value>testProject "{0}" does not exist under tests/</value></data>
+  <data name="StarterPassesTests" xml:space="preserve"><value>The tests already pass against the untouched starter/ – the exercise probably ships the solution</value></data>
+  <data name="StarterBuildFailed" xml:space="preserve"><value>starter/ does not build together with the tests (fine when the exercise is about fixing a compiler error): {0}</value></data>
+  <data name="StarterTimedOut" xml:space="preserve"><value>The test run against starter/ exceeded the time limit</value></data>
+
+  <data name="SkillUnknown" xml:space="preserve"><value>Skill "{0}" is not defined in skills.yaml</value></data>
+  <data name="TeachesEmpty" xml:space="preserve"><value>The exercise teaches no skill (teaches is empty)</value></data>
+  <data name="SkillRequiredAndTaught" xml:space="preserve"><value>Skill "{0}" appears in both teaches and requires</value></data>
+  <data name="SkillDangling" xml:space="preserve"><value>Skill "{0}" is required but taught by no exercise</value></data>
+  <data name="SkillForwardReference" xml:space="preserve"><value>Skill "{0}" is required but only taught by a later exercise ({1})</value></data>
+  <data name="SkillCycle" xml:space="preserve"><value>Cycle in the skill graph: {0}</value></data>
+  <data name="SkillTaughtTooOften" xml:space="preserve"><value>Skill "{0}" is taught by {1} exercises – probably too coarse, split it</value></data>
+  <data name="SkillDeadEnd" xml:space="preserve"><value>Skill "{0}" is taught but never required (dead end)</value></data>
+</root>

@@ -31,8 +31,10 @@ names must match `NN-[a-z0-9-]+`; anything else under `modules/` or a module
 folder is an error, not ignored, so a typo cannot silently drop an exercise.
 
 **Decision — `summary.de.md` and `instructions.de.md` are named by locale**
-and the default locale is `de`. An English summary would be
-`summary.en.md`; the validator only requires the default locale's file.
+and the default locale is `de`. An English summary is `summary.en.md`, an
+English instruction file `instructions.en.md`; the validator only requires the
+default locale's file. The UI shows the file for the current language and
+falls back to the German one with a visible note (docs/UI.md, *Localisation*).
 
 **Decision — `rubric.md` missing is a warning**, not an error. It is never
 rendered, so a missing one breaks nothing for the trainee.
@@ -161,6 +163,10 @@ Warnings:
   "fix the compiler error" exercise).
 - Skill taught by more than three exercises; skill taught but never required
   (dead end).
+- `TranslationMissing`: a module or exercise lacks `summary.xx.md` /
+  `instructions.xx.md` or an `xx` title key for a non-default locale that at
+  least one other module or exercise provides. A course with no translation at
+  all gets no such warning, so translating can start one file at a time.
 
 **Decision — dead ends are warnings even for the last exercises of the
 course**, so a validated course is "no errors", not "no output". The two

@@ -46,6 +46,13 @@ internal static class Strings
         _ => OpenInVisualStudio,
     };
 
+    /// <summary>Language names stay in their own language, so the switcher reads the same whichever is active.</summary>
+    public static string LanguageName(string locale) => locale == "en" ? LanguageEn : LanguageDe;
+
+    public static string LanguageLabel => Resources.GetString(nameof(LanguageLabel))!;
+    public static string LanguageDe => Resources.GetString(nameof(LanguageDe))!;
+    public static string LanguageEn => Resources.GetString(nameof(LanguageEn))!;
+    public static string TranslationFallback => Resources.GetString(nameof(TranslationFallback))!;
     public static string Title => Resources.GetString(nameof(Title))!;
     public static string Listening => Resources.GetString(nameof(Listening))!;
     public static string NavHome => Resources.GetString(nameof(NavHome))!;

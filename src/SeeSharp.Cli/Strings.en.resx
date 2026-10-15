@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Usage" xml:space="preserve"><value>Usage: seesharp [start] [--course &lt;course path&gt;] [--port &lt;port&gt;] [--no-browser]
+       seesharp --version
+       seesharp grade &lt;exercise path&gt; &lt;source path&gt; [--json] [--keep-artifacts] [--timeout &lt;seconds&gt;]
+       seesharp validate &lt;course path&gt; [--skip-starter-check]
+       seesharp export-review [--out &lt;zip file&gt;]</value></data>
+  <data name="StartUsage" xml:space="preserve"><value>Usage: seesharp start [--course &lt;course path&gt;] [--port &lt;port&gt;] [--no-browser]</value></data>
+  <data name="GradeUsage" xml:space="preserve"><value>Usage: seesharp grade &lt;exercise path&gt; &lt;source path&gt; [--json] [--keep-artifacts] [--timeout &lt;seconds&gt;]</value></data>
+  <data name="ResultLine" xml:space="preserve"><value>Result: {0} ({1:0.0} s)</value></data>
+  <data name="TestsLine" xml:space="preserve"><value>Tests: {0} passed, {1} failed</value></data>
+  <data name="ArtifactsLine" xml:space="preserve"><value>Artifacts: {0}</value></data>
+  <data name="OutcomePassed" xml:space="preserve"><value>Passed</value></data>
+  <data name="OutcomeFailed" xml:space="preserve"><value>Failed</value></data>
+  <data name="OutcomeBuildFailed" xml:space="preserve"><value>Build failed</value></data>
+  <data name="OutcomeTimedOut" xml:space="preserve"><value>Timed out</value></data>
+  <data name="TestPassed" xml:space="preserve"><value>PASS</value></data>
+  <data name="TestFailed" xml:space="preserve"><value>FAIL</value></data>
+  <data name="TestSkipped" xml:space="preserve"><value>SKIP</value></data>
+  <data name="ValidateUsage" xml:space="preserve"><value>Usage: seesharp validate &lt;course path&gt; [--skip-starter-check]</value></data>
+  <data name="SeverityError" xml:space="preserve"><value>ERROR  </value></data>
+  <data name="SeverityWarning" xml:space="preserve"><value>WARNING</value></data>
+  <data name="SummaryHeader" xml:space="preserve"><value>Skill graph:</value></data>
+  <data name="SummaryModuleLine" xml:space="preserve"><value>  Level {0:00} {1}: {2} exercises, {3} skills taught ({4} new), {5} required</value></data>
+  <data name="SummaryTotals" xml:space="preserve"><value>  Taught: {0} of {1} skills in skills.yaml</value></data>
+  <data name="SummaryDangling" xml:space="preserve"><value>  Required but never taught: {0}</value></data>
+  <data name="SummaryDeadEnds" xml:space="preserve"><value>  Dead ends (taught, never required): {0}</value></data>
+  <data name="ValidateResultLine" xml:space="preserve"><value>{0} errors, {1} warnings</value></data>
+  <data name="ExportReviewUsage" xml:space="preserve"><value>Usage: seesharp export-review [--out &lt;zip file&gt;]</value></data>
+  <data name="ExportReviewWritten" xml:space="preserve"><value>Review bundle written: {0} ({1} submissions)</value></data>
+</root>

@@ -37,6 +37,8 @@ public enum FindingCode
     InstructionsMissing,
     RubricMissing,
     ReadingInvalid,
+    /// <summary>A file or title exists in a non-default locale somewhere in the course but not here. Warning.</summary>
+    TranslationMissing,
 
     ItemsEmpty,
     ItemIdInvalid,

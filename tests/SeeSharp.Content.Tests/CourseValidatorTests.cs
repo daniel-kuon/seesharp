@@ -266,6 +266,38 @@ public sealed class CourseValidatorTests : IDisposable
         AssertFinding(await Validate(), FindingCode.InstructionsMissing);
     }
 
+    // A course without any translation gets no translation warnings: Valid_course_has_no_errors_and_a_summary covers that.
+
+    [Fact]
+    public async Task One_english_file_makes_every_other_missing_translation_a_warning()
+    {
+        Write("modules/01-basics/01-first/instructions.en.md", "# Task");
+        var report = await Validate();
+
+        Assert.False(report.HasErrors);
+        var warnings = report.Findings.Where(f => f.Code == FindingCode.TranslationMissing).ToList();
+        Assert.All(warnings, f => Assert.Equal(Severity.Warning, f.Severity));
+        Assert.Equal(
+        [
+            ("modules/01-basics", "summary.en.md"),
+            ("modules/01-basics", "title"),
+            ("modules/01-basics/01-first", "title"),
+            ("modules/01-basics/02-second", "instructions.en.md"),
+            ("modules/01-basics/02-second", "title"),
+        ], warnings.Select(f => (f.Location, new[] { "summary.en.md", "instructions.en.md", "title" }.First(f.Message.Contains))));
+    }
+
+    [Fact]
+    public async Task One_english_title_counts_as_a_translation_too()
+    {
+        Write("modules/01-basics/module.yaml", ModuleYaml.Replace("{ de: \"Grundlagen\" }", "{ de: \"Grundlagen\", en: \"Basics\" }"));
+        var report = await Validate();
+
+        Assert.False(report.HasErrors);
+        Assert.Equal(5, report.Findings.Count(f => f.Code == FindingCode.TranslationMissing));
+        Assert.DoesNotContain(report.Findings, f => f.Code == FindingCode.TranslationMissing && f.Location == "modules/01-basics" && f.Message.Contains("title"));
+    }
+
     [Fact]
     public async Task Missing_rubric_warns()
     {

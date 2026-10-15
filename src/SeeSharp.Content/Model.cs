@@ -111,7 +111,9 @@ public sealed record Course(string Root, SkillCatalog Skills, IReadOnlyList<Modu
 /// <param name="Order">The numeric folder prefix; also the level number.</param>
 public sealed record Module(string Directory, int Order, ModuleManifest Manifest, IReadOnlyList<Exercise> Exercises)
 {
-    public string SummaryPath => Path.Combine(Directory, "summary.de.md");
+    public string SummaryPath => Localized.FilePath(Directory, "summary", CourseLoader.DefaultLocale);
+    /// <summary><c>summary.&lt;locale&gt;.md</c>, or the default locale's file when that is missing.</summary>
+    public LocalizedFile Summary(string locale) => Localized.File(Directory, "summary", locale);
 }
 
 /// <param name="Directory">Absolute path of the exercise folder.</param>
@@ -119,6 +121,32 @@ public sealed record Exercise(string Directory, int Order, ExerciseManifest Mani
 {
     public string StarterDirectory => Path.Combine(Directory, "starter");
     public string TestsDirectory => Path.Combine(Directory, "tests");
-    public string InstructionsPath => Path.Combine(Directory, "instructions.de.md");
+    public string InstructionsPath => Localized.FilePath(Directory, "instructions", CourseLoader.DefaultLocale);
+    /// <summary><c>instructions.&lt;locale&gt;.md</c>, or the default locale's file when that is missing.</summary>
+    public LocalizedFile Instructions(string locale) => Localized.File(Directory, "instructions", locale);
     public string RubricPath => Path.Combine(Directory, "rubric.md");
+}
+
+/// <param name="FellBack">True when the requested locale had no file and <paramref name="Path"/> is the default locale's.</param>
+public sealed record LocalizedFile(string Path, bool FellBack);
+
+/// <summary>Locale lookup with explicit fallback to <see cref="CourseLoader.DefaultLocale"/>; the UI shows a note when it fell back.</summary>
+public static class Localized
+{
+    public static string FilePath(string directory, string baseName, string locale) =>
+        Path.Combine(directory, $"{baseName}.{locale}.md");
+
+    public static LocalizedFile File(string directory, string baseName, string locale)
+    {
+        var path = FilePath(directory, baseName, locale);
+        return locale == CourseLoader.DefaultLocale || System.IO.File.Exists(path)
+            ? new LocalizedFile(path, false)
+            : new LocalizedFile(FilePath(directory, baseName, CourseLoader.DefaultLocale), true);
+    }
+
+    /// <summary>The text in <paramref name="locale"/>, else in the default locale, else empty.</summary>
+    public static string Text(IDictionary<string, string>? text, string locale) =>
+        text is null ? ""
+        : text.TryGetValue(locale, out var value) && !string.IsNullOrWhiteSpace(value) ? value
+        : text.TryGetValue(CourseLoader.DefaultLocale, out var fallback) ? fallback : "";
 }

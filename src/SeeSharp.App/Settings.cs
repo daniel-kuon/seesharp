@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Text.Json;
+using SeeSharp.Content;
 
 namespace SeeSharp.App;
 
@@ -17,6 +19,8 @@ public sealed class Settings
     public string? RiderPath { get; set; }
     public string? VsCodePath { get; set; }
     public string? VisualStudioPath { get; set; }
+    /// <summary>UI language (<c>de</c> or <c>en</c>); null = German. <c>SEESHARP_LOCALE</c> overrides it at start.</summary>
+    public string? Locale { get; set; }
 
     public static Settings Load(string? path = null)
     {
@@ -37,6 +41,28 @@ public sealed class Settings
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, JsonSerializer.Serialize(this, Json));
     }
+}
+
+/// <summary>
+/// UI language of the whole process: one trainee, one machine, so the culture is set process-wide
+/// (<see cref="CultureInfo.DefaultThreadCurrentUICulture"/>) rather than per request or circuit.
+/// </summary>
+public static class Locale
+{
+    public const string EnvironmentVariable = "SEESHARP_LOCALE";
+    public static readonly IReadOnlyList<string> Supported = ["de", "en"];
+
+    /// <summary>First supported value of: <c>SEESHARP_LOCALE</c>, the <c>locale</c> setting; else German.</summary>
+    public static string Resolve(string? environment, string? setting) =>
+        new[] { environment, setting }.Select(v => v?.Trim().ToLowerInvariant())
+            .FirstOrDefault(v => v is not null && Supported.Contains(v)) ?? CourseLoader.DefaultLocale;
+
+    /// <summary>The locale content and strings are shown in right now.</summary>
+    public static string Current =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName is var language && Supported.Contains(language) ? language : CourseLoader.DefaultLocale;
+
+    /// <summary>Only the default is set, never the calling thread's own culture: an explicit one would flow into every later request and pin it.</summary>
+    public static void Apply(string locale) => CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo(locale);
 }
 
 public static class CoursePaths

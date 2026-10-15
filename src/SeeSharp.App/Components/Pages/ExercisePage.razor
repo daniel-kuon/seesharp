@@ -42,7 +42,12 @@ else
     }
     else
     {
-        <article class="md">@CourseState.RenderMarkdown(exercise.InstructionsPath)</article>
+        var instructions = exercise.Instructions(Locale.Current);
+        @if (instructions.FellBack)
+        {
+            <p class="hint fallback">@Strings.TranslationFallback</p>
+        }
+        <article class="md">@CourseState.RenderMarkdown(instructions.Path)</article>
 
         @if (exercise.Manifest.Requires.Count > 0)
         {

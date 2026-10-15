@@ -7,6 +7,19 @@
     <NavLink href="" Match="NavLinkMatch.All">@Strings.NavHome</NavLink>
     <NavLink href="modules">@Strings.NavModules</NavLink>
     <NavLink href="settings">@Strings.NavSettings</NavLink>
+    <span class="lang" title="@Strings.LanguageLabel">
+        @foreach (var locale in Locale.Supported)
+        {
+            if (locale == Locale.Current)
+            {
+                <strong>@Strings.LanguageName(locale)</strong>
+            }
+            else
+            {
+                <a href="" @onclick="() => Switch(locale)" @onclick:preventDefault>@Strings.LanguageName(locale)</a>
+            }
+        }
+    </span>
 </nav>
 <main>
     @* Without a course only the settings page makes sense; the other pages assume State.Course is set. *@
@@ -19,3 +32,12 @@
         @Body
     }
 </main>
+
+@code {
+    // The culture is process-wide; a full reload starts a fresh circuit that prerenders and renders in the new language.
+    private void Switch(string locale)
+    {
+        State.SetLocale(locale);
+        Nav.NavigateTo(Nav.Uri, forceLoad: true);
+    }
+}

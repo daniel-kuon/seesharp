@@ -178,6 +178,33 @@ serves it at `/_framework/blazor.web.js`. Verified in the packed tool.
 property per key, plus `ForSkill` / `ForOutcome` / `ForTest` mappers. The CLI
 gained `StartUsage` and the extended `Usage`.
 
+## Localisation (task 10)
+
+German is the neutral resource (`NeutralLanguage=de`); English lives in
+`Strings.en.resx` next to each `Strings.resx` (App, Cli, Content) and ships as
+the `en/` satellite assembly. A test per project asserts the English key set
+equals the German one, so a new key without a translation fails the build's
+tests, not the trainee.
+
+**Decision — the culture is process-wide.** One trainee, one machine: `Locale.Apply`
+sets `CultureInfo.DefaultThreadCurrentUICulture` and nothing else (an explicit
+per-thread culture would flow into every later request and pin it). Resolution
+(`Locale.Resolve`, tested): `SEESHARP_LOCALE`, else `locale` in
+`settings.json`, else `de`; unknown values mean German. The CLI applies it in
+`Program.cs`, so `seesharp validate` prints its findings in the chosen language
+too. The switcher in the nav ("Deutsch | English", `MainLayout`) writes the
+setting, applies the culture and force-reloads the page, which starts a fresh
+circuit in the new language; `<html lang>` follows `Locale.Current`.
+
+Content falls back explicitly: `exercise.Instructions(locale)` and
+`module.Summary(locale)` return the `*.en.md` file, or the German one with
+`FellBack = true`, and the page shows `TranslationFallback` ("No English
+version yet, showing German") above the article. Locale-keyed titles, prompts
+and skill labels go through `Localized.Text` and fall back to German silently.
+The validator warns (`TranslationMissing`) once any module or exercise provides
+a non-default locale that another one lacks; a course without translations gets
+no warning (CONTENT-FORMAT.md).
+
 ## Tests
 
 `tests/SeeSharp.App.Tests/CoursePathsTests.cs`: resolution order, missing
@@ -187,7 +214,7 @@ and the runner already test.
 
 ## Not done, on purpose
 
-- No admin mode, no exam mode, no English.
+- No admin mode, no exam mode.
 - No inline PDF viewer; the link is enough (SKILL-MODEL §4: "ship the link first").
 - No per-attempt history view; the last attempt is shown, the export has the rest.
 - Navigating away during a test run still records the attempt (the store is a

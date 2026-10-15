@@ -1,5 +1,8 @@
 using System.Reflection;
+using SeeSharp.App;
 using SeeSharp.Cli;
+
+Locale.Apply(Locale.Resolve(Environment.GetEnvironmentVariable(Locale.EnvironmentVariable), Settings.Load().Locale));
 
 if (args is ["--version"])
 {

@@ -80,7 +80,17 @@ public sealed class CourseState(ProgressStore store, string? courseArgument) : I
     public CourseProgress Progress() => Store.Query(Course!);
 
     public string SkillLabel(string id) =>
-        _skills.TryGetValue(id, out var skill) && skill.Label.TryGetValue(CourseLoader.DefaultLocale, out var label) ? label : id;
+        _skills.TryGetValue(id, out var skill) && Localized.Text(skill.Label, Locale.Current) is { Length: > 0 } label ? label : id;
+
+    /// <summary>Persists the UI language and switches the process to it; callers reload the page so a fresh circuit renders in it.</summary>
+    public void SetLocale(string locale)
+    {
+        var settings = Settings.Load();
+        settings.Locale = locale;
+        settings.Save();
+        Settings = settings;
+        Locale.Apply(locale);
+    }
 
     /// <summary>The first module in published order with an exercise that teaches the skill.</summary>
     public Module? TaughtIn(string skillId) => _taughtIn.GetValueOrDefault(skillId);
@@ -89,8 +99,8 @@ public sealed class CourseState(ProgressStore store, string? courseArgument) : I
     public Exercise? FindExercise(string id) => Course?.ExercisesInOrder.FirstOrDefault(e => e.Manifest.Id == id);
     public Module ModuleOf(Exercise exercise) => Course!.Modules.First(m => m.Exercises.Contains(exercise));
 
-    public static string Text(IDictionary<string, string>? text) =>
-        text is not null && text.TryGetValue(CourseLoader.DefaultLocale, out var value) ? value : "";
+    /// <summary>A locale-keyed field in the current language, falling back to German silently (titles carry no note; the page's file does).</summary>
+    public static string Text(IDictionary<string, string>? text) => Localized.Text(text, Locale.Current);
 
     /// <summary>Deep link into the served PDF (browser viewers honour <c>#page=</c>), or null when the book is missing.</summary>
     public string? BookHref(Reading reading) => BookHref(BookPdfPath, reading);
