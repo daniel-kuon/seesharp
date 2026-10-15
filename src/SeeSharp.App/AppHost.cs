@@ -35,8 +35,24 @@ public static class AppHost
         var url = app.Urls.First();
         console.WriteLine(string.Format(Strings.Listening, url));
         if (openBrowser)
-            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            OpenBrowser(url);
         await app.WaitForShutdownAsync();
         return 0;
+    }
+
+    /// <summary>Windows and macOS open URLs through the shell; Linux has no such association, so go through xdg-open. Failure is not fatal — the URL was printed.</summary>
+    private static void OpenBrowser(string url)
+    {
+        try
+        {
+            if (OperatingSystem.IsLinux())
+                Process.Start(new ProcessStartInfo("xdg-open", url) { UseShellExecute = false })?.Dispose();
+            else
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true })?.Dispose();
+        }
+        catch (Exception)
+        {
+            // No browser: the printed URL is the fallback.
+        }
     }
 }

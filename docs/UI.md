@@ -158,6 +158,26 @@ a real temp tree with spaces, umlauts and a comma; nearest-`.csproj` lookup;
 resolver precedence with a faked `IdeProbe`; a throwing probe yields null; a
 missing executable yields a message instead of an exception.
 
+**Linux / macOS.** `IdeProbe.Windows` picks the candidate set: on Unix the
+resolver tries Toolbox under `~/.local/share/JetBrains/Toolbox/apps` (newest
+`rider.sh`), the Toolbox `scripts/rider` shim, `/opt/jetbrains/rider`,
+`/opt/rider`, `/snap/bin/rider`, the macOS app bundle, then `rider`/`rider.sh`
+on PATH; VS Code via `/usr/bin/code`, `/usr/share/code/bin/code`, snap, the
+macOS bundle, then PATH; Visual Studio never. PATH lookup uses no PATHEXT off
+Windows. The command lines are identical (`rider.sh <csproj> --line n <file>`).
+Verified 2026-10-16 on an Ubuntu VM with Rider 2026.3 EAP under Xvfb: the
+whole test suite passes on Linux, and clicking "In Rider öffnen" started Rider
+with exactly those arguments (`AppStarter - args:` in `idea.log`). A Rider that
+has never completed its first-run wizard stops there; that is Rider's state, not
+ours. The browser is opened with `xdg-open` on Linux.
+
+**Known Rider failure.** If a Rider instance is already running but does not
+answer its activation socket (seen with a hung or plugin-sandbox instance),
+Rider shows "Start Failed … is still running and does not respond" for the
+second process. Nothing SeeSharp can do: close that instance. The launcher
+returns no error in that case because the second process stays alive showing
+the dialog.
+
 ## Rendering
 
 Global `InteractiveServer` render mode with prerendering, one `MainLayout`
