@@ -1,0 +1,185 @@
+# Content format (task 3 / 3a)
+
+The on-disk format of the `seesharp-course` repository, as implemented in
+`src/SeeSharp.Content` and checked by `seesharp validate <course-path>`. The
+review gates for tasks 3 and 3a were waived; every decision that was not
+spelled out in `AGENT_TASKS.md` or `SKILL-MODEL.md` is marked **Decision** so
+it can be revisited before the UI (task 5) builds on it.
+
+## Layout
+
+```
+<course>/
+  skills.yaml                 closed skill vocabulary (SKILL-MODEL §1)
+  global.json                 pins the SDK used when grading (copied from the tool repo)
+  modules/
+    04-klassen-und-objekte/   NN-slug; NN is the level number and the published order
+      module.yaml
+      summary.de.md           condensed reading for the level (SKILL-MODEL §4)
+      01-konstruktoren/       NN-slug; published order within the level
+        manifest.yaml
+        instructions.de.md    rendered to the trainee
+        rubric.md             supervisor only, never rendered
+        starter/              the project the trainee edits (coding exercises only)
+        tests/                the authoritative test project (exactly one .csproj)
+```
+
+**Decision — order and level come from folder names only.** `module.yaml` has
+no `level` or `order` field; the two-digit prefix is the single source. Folder
+names must match `NN-[a-z0-9-]+`; anything else under `modules/` or a module
+folder is an error, not ignored, so a typo cannot silently drop an exercise.
+
+**Decision — `summary.de.md` and `instructions.de.md` are named by locale**
+and the default locale is `de`. An English summary would be
+`summary.en.md`; the validator only requires the default locale's file.
+
+**Decision — `rubric.md` missing is a warning**, not an error. It is never
+rendered, so a missing one breaks nothing for the trainee.
+
+**Decision — `tests/` is the overlay for `GradingRunner`** exactly as task 2
+defined it: `tests/<Test Project>/x.Tests.csproj` referencing
+`../<Trainee Project>/x.csproj`, where `<Trainee Project>` lives under
+`starter/`. The validator runs `GradingRunner.RunAsync(tests, starter)` for the
+starter check, so the same layout is used for grading later. Project folder
+names may contain spaces and umlauts (`b7 Operatoren-Überladung`).
+
+## `skills.yaml`
+
+```yaml
+skills:
+  - id: oop.constructor-explicit        # category.name, lowercase, permanent
+    category: oop
+    label: { de: "…", en: "…" }         # de required, en optional
+    supersedes: oop.constructor          # optional, must exist
+    aliases: [oop.ctor-explicit]        # optional, old ids that resolve to this one
+```
+
+- Id pattern: `^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*)+$`.
+- **Decision — no `level` field on a skill.** The level is derived from the
+  exercises that teach it, so the vocabulary cannot drift from the content.
+  `docs/SKILLS.md` in the course repo groups the draft by level for review.
+- **Decision — aliases resolve.** A manifest may reference an alias; the
+  validator maps it to the canonical id for all graph checks. An alias that
+  equals another id or alias is an error.
+- The vocabulary for levels 0–6 (148 skills) is drafted; the b0–b9 mapping and
+  a Mermaid graph are in the course repo's `docs/SKILLS.md`.
+
+## `module.yaml`
+
+```yaml
+id: klassen-und-objekte                  # ^[a-z0-9][a-z0-9-]*$, unique
+title: { de: "Klassen und Objekte" }
+reading:                                 # optional, same shape as on exercises
+  section: "5"
+  title: { de: "Klassen und Objekte" }
+  printedPage: 286
+```
+
+**Decision — `reading` on modules is optional** and points at the chapter the
+summary condenses; exercises carry their own section-level pointer.
+
+## `manifest.yaml`
+
+```yaml
+id: klassen-konstruktoren                # ^[a-z0-9][a-z0-9-]*$, unique across the course
+title: { de: "Konstruktoren" }
+reading:                                 # optional
+  section: "5.4.3"
+  title: { de: "Einsatzvorbereitung" }
+  printedPage: 340                       # printed page; physical = printed + 32 (Reading.PrintedToPhysicalOffset)
+teaches: [oop.constructor-explicit, …]   # skill ids credited on pass
+requires: [oop.method-instance, …]       # skill ids that must be held to unlock
+items:
+  - type: coding
+    id: bruch                            # item id, unique within the exercise
+    openFile: "b2 Konstruktoren/Bruch.cs" # relative to starter/
+    openLine: 8                          # optional
+    testProject: "b2 Tests/b2.Tests.csproj" # relative to tests/
+    requiredTests: [BruchTests.Kuerze_teilt_durch_den_ggT] # optional; absent = all
+  - type: multipleChoice
+    id: q1
+    prompt: { de: "…" }
+    options: [{ de: "…" }, { de: "…" }]
+    correct: [1]                         # indices into options; several = multi-select
+    explanation: { de: "…" }             # optional
+  - type: open
+    id: q2
+    prompt: { de: "…" }                  # gates on answered, never graded
+  - type: review
+    id: r1
+    prompt: { de: "…" }                  # supervisor-graded; trainee marks done
+    openFile: "…"                        # optional, relative to starter/
+```
+
+- `teaches` / `requires` hold **skill ids**, not exercise ids (SKILL-MODEL §2).
+  Module and level prerequisites are derived, never authored.
+- **Decision — every item has an `id`.** Progress rows (task 4) need to
+  reference items, not just exercises.
+- **Decision — `requiredTests` is a list or absent.** The spec's `all` keyword
+  is expressed by omitting the field; a list of test names restricts the gate.
+  Names are not checked by the validator (they only exist after a test run).
+- **Decision — item types are a closed set per tool version**, resolved from
+  the `type` key via `ItemTypes.ByName`. Adding a type is one subclass of
+  `ExerciseItem` plus one dictionary line; old manifests are unaffected. An
+  unknown type, an unknown key, or a wrong value type is a parse error for the
+  whole manifest, so typos are caught rather than ignored.
+- **Decision — one `tests/` folder per exercise.** `testProject` only picks
+  the project file inside it for the IDE; the grader finds the single
+  `.csproj` itself. Several coding items in one exercise share the test
+  project.
+- Multiple choice: at least two options, `correct` non-empty and in range.
+
+## Validator rules
+
+`seesharp validate <course-path> [--skip-starter-check]`. Exit 0 with no
+errors, 1 with errors, 2 on usage. Every rule has a `FindingCode`; the message
+text is in `SeeSharp.Content/Strings.resx` (German), tests assert on the code.
+
+Errors:
+
+- `skills.yaml` missing or unparseable; skill id invalid or duplicate; missing
+  category; missing `de` label; `supersedes` unknown; alias conflict.
+- `modules/` missing; misnamed module or exercise folder; `module.yaml` or
+  `manifest.yaml` missing or unparseable; invalid or duplicate module,
+  exercise, or item id; title or prompt or option or explanation missing in
+  `de`; `summary.de.md` or `instructions.de.md` missing; incomplete `reading`.
+- `items` empty; too few options; invalid `correct`; `starter/` or `tests/`
+  missing; `tests/` without exactly one `.csproj`; `openFile` or
+  `testProject` not found (paths escaping their folder count as not found).
+- **Starter passes its tests** (`StarterPassesTests`). The solution shipped.
+- Starter test run timed out.
+- Skill referenced but not in `skills.yaml`; skill in both `teaches` and
+  `requires` of one exercise; **dangling** (required, taught nowhere);
+  **forward reference** (required, taught only later in published order);
+  cycle in the derived skill graph.
+
+Warnings:
+
+- `rubric.md` missing; module without exercises; `teaches` empty.
+- Starter does not compile together with the tests (legitimate for a
+  "fix the compiler error" exercise).
+- Skill taught by more than three exercises; skill taught but never required
+  (dead end).
+
+**Decision — dead ends are warnings even for the last exercises of the
+course**, so a validated course is "no errors", not "no output". The two
+level-4 exercises currently produce five dead-end warnings because nothing
+later requires them yet.
+
+**Decision — the starter check uses `SeeSharp.Grading`**, so
+`SeeSharp.Content` references `SeeSharp.Grading` (which only references
+`SeeSharp.Core`). The alternative, running the check in the CLI, would have
+left the most valuable rule untested in the content test suite.
+
+The summary printed after the findings lists, per level, the exercise count,
+skills taught (and how many for the first time), skills required, then the
+totals, the dangling list and the dead-end list.
+
+## Known gaps
+
+- With only levels 4.3 and 4.8 authored, the manifests cannot require
+  level 0–3 skills (that would be dangling). Their intended `requires` is
+  documented in the course repo's `docs/SKILLS.md`; fill them in as the earlier
+  levels get written.
+- `requiredTests` names are unverified.
+- No `--json` output for `validate`; add when the admin UI (task 7) needs it.

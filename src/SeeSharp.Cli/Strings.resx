@@ -5,7 +5,8 @@
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <data name="Usage" xml:space="preserve"><value>Verwendung: seesharp [--version]
-            seesharp grade &lt;Übungspfad&gt; &lt;Quellpfad&gt; [--json] [--keep-artifacts] [--timeout &lt;Sekunden&gt;]</value></data>
+            seesharp grade &lt;Übungspfad&gt; &lt;Quellpfad&gt; [--json] [--keep-artifacts] [--timeout &lt;Sekunden&gt;]
+            seesharp validate &lt;Kurspfad&gt; [--skip-starter-check]</value></data>
   <data name="GradeUsage" xml:space="preserve"><value>Verwendung: seesharp grade &lt;Übungspfad&gt; &lt;Quellpfad&gt; [--json] [--keep-artifacts] [--timeout &lt;Sekunden&gt;]</value></data>
   <data name="ResultLine" xml:space="preserve"><value>Ergebnis: {0} ({1:0.0} s)</value></data>
   <data name="TestsLine" xml:space="preserve"><value>Tests: {0} bestanden, {1} fehlgeschlagen</value></data>
@@ -17,4 +18,13 @@
   <data name="TestPassed" xml:space="preserve"><value>PASS</value></data>
   <data name="TestFailed" xml:space="preserve"><value>FAIL</value></data>
   <data name="TestSkipped" xml:space="preserve"><value>SKIP</value></data>
+  <data name="ValidateUsage" xml:space="preserve"><value>Verwendung: seesharp validate &lt;Kurspfad&gt; [--skip-starter-check]</value></data>
+  <data name="SeverityError" xml:space="preserve"><value>FEHLER </value></data>
+  <data name="SeverityWarning" xml:space="preserve"><value>WARNUNG</value></data>
+  <data name="SummaryHeader" xml:space="preserve"><value>Skill-Graph:</value></data>
+  <data name="SummaryModuleLine" xml:space="preserve"><value>  Level {0:00} {1}: {2} Übungen, {3} Skills vermittelt ({4} neu), {5} vorausgesetzt</value></data>
+  <data name="SummaryTotals" xml:space="preserve"><value>  Vermittelt: {0} von {1} Skills in skills.yaml</value></data>
+  <data name="SummaryDangling" xml:space="preserve"><value>  Vorausgesetzt, aber nie vermittelt: {0}</value></data>
+  <data name="SummaryDeadEnds" xml:space="preserve"><value>  Sackgassen (vermittelt, nie vorausgesetzt): {0}</value></data>
+  <data name="ValidateResultLine" xml:space="preserve"><value>{0} Fehler, {1} Warnungen</value></data>
 </root>

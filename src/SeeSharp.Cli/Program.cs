@@ -12,5 +12,8 @@ if (args is ["--version"])
 if (args is ["grade", ..])
     return await GradeCommand.RunAsync(args[1..]);
 
+if (args is ["validate", ..])
+    return await ValidateCommand.RunAsync(args[1..]);
+
 Console.WriteLine(Strings.Usage);
 return 0;
