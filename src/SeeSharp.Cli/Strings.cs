@@ -7,6 +7,7 @@ internal static class Strings
     private static readonly ResourceManager Resources = new("SeeSharp.Cli.Strings", typeof(Strings).Assembly);
 
     public static string Usage => Resources.GetString(nameof(Usage))!;
+    public static string StartUsage => Resources.GetString(nameof(StartUsage))!;
     public static string GradeUsage => Resources.GetString(nameof(GradeUsage))!;
     public static string ValidateUsage => Resources.GetString(nameof(ValidateUsage))!;
     public static string ExportReviewUsage => Resources.GetString(nameof(ExportReviewUsage))!;

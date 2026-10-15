@@ -1,0 +1,36 @@
+@inject CourseState State
+
+<p>@CourseState.Text(Item.Prompt)</p>
+@if (Item.OpenFile is { } file)
+{
+    <p class="path"><code>@Path.Combine(Exercise.StarterDirectory, file)</code></p>
+}
+@if (_done)
+{
+    <p class="ok">@Strings.ReviewDoneAlready</p>
+}
+else
+{
+    <label>@Strings.NoteLabel <textarea rows="3" @bind="_note"></textarea></label>
+    <button @onclick="MarkDone">@Strings.ReviewDone</button>
+}
+
+@code {
+    [Parameter, EditorRequired] public Exercise Exercise { get; set; } = null!;
+    [Parameter, EditorRequired] public ReviewItem Item { get; set; } = null!;
+    [Parameter] public IReadOnlyList<Attempt> History { get; set; } = [];
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
+    private string _note = "";
+    private bool _done;
+
+    protected override void OnInitialized() => _done = History.Any(a => a.Passed);
+
+    private async Task MarkDone()
+    {
+        State.Store.RecordAttempt(Attempts.Review(Exercise.Manifest.Id, Item, string.IsNullOrWhiteSpace(_note) ? null : _note, _clock.Elapsed), Exercise.Manifest);
+        _done = true;
+        await OnChanged.InvokeAsync();
+    }
+}

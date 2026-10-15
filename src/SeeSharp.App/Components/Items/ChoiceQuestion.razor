@@ -1,0 +1,66 @@
+@inject CourseState State
+
+<p>@CourseState.Text(Item.Prompt)</p>
+@for (var i = 0; i < Item.Options.Count; i++)
+{
+    var index = i;
+    <label class="option">
+        @if (Item.Correct.Count > 1)
+        {
+            <input type="checkbox" checked="@_selected.Contains(index)" @onchange="e => Toggle(index, (bool)e.Value!)" />
+        }
+        else
+        {
+            <input type="radio" name="@Item.Id" checked="@_selected.Contains(index)" @onchange="() => _selected = [index]" />
+        }
+        @CourseState.Text(Item.Options[index])
+    </label>
+}
+<button @onclick="Submit" disabled="@(_selected.Count == 0)">@Strings.Submit</button>
+@if (_passed)
+{
+    <p class="ok">@Strings.AnswerCorrect</p>
+}
+else if (_submitted)
+{
+    <p class="bad">@Strings.AnswerWrong</p>
+}
+@if (_submitted && Item.Explanation is not null)
+{
+    <p class="hint">@CourseState.Text(Item.Explanation)</p>
+}
+
+@code {
+    [Parameter, EditorRequired] public Exercise Exercise { get; set; } = null!;
+    [Parameter, EditorRequired] public MultipleChoiceItem Item { get; set; } = null!;
+    /// <summary>Earlier attempts of this item, oldest first.</summary>
+    [Parameter] public IReadOnlyList<Attempt> History { get; set; } = [];
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
+    private HashSet<int> _selected = [];
+    private bool _submitted, _passed;
+
+    protected override void OnInitialized()
+    {
+        if (History.Count == 0)
+            return;
+        _submitted = true;
+        _passed = History.Any(a => a.Passed);
+        _selected = (History[^1].Answer ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToHashSet();
+    }
+
+    private void Toggle(int index, bool on)
+    {
+        if (on) _selected.Add(index); else _selected.Remove(index);
+    }
+
+    private async Task Submit()
+    {
+        var attempt = State.Store.RecordAttempt(Attempts.MultipleChoice(Exercise.Manifest.Id, Item, _selected, _clock.Elapsed), Exercise.Manifest);
+        _submitted = true;
+        _passed = attempt.Passed;
+        _clock.Restart();
+        await OnChanged.InvokeAsync();
+    }
+}

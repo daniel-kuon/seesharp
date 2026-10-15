@@ -4,10 +4,12 @@
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
-  <data name="Usage" xml:space="preserve"><value>Verwendung: seesharp [--version]
+  <data name="Usage" xml:space="preserve"><value>Verwendung: seesharp [start] [--course &lt;Kurspfad&gt;] [--port &lt;Port&gt;] [--no-browser]
+            seesharp --version
             seesharp grade &lt;Übungspfad&gt; &lt;Quellpfad&gt; [--json] [--keep-artifacts] [--timeout &lt;Sekunden&gt;]
             seesharp validate &lt;Kurspfad&gt; [--skip-starter-check]
             seesharp export-review [--out &lt;Zip-Datei&gt;]</value></data>
+  <data name="StartUsage" xml:space="preserve"><value>Verwendung: seesharp start [--course &lt;Kurspfad&gt;] [--port &lt;Port&gt;] [--no-browser]</value></data>
   <data name="GradeUsage" xml:space="preserve"><value>Verwendung: seesharp grade &lt;Übungspfad&gt; &lt;Quellpfad&gt; [--json] [--keep-artifacts] [--timeout &lt;Sekunden&gt;]</value></data>
   <data name="ResultLine" xml:space="preserve"><value>Ergebnis: {0} ({1:0.0} s)</value></data>
   <data name="TestsLine" xml:space="preserve"><value>Tests: {0} bestanden, {1} fehlgeschlagen</value></data>

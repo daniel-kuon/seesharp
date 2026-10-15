@@ -1,5 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <ItemGroup>
-    <ProjectReference Include="../SeeSharp.Core/SeeSharp.Core.csproj" />
+    <PackageReference Include="Markdig" Version="0.45.0" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../SeeSharp.Content/SeeSharp.Content.csproj" />
+    <ProjectReference Include="../SeeSharp.Core/SeeSharp.Core.csproj" />
+    <ProjectReference Include="../SeeSharp.Grading/SeeSharp.Grading.csproj" />
+    <ProjectReference Include="../SeeSharp.Progress/SeeSharp.Progress.csproj" />
+  </ItemGroup>
+
+  <!--
+    blazor.web.js is a static web asset of the ASP.NET Core SDK pack. The CLI (a plain console tool) hosts this
+    project, so there is no wwwroot and no static-web-assets manifest at runtime; embed the script and let
+    AppHost serve it from the assembly instead.
+  -->
+  <Target Name="EmbedBlazorScript" BeforeTargets="AssignTargetPaths" DependsOnTargets="ResolveStaticWebAssetsInputs">
+    <ItemGroup>
+      <EmbeddedResource Include="@(StaticWebAsset)" Condition="'%(Filename)%(Extension)' == 'blazor.web.js'" LogicalName="blazor.web.js" />
+    </ItemGroup>
+  </Target>
 </Project>

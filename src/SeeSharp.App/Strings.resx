@@ -5,5 +5,82 @@
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <data name="Title" xml:space="preserve"><value>SeeSharp</value></data>
-  <data name="Welcome" xml:space="preserve"><value>Willkommen bei SeeSharp.</value></data>
+  <data name="Listening" xml:space="preserve"><value>SeeSharp läuft unter {0} – Beenden mit Strg+C.</value></data>
+  <data name="NavHome" xml:space="preserve"><value>Übersicht</value></data>
+  <data name="NavModules" xml:space="preserve"><value>Module</value></data>
+  <data name="NavSettings" xml:space="preserve"><value>Einstellungen</value></data>
+  <data name="NoCourse" xml:space="preserve"><value>Kein Kurs geladen.</value></data>
+  <data name="GoToSettings" xml:space="preserve"><value>Zu den Einstellungen</value></data>
+  <data name="NotFound" xml:space="preserve"><value>Nicht gefunden.</value></data>
+  <data name="DashboardTitle" xml:space="preserve"><value>Übersicht</value></data>
+  <data name="ModulesDone" xml:space="preserve"><value>{0} von {1} Modulen abgeschlossen</value></data>
+  <data name="ExercisesDone" xml:space="preserve"><value>{0} von {1} Übungen bestanden</value></data>
+  <data name="SkillsHeld" xml:space="preserve"><value>{0} Skills geübt, davon {1} angewendet</value></data>
+  <data name="NextUp" xml:space="preserve"><value>Als Nächstes</value></data>
+  <data name="NothingNext" xml:space="preserve"><value>Nichts offen – alle freigeschalteten Übungen sind bestanden.</value></data>
+  <data name="Done" xml:space="preserve"><value>Erledigt</value></data>
+  <data name="NothingDone" xml:space="preserve"><value>Noch keine Übung bestanden.</value></data>
+  <data name="ModulesTitle" xml:space="preserve"><value>Module</value></data>
+  <data name="LevelTitle" xml:space="preserve"><value>Level {0:00}: {1}</value></data>
+  <data name="Locked" xml:space="preserve"><value>gesperrt</value></data>
+  <data name="Passed" xml:space="preserve"><value>bestanden</value></data>
+  <data name="ExerciseProgress" xml:space="preserve"><value>{0} von {1} Übungen bestanden</value></data>
+  <data name="MissingSkillsLabel" xml:space="preserve"><value>Fehlende Skills:</value></data>
+  <data name="TaughtIn" xml:space="preserve"><value>vermittelt in</value></data>
+  <data name="TaughtNowhere" xml:space="preserve"><value>wird in keinem Modul vermittelt</value></data>
+  <data name="ValidationErrors" xml:space="preserve"><value>Der Kurs hat Validierungsfehler (seesharp validate zeigt Details):</value></data>
+  <data name="BookLabel" xml:space="preserve"><value>Im Buch:</value></data>
+  <data name="BookReference" xml:space="preserve"><value>Abschnitt {0} „{1}“, Seite {2}</value></data>
+  <data name="BookMissing" xml:space="preserve"><value>Buch-PDF nicht gefunden – Abschnitte werden nur als Text angezeigt.</value></data>
+  <data name="BookFound" xml:space="preserve"><value>Buch-PDF: {0}</value></data>
+  <data name="SkillsTaught" xml:space="preserve"><value>Skills in diesem Level</value></data>
+  <data name="SkillStateNone" xml:space="preserve"><value>noch nicht</value></data>
+  <data name="SkillStateIntroduced" xml:space="preserve"><value>eingeführt</value></data>
+  <data name="SkillStatePracticed" xml:space="preserve"><value>geübt</value></data>
+  <data name="SkillStateApplied" xml:space="preserve"><value>angewendet</value></data>
+  <data name="SummaryRead" xml:space="preserve"><value>Gelesen</value></data>
+  <data name="SummaryReadDone" xml:space="preserve"><value>Als gelesen markiert</value></data>
+  <data name="Exercises" xml:space="preserve"><value>Übungen</value></data>
+  <data name="ItemProgress" xml:space="preserve"><value>{0} von {1} Aufgaben erledigt</value></data>
+  <data name="ExerciseLocked" xml:space="preserve"><value>Diese Übung ist noch gesperrt. Es fehlen:</value></data>
+  <data name="BuildsOn" xml:space="preserve"><value>Baut auf</value></data>
+  <data name="Items" xml:space="preserve"><value>Aufgaben</value></data>
+  <data name="ItemPassed" xml:space="preserve"><value>erledigt</value></data>
+  <data name="ExercisePassed" xml:space="preserve"><value>Übung bestanden – die Skills sind gutgeschrieben.</value></data>
+  <data name="Submit" xml:space="preserve"><value>Abgeben</value></data>
+  <data name="AnswerCorrect" xml:space="preserve"><value>Richtig.</value></data>
+  <data name="AnswerWrong" xml:space="preserve"><value>Leider falsch – versuch es noch einmal.</value></data>
+  <data name="Answered" xml:space="preserve"><value>Antwort gespeichert.</value></data>
+  <data name="AnswerEmpty" xml:space="preserve"><value>Bitte eine Antwort eingeben.</value></data>
+  <data name="ReviewDone" xml:space="preserve"><value>Als erledigt markieren</value></data>
+  <data name="ReviewDoneAlready" xml:space="preserve"><value>Erledigt – wird mit dem Betreuer besprochen.</value></data>
+  <data name="NoteLabel" xml:space="preserve"><value>Notiz (optional)</value></data>
+  <data name="OpenFileLabel" xml:space="preserve"><value>Diese Datei in Rider öffnen und bearbeiten:</value></data>
+  <data name="LineLabel" xml:space="preserve"><value>Zeile {0}</value></data>
+  <data name="Copy" xml:space="preserve"><value>Pfad kopieren</value></data>
+  <data name="Copied" xml:space="preserve"><value>Kopiert</value></data>
+  <data name="Grade" xml:space="preserve"><value>Prüfen</value></data>
+  <data name="GradingRunning" xml:space="preserve"><value>Tests laufen …</value></data>
+  <data name="GradingError" xml:space="preserve"><value>Prüfung konnte nicht ausgeführt werden: {0}</value></data>
+  <data name="OutcomePassed" xml:space="preserve"><value>Bestanden</value></data>
+  <data name="OutcomeFailed" xml:space="preserve"><value>Fehlgeschlagen</value></data>
+  <data name="OutcomeBuildFailed" xml:space="preserve"><value>Build fehlgeschlagen</value></data>
+  <data name="OutcomeTimedOut" xml:space="preserve"><value>Zeitüberschreitung</value></data>
+  <data name="DurationSeconds" xml:space="preserve"><value>{0:0.0} s</value></data>
+  <data name="TestsHeader" xml:space="preserve"><value>Tests: {0} bestanden, {1} fehlgeschlagen</value></data>
+  <data name="TestPassed" xml:space="preserve"><value>bestanden</value></data>
+  <data name="TestFailed" xml:space="preserve"><value>fehlgeschlagen</value></data>
+  <data name="TestSkipped" xml:space="preserve"><value>übersprungen</value></data>
+  <data name="ColumnTest" xml:space="preserve"><value>Test</value></data>
+  <data name="ColumnOutcome" xml:space="preserve"><value>Ergebnis</value></data>
+  <data name="ColumnMessage" xml:space="preserve"><value>Meldung</value></data>
+  <data name="SettingsTitle" xml:space="preserve"><value>Einstellungen</value></data>
+  <data name="NoCourseFound" xml:space="preserve"><value>Kein Kurs gefunden. Gib den Pfad zum Ordner des seesharp-course-Repositorys an.</value></data>
+  <data name="CourseNotFoundAt" xml:space="preserve"><value>Kursordner nicht gefunden: {0}</value></data>
+  <data name="CourseLoadedFrom" xml:space="preserve"><value>Kurs geladen aus {0}</value></data>
+  <data name="CoursePathLabel" xml:space="preserve"><value>Kurspfad</value></data>
+  <data name="BookPdfLabel" xml:space="preserve"><value>Buch-PDF (leer = ../csharp14.pdf neben dem Kursordner)</value></data>
+  <data name="SettingsFileHint" xml:space="preserve"><value>Gespeichert in {0}. Die Option --course und die Umgebungsvariable SEESHARP_COURSE haben Vorrang.</value></data>
+  <data name="Save" xml:space="preserve"><value>Speichern</value></data>
+  <data name="Reload" xml:space="preserve"><value>Kurs neu laden</value></data>
 </root>

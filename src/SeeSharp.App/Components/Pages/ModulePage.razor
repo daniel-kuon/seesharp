@@ -1,0 +1,86 @@
+@page "/module/{Id}"
+@inject CourseState State
+
+@if (State.FindModule(Id) is not { } module)
+{
+    <PageTitle>@Strings.Title</PageTitle>
+    <p class="bad">@Strings.NotFound</p>
+}
+else
+{
+    var progress = State.Progress();
+    var moduleProgress = progress.Modules.First(m => m.Module == module);
+    var title = string.Format(Strings.LevelTitle, module.Order, CourseState.Text(module.Manifest.Title));
+    var taught = module.Exercises.SelectMany(e => e.Manifest.Teaches).Distinct().ToList();
+    var read = taught.All(progress.HeldSkills.ContainsKey);
+
+    <PageTitle>@title</PageTitle>
+    <p class="crumbs"><a href="modules">@Strings.ModulesTitle</a> › @title</p>
+    <h1>@title</h1>
+    @if (module.Manifest.Reading is { } reading)
+    {
+        <p>@Strings.BookLabel <BookLink Reading="reading" /></p>
+    }
+
+    <article class="md">@CourseState.RenderMarkdown(module.SummaryPath)</article>
+
+    <h2>@Strings.SkillsTaught</h2>
+    <ul class="skills">
+        @foreach (var skill in taught)
+        {
+            var state = progress.HeldSkills.TryGetValue(skill, out var status) ? status.State : (SkillState?)null;
+            <li>
+                <input type="checkbox" disabled checked="@(state >= SkillState.Practiced)" />
+                @State.SkillLabel(skill) <span class="state">@Strings.ForSkill(state)</span>
+            </li>
+        }
+    </ul>
+    <button @onclick="() => { State.Store.MarkSummaryRead(module); }" disabled="@read">
+        @(read ? Strings.SummaryReadDone : Strings.SummaryRead)
+    </button>
+
+    <h2>@Strings.Exercises</h2>
+    @foreach (var e in moduleProgress.Exercises)
+    {
+        var exerciseTitle = CourseState.Text(e.Exercise.Manifest.Title);
+        <section class="card @(e.Unlocked ? "" : "locked")">
+            <h3>
+                @if (e.Unlocked)
+                {
+                    <a href="exercise/@e.Exercise.Manifest.Id">@exerciseTitle</a>
+                }
+                else
+                {
+                    @exerciseTitle
+                }
+                @if (e.Passed)
+                {
+                    <span class="badge ok">@Strings.Passed</span>
+                }
+                else if (!e.Unlocked)
+                {
+                    <span class="badge locked">@Strings.Locked</span>
+                }
+            </h3>
+            <p>@string.Format(Strings.ItemProgress, e.PassedItems.Count, e.Exercise.Manifest.Items.Count)</p>
+            @if (e.Exercise.Manifest.Reading is { } exerciseReading)
+            {
+                <p>@Strings.BookLabel <BookLink Reading="exerciseReading" /></p>
+            }
+            @if (!e.Unlocked)
+            {
+                <p>@Strings.MissingSkillsLabel</p>
+                <ul class="skills">
+                    @foreach (var skill in e.MissingSkills)
+                    {
+                        <li>@State.SkillLabel(skill) <span class="state"><SkillSource SkillId="@skill" /></span></li>
+                    }
+                </ul>
+            }
+        </section>
+    }
+}
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+}

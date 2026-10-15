@@ -1,0 +1,21 @@
+@inherits LayoutComponentBase
+@inject CourseState State
+@inject NavigationManager Nav
+
+<nav>
+    <span class="brand">@Strings.Title</span>
+    <NavLink href="" Match="NavLinkMatch.All">@Strings.NavHome</NavLink>
+    <NavLink href="modules">@Strings.NavModules</NavLink>
+    <NavLink href="settings">@Strings.NavSettings</NavLink>
+</nav>
+<main>
+    @* Without a course only the settings page makes sense; the other pages assume State.Course is set. *@
+    @if (State.Course is null && !Nav.ToBaseRelativePath(Nav.Uri).StartsWith("settings", StringComparison.Ordinal))
+    {
+        <p class="bad">@Strings.NoCourse <a href="settings">@Strings.GoToSettings</a></p>
+    }
+    else
+    {
+        @Body
+    }
+</main>

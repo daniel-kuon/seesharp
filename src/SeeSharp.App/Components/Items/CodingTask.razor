@@ -1,0 +1,118 @@
+@inject CourseState State
+@inject IJSRuntime JS
+
+@{
+    var file = Path.GetFullPath(Path.Combine(Exercise.StarterDirectory, Item.OpenFile)); // manifests use '/', Windows shows '\'
+}
+<p>@Strings.OpenFileLabel</p>
+<p class="path">
+    <code>@file</code>
+    @if (Item.OpenLine is { } line)
+    {
+        <span class="state">@string.Format(Strings.LineLabel, line)</span>
+    }
+    <button @onclick="Copy">@(_copied ? Strings.Copied : Strings.Copy)</button>
+</p>
+<button @onclick="Grade" disabled="@_running">@(_running ? Strings.GradingRunning : Strings.Grade)</button>
+@if (_error is not null)
+{
+    <p class="bad">@string.Format(Strings.GradingError, _error)</p>
+}
+@if (_result is { } result)
+{
+    <div class="results">
+        <p class="@(_passed ? "ok" : "bad")">
+            <strong>@Strings.ForOutcome(result.Outcome)</strong> (@string.Format(Strings.DurationSeconds, result.Duration.TotalSeconds))
+        </p>
+        @if (result.Outcome == GradingOutcome.BuildFailed)
+        {
+            @if (result.BuildErrors.Count > 0)
+            {
+                <ul class="errors">
+                    @foreach (var error in result.BuildErrors)
+                    {
+                        <li>@error</li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <pre>@result.Output</pre>
+            }
+        }
+        else if (result.Tests.Count > 0)
+        {
+            <p>@string.Format(Strings.TestsHeader, result.Passed, result.Failed)</p>
+            <table>
+                <thead><tr><th>@Strings.ColumnTest</th><th>@Strings.ColumnOutcome</th><th>@Strings.ColumnMessage</th></tr></thead>
+                <tbody>
+                    @foreach (var test in result.Tests)
+                    {
+                        <tr>
+                            <td>@test.Name</td>
+                            <td class="@(test.Outcome == TestOutcome.Passed ? "ok" : test.Outcome == TestOutcome.Failed ? "bad" : "")">@Strings.ForTest(test.Outcome)</td>
+                            <td>@if (test.Message is not null) { <pre>@test.Message</pre> }</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <pre>@result.Output</pre>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public Exercise Exercise { get; set; } = null!;
+    [Parameter, EditorRequired] public CodingItem Item { get; set; } = null!;
+    [Parameter] public IReadOnlyList<Attempt> History { get; set; } = [];
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
+    private GradingResult? _result;
+    private string? _error;
+    private bool _running, _passed, _copied;
+
+    protected override void OnInitialized()
+    {
+        // Show the last run again after a reload; the store keeps the serialised result of every attempt.
+        if (History.LastOrDefault(a => a.GradingJson is not null) is { } last)
+        {
+            _result = System.Text.Json.JsonSerializer.Deserialize<GradingResult>(last.GradingJson!, Attempts.GradingJson);
+            _passed = last.Passed;
+        }
+    }
+
+    private async Task Copy()
+    {
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", Path.GetFullPath(Path.Combine(Exercise.StarterDirectory, Item.OpenFile)));
+        _copied = true;
+    }
+
+    /// <summary>Runs in the circuit's own async flow, so the UI stays responsive while <c>dotnet test</c> works.</summary>
+    private async Task Grade()
+    {
+        _running = true;
+        _error = null;
+        try
+        {
+            var result = await new GradingRunner().RunAsync(Exercise.TestsDirectory, Exercise.StarterDirectory);
+            var attempt = State.Store.RecordAttempt(
+                Attempts.Coding(Exercise.Manifest.Id, Item, Exercise.StarterDirectory, result, _clock.Elapsed), Exercise.Manifest);
+            _result = result;
+            _passed = attempt.Passed;
+            _clock.Restart();
+        }
+        catch (Exception e)
+        {
+            _error = e.Message;
+        }
+        finally
+        {
+            _running = false;
+        }
+        await OnChanged.InvokeAsync();
+    }
+}

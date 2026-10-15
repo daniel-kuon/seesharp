@@ -1,0 +1,16 @@
+@* "taught in Level NN: Title" with a link, or a note that nothing teaches the skill yet. *@
+@inject CourseState State
+
+@if (State.TaughtIn(SkillId) is { } module)
+{
+    var title = string.Format(Strings.LevelTitle, module.Order, CourseState.Text(module.Manifest.Title));
+    <span>@Strings.TaughtIn <a href="module/@module.Manifest.Id">@title</a></span>
+}
+else
+{
+    <span>@Strings.TaughtNowhere</span>
+}
+
+@code {
+    [Parameter, EditorRequired] public string SkillId { get; set; } = "";
+}

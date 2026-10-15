@@ -1,0 +1,47 @@
+@page "/modules"
+@inject CourseState State
+
+<PageTitle>@Strings.ModulesTitle</PageTitle>
+<h1>@Strings.ModulesTitle</h1>
+
+@if (State.Findings.Any(f => f.Severity == Severity.Error))
+{
+    <div class="card bad">
+        <p>@Strings.ValidationErrors</p>
+        <ul class="errors">
+            @foreach (var f in State.Findings.Where(f => f.Severity == Severity.Error))
+            {
+                <li>@f.Location: @f.Message</li>
+            }
+        </ul>
+    </div>
+}
+
+@foreach (var m in State.Progress().Modules)
+{
+    var title = string.Format(Strings.LevelTitle, m.Module.Order, CourseState.Text(m.Module.Manifest.Title));
+    <section class="card @(m.Unlocked ? "" : "locked")">
+        <h2>
+            <a href="module/@m.Module.Manifest.Id">@title</a>
+            @if (m.Passed)
+            {
+                <span class="badge ok">@Strings.Passed</span>
+            }
+            else if (!m.Unlocked)
+            {
+                <span class="badge locked">@Strings.Locked</span>
+            }
+        </h2>
+        <p>@string.Format(Strings.ExerciseProgress, m.Exercises.Count(e => e.Passed), m.Exercises.Count)</p>
+        @if (!m.Unlocked)
+        {
+            <p>@Strings.MissingSkillsLabel</p>
+            <ul class="skills">
+                @foreach (var skill in m.Exercises.SelectMany(e => e.MissingSkills).Distinct())
+                {
+                    <li>@State.SkillLabel(skill) <span class="state"><SkillSource SkillId="@skill" /></span></li>
+                }
+            </ul>
+        }
+    </section>
+}

@@ -1,0 +1,18 @@
+@* A reading pointer: a deep link into the served PDF (physical page = printed + Reading.PrintedToPhysicalOffset), or plain text when the book is missing. *@
+@inject CourseState State
+
+@{
+    var text = string.Format(Strings.BookReference, Reading.Section, CourseState.Text(Reading.Title), Reading.PrintedPage);
+}
+@if (State.BookHref(Reading) is { } href)
+{
+    <a href="@href" target="_blank">@text</a>
+}
+else
+{
+    <span>@text</span>
+}
+
+@code {
+    [Parameter, EditorRequired] public Reading Reading { get; set; } = null!;
+}

@@ -1,0 +1,41 @@
+@page "/settings"
+@inject CourseState State
+
+<PageTitle>@Strings.SettingsTitle</PageTitle>
+<h1>@Strings.SettingsTitle</h1>
+
+@if (State.Course is null)
+{
+    <p class="bad">@(State.CoursePath is null ? Strings.NoCourseFound : string.Format(Strings.CourseNotFoundAt, State.CoursePath))</p>
+}
+else
+{
+    <p class="ok">@string.Format(Strings.CourseLoadedFrom, State.CoursePath)</p>
+    <p>@(State.BookPdfPath is { } pdf ? string.Format(Strings.BookFound, pdf) : Strings.BookMissing)</p>
+}
+
+<p><label>@Strings.CoursePathLabel<br /><input type="text" @bind="_course" /></label></p>
+<p><label>@Strings.BookPdfLabel<br /><input type="text" @bind="_book" /></label></p>
+<p class="hint">@string.Format(Strings.SettingsFileHint, Settings.DefaultPath)</p>
+<button @onclick="Save">@Strings.Save</button>
+<button @onclick="State.LoadAsync">@Strings.Reload</button>
+
+@code {
+    private string _course = "";
+    private string _book = "";
+
+    protected override void OnInitialized()
+    {
+        _course = State.Settings.CoursePath ?? State.CoursePath ?? "";
+        _book = State.Settings.BookPdfPath ?? "";
+    }
+
+    private async Task Save()
+    {
+        var settings = Settings.Load();
+        settings.CoursePath = string.IsNullOrWhiteSpace(_course) ? null : _course.Trim();
+        settings.BookPdfPath = string.IsNullOrWhiteSpace(_book) ? null : _book.Trim();
+        settings.Save();
+        await State.LoadAsync();
+    }
+}

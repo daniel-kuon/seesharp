@@ -9,6 +9,9 @@ if (args is ["--version"])
     return 0;
 }
 
+if (args is [] or ["start", ..])
+    return await StartCommand.RunAsync(args is [] ? args : args[1..]);
+
 if (args is ["grade", ..])
     return await GradeCommand.RunAsync(args[1..]);
 

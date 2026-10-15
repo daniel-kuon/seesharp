@@ -1,5 +1,54 @@
 @page "/"
-@rendermode InteractiveServer
+@inject CourseState State
 
 <PageTitle>@Strings.Title</PageTitle>
-<h1>@Strings.Welcome</h1>
+<h1>@Strings.DashboardTitle</h1>
+
+@{
+    var progress = State.Progress();
+    var exercises = progress.Exercises.ToList();
+    var next = exercises.FirstOrDefault(e => e.Unlocked && !e.Passed);
+    var done = exercises.Where(e => e.Passed).ToList();
+}
+<ul>
+    <li>@string.Format(Strings.ModulesDone, progress.Modules.Count(m => m.Passed), progress.Modules.Count)</li>
+    <li>@string.Format(Strings.ExercisesDone, done.Count, exercises.Count)</li>
+    <li>@string.Format(Strings.SkillsHeld,
+            progress.HeldSkills.Values.Count(s => s.State >= SkillState.Practiced),
+            progress.HeldSkills.Values.Count(s => s.State == SkillState.Applied))</li>
+</ul>
+
+<h2>@Strings.NextUp</h2>
+@if (next is null)
+{
+    <p>@Strings.NothingNext</p>
+}
+else
+{
+    <p class="card">
+        <a href="exercise/@next.Exercise.Manifest.Id">@ExerciseTitle(next.Exercise)</a>
+    </p>
+}
+
+<h2>@Strings.Done</h2>
+@if (done.Count == 0)
+{
+    <p>@Strings.NothingDone</p>
+}
+else
+{
+    <ul>
+        @foreach (var e in done)
+        {
+            <li><a href="exercise/@e.Exercise.Manifest.Id">@ExerciseTitle(e.Exercise)</a></li>
+        }
+    </ul>
+}
+
+@code {
+    private string ExerciseTitle(Exercise exercise)
+    {
+        var module = State.ModuleOf(exercise);
+        return string.Format(Strings.LevelTitle, module.Order, CourseState.Text(module.Manifest.Title)) + " › " + CourseState.Text(exercise.Manifest.Title);
+    }
+}

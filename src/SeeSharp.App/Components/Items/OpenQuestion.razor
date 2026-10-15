@@ -1,0 +1,43 @@
+@inject CourseState State
+
+<p>@CourseState.Text(Item.Prompt)</p>
+<textarea rows="6" @bind="_text"></textarea>
+<div>
+    <button @onclick="Submit">@Strings.Submit</button>
+    @if (_passed)
+    {
+        <span class="ok">@Strings.Answered</span>
+    }
+    else if (_submitted)
+    {
+        <span class="bad">@Strings.AnswerEmpty</span>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Exercise Exercise { get; set; } = null!;
+    [Parameter, EditorRequired] public OpenItem Item { get; set; } = null!;
+    [Parameter] public IReadOnlyList<Attempt> History { get; set; } = [];
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
+    private string _text = "";
+    private bool _submitted, _passed;
+
+    protected override void OnInitialized()
+    {
+        if (History.Count == 0)
+            return;
+        _text = History[^1].Answer ?? "";
+        _passed = History.Any(a => a.Passed);
+    }
+
+    private async Task Submit()
+    {
+        var attempt = State.Store.RecordAttempt(Attempts.Open(Exercise.Manifest.Id, Item, _text, _clock.Elapsed), Exercise.Manifest);
+        _submitted = true;
+        _passed = attempt.Passed;
+        _clock.Restart();
+        await OnChanged.InvokeAsync();
+    }
+}

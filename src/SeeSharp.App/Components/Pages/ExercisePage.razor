@@ -1,0 +1,100 @@
+@page "/exercise/{Id}"
+@inject CourseState State
+
+@if (State.FindExercise(Id) is not { } exercise)
+{
+    <PageTitle>@Strings.Title</PageTitle>
+    <p class="bad">@Strings.NotFound</p>
+}
+else
+{
+    var module = State.ModuleOf(exercise);
+    var progress = State.Progress();
+    var exerciseProgress = progress.Exercises.First(e => e.Exercise == exercise);
+    var moduleTitle = string.Format(Strings.LevelTitle, module.Order, CourseState.Text(module.Manifest.Title));
+    var title = CourseState.Text(exercise.Manifest.Title);
+
+    <PageTitle>@title</PageTitle>
+    <p class="crumbs"><a href="modules">@Strings.ModulesTitle</a> › <a href="module/@module.Manifest.Id">@moduleTitle</a> › @title</p>
+    <h1>
+        @title
+        @if (exerciseProgress.Passed)
+        {
+            <span class="badge ok">@Strings.Passed</span>
+        }
+    </h1>
+    @if (exercise.Manifest.Reading is { } reading)
+    {
+        <p>@Strings.BookLabel <BookLink Reading="reading" /></p>
+    }
+
+    @if (!exerciseProgress.Unlocked)
+    {
+        <div class="card locked">
+            <p>@Strings.ExerciseLocked</p>
+            <ul class="skills">
+                @foreach (var skill in exerciseProgress.MissingSkills)
+                {
+                    <li>@State.SkillLabel(skill) <span class="state"><SkillSource SkillId="@skill" /></span></li>
+                }
+            </ul>
+        </div>
+    }
+    else
+    {
+        <article class="md">@CourseState.RenderMarkdown(exercise.InstructionsPath)</article>
+
+        @if (exercise.Manifest.Requires.Count > 0)
+        {
+            <h2>@Strings.BuildsOn</h2>
+            <ul class="skills">
+                @foreach (var skill in exercise.Manifest.Requires)
+                {
+                    var state = progress.HeldSkills.TryGetValue(skill, out var status) ? status.State : (SkillState?)null;
+                    <li>@State.SkillLabel(skill) <span class="state">@Strings.ForSkill(state) · <SkillSource SkillId="@skill" /></span></li>
+                }
+            </ul>
+        }
+
+        <h2>@Strings.Items</h2>
+        @foreach (var item in exercise.Manifest.Items)
+        {
+            var history = _attempts.Where(a => a.ItemId == item.Id).ToList();
+            <section class="item">
+                @if (exerciseProgress.PassedItems.Contains(item.Id))
+                {
+                    <span class="badge ok">@Strings.ItemPassed</span>
+                }
+                @switch (item)
+                {
+                    case MultipleChoiceItem choice:
+                        <ChoiceQuestion Exercise="exercise" Item="choice" History="history" OnChanged="Refresh" />
+                        break;
+                    case OpenItem open:
+                        <OpenQuestion Exercise="exercise" Item="open" History="history" OnChanged="Refresh" />
+                        break;
+                    case ReviewItem review:
+                        <ReviewTask Exercise="exercise" Item="review" History="history" OnChanged="Refresh" />
+                        break;
+                    case CodingItem coding:
+                        <CodingTask Exercise="exercise" Item="coding" History="history" OnChanged="Refresh" />
+                        break;
+                }
+            </section>
+        }
+        @if (exerciseProgress.Passed)
+        {
+            <p class="ok">@Strings.ExercisePassed</p>
+        }
+    }
+}
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+
+    private IReadOnlyList<Attempt> _attempts = [];
+
+    protected override void OnParametersSet() => Refresh();
+
+    private void Refresh() => _attempts = State.Store.Attempts(Id);
+}
