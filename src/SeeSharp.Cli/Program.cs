@@ -9,5 +9,8 @@ if (args is ["--version"])
     return 0;
 }
 
+if (args is ["grade", ..])
+    return await GradeCommand.RunAsync(args[1..]);
+
 Console.WriteLine(Strings.Usage);
 return 0;

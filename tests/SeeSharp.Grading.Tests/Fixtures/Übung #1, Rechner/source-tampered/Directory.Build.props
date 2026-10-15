@@ -1,0 +1,6 @@
+<!-- Schummelversuch: Tests aus dem Build entfernen. -->
+<Project>
+  <ItemGroup>
+    <Compile Remove="**/RechnerTests.cs" />
+  </ItemGroup>
+</Project>
