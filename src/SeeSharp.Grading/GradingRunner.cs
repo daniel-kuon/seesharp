@@ -67,7 +67,10 @@ public sealed class GradingRunner
                 : GradingOutcome.Failed;
             var buildErrors = outcome == GradingOutcome.BuildFailed ? ExtractBuildErrors(output, work) : [];
 
-            return new GradingResult(outcome, elapsed, tests, buildErrors, output, keepArtifacts ? work : null);
+            return new GradingResult(outcome, elapsed, tests, buildErrors, output, keepArtifacts ? work : null)
+            {
+                Trx = File.Exists(trx) ? await File.ReadAllTextAsync(trx, CancellationToken.None) : null,
+            };
         }
         finally
         {

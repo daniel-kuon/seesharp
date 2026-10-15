@@ -9,6 +9,8 @@ internal static class Strings
     public static string Usage => Resources.GetString(nameof(Usage))!;
     public static string GradeUsage => Resources.GetString(nameof(GradeUsage))!;
     public static string ValidateUsage => Resources.GetString(nameof(ValidateUsage))!;
+    public static string ExportReviewUsage => Resources.GetString(nameof(ExportReviewUsage))!;
+    public static string ExportReviewWritten => Resources.GetString(nameof(ExportReviewWritten))!;
     public static string SeverityError => Resources.GetString(nameof(SeverityError))!;
     public static string SeverityWarning => Resources.GetString(nameof(SeverityWarning))!;
     public static string SummaryHeader => Resources.GetString(nameof(SummaryHeader))!;

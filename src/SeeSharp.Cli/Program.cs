@@ -15,5 +15,8 @@ if (args is ["grade", ..])
 if (args is ["validate", ..])
     return await ValidateCommand.RunAsync(args[1..]);
 
+if (args is ["export-review", ..])
+    return ExportReviewCommand.Run(args[1..]);
+
 Console.WriteLine(Strings.Usage);
 return 0;

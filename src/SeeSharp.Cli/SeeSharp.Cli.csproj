@@ -16,5 +16,6 @@
     <ProjectReference Include="../SeeSharp.Core/SeeSharp.Core.csproj" />
     <ProjectReference Include="../SeeSharp.Grading/SeeSharp.Grading.csproj" />
     <ProjectReference Include="../SeeSharp.Ide/SeeSharp.Ide.csproj" />
+    <ProjectReference Include="../SeeSharp.Progress/SeeSharp.Progress.csproj" />
   </ItemGroup>
 </Project>

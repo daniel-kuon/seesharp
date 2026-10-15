@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace SeeSharp.Grading;
 
 public enum GradingOutcome
@@ -31,4 +33,8 @@ public sealed record GradingResult(
 {
     public int Passed => Tests.Count(t => t.Outcome == TestOutcome.Passed);
     public int Failed => Tests.Count(t => t.Outcome == TestOutcome.Failed);
+
+    /// <summary>Raw text of <c>results.trx</c>, kept for the review bundle; null when the build failed. Not part of the JSON output.</summary>
+    [JsonIgnore]
+    public string? Trx { get; init; }
 }
