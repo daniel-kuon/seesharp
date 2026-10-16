@@ -30,6 +30,9 @@
   <data name="SummaryDangling" xml:space="preserve"><value>  Vorausgesetzt, aber nie vermittelt: {0}</value></data>
   <data name="SummaryDeadEnds" xml:space="preserve"><value>  Sackgassen (vermittelt, nie vorausgesetzt): {0}</value></data>
   <data name="ValidateResultLine" xml:space="preserve"><value>{0} Fehler, {1} Warnungen</value></data>
+  <data name="SummaryExamsHeader" xml:space="preserve"><value>Prüfungen:</value></data>
+  <data name="SummaryNoExams" xml:space="preserve"><value>  keine (exams/*.yaml)</value></data>
+  <data name="SummaryExamLine" xml:space="preserve"><value>  {0} ({1}): Level {2}, {3} Skills aus {4} Übungen mit {5} Aufgaben, {6} Minuten</value></data>
   <data name="ExportReviewUsage" xml:space="preserve"><value>Verwendung: seesharp export-review [--out &lt;Zip-Datei&gt;]</value></data>
   <data name="ExportReviewWritten" xml:space="preserve"><value>Review-Paket geschrieben: {0} ({1} Abgaben)</value></data>
 </root>

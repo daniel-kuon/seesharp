@@ -58,4 +58,14 @@
   <data name="SkillCycle" xml:space="preserve"><value>Cycle in the skill graph: {0}</value></data>
   <data name="SkillTaughtTooOften" xml:space="preserve"><value>Skill "{0}" is taught by {1} exercises – probably too coarse, split it</value></data>
   <data name="SkillDeadEnd" xml:space="preserve"><value>Skill "{0}" is taught but never required (dead end)</value></data>
+  <data name="ExamManifestMissing" xml:space="preserve"><value>Exam file missing</value></data>
+  <data name="ExamManifestInvalid" xml:space="preserve"><value>Exam file cannot be read: {0}</value></data>
+  <data name="ExamIdInvalid" xml:space="preserve"><value>Invalid exam id "{0}" (expected: lowercase letters, digits, hyphens)</value></data>
+  <data name="ExamIdDuplicate" xml:space="preserve"><value>Exam id "{0}" is used more than once</value></data>
+  <data name="ExamTitleMissingDefaultLocale" xml:space="preserve"><value>Exam title missing in the default locale "{0}"</value></data>
+  <data name="ExamKindInvalid" xml:space="preserve"><value>Unknown exam kind "{0}" (expected: practice or real)</value></data>
+  <data name="ExamTimeLimitInvalid" xml:space="preserve"><value>timeLimitMinutes must be at least 1</value></data>
+  <data name="ExamLevelUnknown" xml:space="preserve"><value>Level {0} does not exist in the course</value></data>
+  <data name="ExamSkillUnknown" xml:space="preserve"><value>Skill "{0}" is not defined in skills.yaml</value></data>
+  <data name="ExamCoverageEmpty" xml:space="preserve"><value>The exam covers no skill (set coverage.levels or skills)</value></data>
 </root>

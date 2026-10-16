@@ -39,6 +39,10 @@
         .split { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
         .preview { border: 1px solid #ddd; background: #fff; padding: 0 1rem; overflow: auto; }
         pre.diff, pre.answer { background: #f0f0f0; padding: 0.6rem; overflow-x: auto; white-space: pre-wrap; font-size: 0.85rem; }
+        .timer { position: sticky; top: 0; z-index: 1; font-size: 1.6rem; font-weight: bold; background: #fff3cd; border: 1px solid #e0c060; border-radius: 6px; padding: 0.5rem 1rem; margin: 0.8rem 0; }
+        .timer.bad { background: #f8d7da; border-color: #d9534f; }
+        a.button { display: inline-block; border: 1px solid #888; border-radius: 3px; padding: 0.3rem 0.9rem; background: #efefef; color: #222; text-decoration: none; }
+        details.card summary { cursor: pointer; }
     </style>
 </head>
 <body>

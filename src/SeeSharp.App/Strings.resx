@@ -200,4 +200,42 @@
   <data name="ColumnState" xml:space="preserve"><value>Status</value></data>
   <data name="ColumnLastExercised" xml:space="preserve"><value>Zuletzt geübt</value></data>
   <data name="ColumnExercise" xml:space="preserve"><value>Übung</value></data>
+  <data name="NavExams" xml:space="preserve"><value>Prüfungen</value></data>
+  <data name="ExamsTitle" xml:space="preserve"><value>Prüfungen</value></data>
+  <data name="NoExams" xml:space="preserve"><value>Der Kurs enthält keine Prüfungen (exams/*.yaml).</value></data>
+  <data name="ExamKindPractice" xml:space="preserve"><value>Probeprüfung</value></data>
+  <data name="ExamKindReal" xml:space="preserve"><value>Prüfung</value></data>
+  <data name="ExamStateLocked" xml:space="preserve"><value>gesperrt</value></data>
+  <data name="ExamStateAvailable" xml:space="preserve"><value>verfügbar</value></data>
+  <data name="ExamStateRunning" xml:space="preserve"><value>läuft</value></data>
+  <data name="ExamStateSubmitted" xml:space="preserve"><value>abgegeben</value></data>
+  <data name="ExamCoversLevels" xml:space="preserve"><value>Level {0}</value></data>
+  <data name="ExamCoversSkills" xml:space="preserve"><value>+ {0} einzelne Skills</value></data>
+  <data name="ExamTimeLimit" xml:space="preserve"><value>{0} Minuten</value></data>
+  <data name="ExamMaxItems" xml:space="preserve"><value>höchstens {0} Aufgaben</value></data>
+  <data name="ExamLockedHint" xml:space="preserve"><value>Erst müssen alle Übungen der abgedeckten Level bestanden sein.</value></data>
+  <data name="ExamPracticeStartHint" xml:space="preserve"><value>Beliebig oft wiederholbar; Antworten und Testergebnisse werden nach der Abgabe gezeigt.</value></data>
+  <data name="ExamRealStartHint" xml:space="preserve"><value>Nur ein Versuch. Nach der Abgabe wird nichts angezeigt – das Ergebnis geht über das Review-Paket an die Betreuung. Die Zeit läuft ab dem Start weiter, auch wenn SeeSharp geschlossen wird.</value></data>
+  <data name="ExamStart" xml:space="preserve"><value>Starten</value></data>
+  <data name="ExamResume" xml:space="preserve"><value>Zur Prüfung</value></data>
+  <data name="ExamRetake" xml:space="preserve"><value>Erneut starten</value></data>
+  <data name="ExamShowResult" xml:space="preserve"><value>Ergebnis ansehen</value></data>
+  <data name="ExamStartError" xml:space="preserve"><value>Die Prüfung kann nicht gestartet werden: {0}</value></data>
+  <data name="ExamRemaining" xml:space="preserve"><value>Verbleibend: {0}</value></data>
+  <data name="ExamRunHint" xml:space="preserve"><value>Während der Prüfung gibt es keine Rückmeldung zu den Antworten; Tests werden ausgeführt, das Ergebnis aber erst nach der Abgabe gezeigt. Läuft die Zeit ab, gilt die Prüfung als abgegeben.</value></data>
+  <data name="ExamSubmittedAt" xml:space="preserve"><value>Abgegeben am {0}</value></data>
+  <data name="ExamRealNoResults" xml:space="preserve"><value>Das Ergebnis wird nicht angezeigt; es geht über das Review-Paket (seesharp export-review) an die Betreuung.</value></data>
+  <data name="ExamScore" xml:space="preserve"><value>{0} von {1} Aufgaben richtig ({2} beantwortet)</value></data>
+  <data name="ExamInstructions" xml:space="preserve"><value>Aufgabenstellung</value></data>
+  <data name="ExamItemNumber" xml:space="preserve"><value>Aufgabe {0} von {1}</value></data>
+  <data name="ExamItemSubmitted" xml:space="preserve"><value>abgegeben</value></data>
+  <data name="ExamItemNotAnswered" xml:space="preserve"><value>nicht beantwortet</value></data>
+  <data name="ExamItemCorrect" xml:space="preserve"><value>richtig</value></data>
+  <data name="ExamItemWrong" xml:space="preserve"><value>falsch</value></data>
+  <data name="ExamAnsweredCount" xml:space="preserve"><value>{0} von {1} Aufgaben abgegeben</value></data>
+  <data name="ExamSubmit" xml:space="preserve"><value>Prüfung abgeben</value></data>
+  <data name="ExamConfirmSubmit" xml:space="preserve"><value>Wirklich abgeben? Danach sind keine Änderungen mehr möglich.</value></data>
+  <data name="ExamSubmitConfirmed" xml:space="preserve"><value>Ja, abgeben</value></data>
+  <data name="ExamKeepWorking" xml:space="preserve"><value>Weiterarbeiten</value></data>
+  <data name="ExamActiveGate" xml:space="preserve"><value>Eine Prüfung läuft – bis zur Abgabe sind die anderen Seiten gesperrt.</value></data>
 </root>

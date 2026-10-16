@@ -57,6 +57,19 @@ public sealed class ProgressStore : IDisposable
             timestamp TEXT    NOT NULL,
             cause     TEXT    NOT NULL);
         """,
+        // Task 8: exam runs; their attempts carry the run id and stay out of regular progress.
+        """
+        CREATE TABLE exam_run (
+            id        INTEGER PRIMARY KEY,
+            exam_id   TEXT    NOT NULL,
+            real      INTEGER NOT NULL,
+            started   TEXT    NOT NULL,
+            deadline  TEXT    NOT NULL,
+            seed      INTEGER NOT NULL,
+            items     TEXT    NOT NULL,
+            submitted TEXT);
+        ALTER TABLE attempt ADD COLUMN exam_run_id INTEGER REFERENCES exam_run(id);
+        """,
     ];
 
     private readonly SqliteConnection _connection;
@@ -102,19 +115,25 @@ public sealed class ProgressStore : IDisposable
 
     // ----- writes -----------------------------------------------------------------------------
 
-    /// <summary>Appends the attempt and returns it with its id. No ledger update; use the overload with the manifest for that.</summary>
+    /// <summary>
+    /// Appends the attempt and returns it with its id. No ledger update; use the overload with the manifest for that.
+    /// An attempt with <see cref="Attempt.ExamRunId"/> is refused once that run is submitted or its deadline has passed.
+    /// </summary>
     public Attempt RecordAttempt(Attempt attempt)
     {
         lock (_lock)
         {
+            if (attempt.ExamRunId is { } runId && ExamRun(runId) is not { Active: true })
+                throw new InvalidOperationException($"Exam run {runId} is not active.");
             var id = (long)Execute("""
-                INSERT INTO attempt (exercise_id, item_id, timestamp, time_spent_ms, passed, answer, source, grading_json, trx)
-                VALUES ($exercise, $item, $timestamp, $spent, $passed, $answer, $source, $grading, $trx);
+                INSERT INTO attempt (exercise_id, item_id, timestamp, time_spent_ms, passed, answer, source, grading_json, trx, exam_run_id)
+                VALUES ($exercise, $item, $timestamp, $spent, $passed, $answer, $source, $grading, $trx, $run);
                 SELECT last_insert_rowid();
                 """,
                 ("$exercise", attempt.ExerciseId), ("$item", attempt.ItemId), ("$timestamp", Iso(attempt.Timestamp)),
                 ("$spent", (long)attempt.TimeSpent.TotalMilliseconds), ("$passed", attempt.Passed ? 1 : 0),
-                ("$answer", attempt.Answer), ("$source", attempt.Source), ("$grading", attempt.GradingJson), ("$trx", attempt.Trx)).ExecuteScalar()!;
+                ("$answer", attempt.Answer), ("$source", attempt.Source), ("$grading", attempt.GradingJson), ("$trx", attempt.Trx),
+                ("$run", attempt.ExamRunId)).ExecuteScalar()!;
             return attempt with { Id = id };
         }
     }
@@ -156,16 +175,85 @@ public sealed class ProgressStore : IDisposable
                 ("$skill", t.SkillId), ("$state", (int)t.State), ("$timestamp", Iso(t.Timestamp)), ("$cause", t.Cause)).ExecuteNonQuery();
     }
 
+    // ----- exam runs (task 8) -----------------------------------------------------------------
+
+    /// <summary>
+    /// Opens a run: the deadline is <paramref name="now"/> + <paramref name="timeLimit"/> and persisted before anything is shown.
+    /// Refused while another run is open, and for a real exam that already has a run — a real exam is taken once per id.
+    /// </summary>
+    public ExamRun StartExamRun(string examId, bool real, TimeSpan timeLimit, int seed, IReadOnlyList<ExamItemRef> items, DateTimeOffset? now = null)
+    {
+        var start = now ?? DateTimeOffset.UtcNow;
+        lock (_lock)
+        {
+            if (ActiveRun(start) is { } open)
+                throw new InvalidOperationException($"Exam run {open.Id} ({open.ExamId}) is still open.");
+            if (real && ExamRuns(examId, start).Count > 0)
+                throw new InvalidOperationException($"Real exam '{examId}' was already taken.");
+            var id = (long)Execute("""
+                INSERT INTO exam_run (exam_id, real, started, deadline, seed, items) VALUES ($exam, $real, $started, $deadline, $seed, $items);
+                SELECT last_insert_rowid();
+                """,
+                ("$exam", examId), ("$real", real ? 1 : 0), ("$started", Iso(start)), ("$deadline", Iso(start + timeLimit)),
+                ("$seed", seed), ("$items", string.Join("\n", items.Select(i => i.ExerciseId + "/" + i.ItemId)))).ExecuteScalar()!;
+            return ExamRun(id)!;
+        }
+    }
+
+    /// <summary>Closes the run; later attempts for it are refused. Submitting twice is a no-op.</summary>
+    public void SubmitExamRun(long id, DateTimeOffset? now = null)
+    {
+        lock (_lock)
+            Execute("UPDATE exam_run SET submitted = $now WHERE id = $id AND submitted IS NULL",
+                ("$now", Iso(now ?? DateTimeOffset.UtcNow)), ("$id", id)).ExecuteNonQuery();
+    }
+
+    /// <summary>The one open run, or null. Expired runs are submitted first (at their deadline), so the timer needs no background job.</summary>
+    public ExamRun? ActiveRun(DateTimeOffset? now = null) => ExamRuns(null, now).FirstOrDefault(r => r.Active);
+
+    public ExamRun? ExamRun(long id) => ReadRuns("WHERE id = $id", ("$id", id)).SingleOrDefault();
+
+    /// <summary>All runs, newest last, optionally for one exam. Expires overdue runs first.</summary>
+    public IReadOnlyList<ExamRun> ExamRuns(string? examId = null, DateTimeOffset? now = null)
+    {
+        lock (_lock)
+        {
+            Execute("UPDATE exam_run SET submitted = deadline WHERE submitted IS NULL AND deadline <= $now", ("$now", Iso(now ?? DateTimeOffset.UtcNow))).ExecuteNonQuery();
+            return ReadRuns("WHERE $exam IS NULL OR exam_id = $exam", ("$exam", examId));
+        }
+    }
+
+    private List<ExamRun> ReadRuns(string where, params (string Name, object? Value)[] parameters)
+    {
+        lock (_lock)
+        {
+            using var reader = Execute($"SELECT id, exam_id, real, started, deadline, seed, items, submitted FROM exam_run {where} ORDER BY id", parameters).ExecuteReader();
+            var runs = new List<ExamRun>();
+            while (reader.Read())
+                runs.Add(new ExamRun(reader.GetInt64(0), reader.GetString(1), reader.GetInt64(2) != 0, ParseIso(reader.GetString(3)), ParseIso(reader.GetString(4)),
+                    reader.GetInt32(5),
+                    reader.GetString(6).Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(l => l.Split('/', 2)).Select(p => new ExamItemRef(p[0], p[1])).ToList(),
+                    reader.IsDBNull(7) ? null : ParseIso(reader.GetString(7))));
+            return runs;
+        }
+    }
+
+    /// <summary>The attempts made inside one run, in submission order.</summary>
+    public IReadOnlyList<Attempt> ExamAttempts(long runId) => ReadAttempts("WHERE exam_run_id = $run", ("$run", runId));
+
     // ----- reads ------------------------------------------------------------------------------
 
-    /// <summary>All attempts in submission order, optionally for one exercise. Includes sources and TRX; cheap at this scale.</summary>
-    public IReadOnlyList<Attempt> Attempts(string? exerciseId = null)
+    /// <summary>All regular attempts in submission order, optionally for one exercise. Exam attempts are excluded; see <see cref="ExamAttempts"/>. Includes sources and TRX; cheap at this scale.</summary>
+    public IReadOnlyList<Attempt> Attempts(string? exerciseId = null) =>
+        ReadAttempts("WHERE exam_run_id IS NULL AND ($exercise IS NULL OR exercise_id = $exercise)", ("$exercise", exerciseId));
+
+    private List<Attempt> ReadAttempts(string where, params (string Name, object? Value)[] parameters)
     {
         lock (_lock)
         {
             using var reader = Execute(
-                "SELECT id, exercise_id, item_id, timestamp, time_spent_ms, passed, answer, source, grading_json, trx FROM attempt " +
-                "WHERE $exercise IS NULL OR exercise_id = $exercise ORDER BY id", ("$exercise", exerciseId)).ExecuteReader();
+                $"SELECT id, exercise_id, item_id, timestamp, time_spent_ms, passed, answer, source, grading_json, trx, exam_run_id FROM attempt {where} ORDER BY id",
+                parameters).ExecuteReader();
             var attempts = new List<Attempt>();
             while (reader.Read())
                 attempts.Add(new Attempt(
@@ -174,7 +262,7 @@ public sealed class ProgressStore : IDisposable
                     reader.IsDBNull(6) ? null : reader.GetString(6),
                     reader.IsDBNull(7) ? null : (byte[])reader.GetValue(7),
                     reader.IsDBNull(8) ? null : reader.GetString(8),
-                    reader.IsDBNull(9) ? null : reader.GetString(9)) { Id = reader.GetInt64(0) });
+                    reader.IsDBNull(9) ? null : reader.GetString(9)) { Id = reader.GetInt64(0), ExamRunId = reader.IsDBNull(10) ? null : reader.GetInt64(10) });
             return attempts;
         }
     }

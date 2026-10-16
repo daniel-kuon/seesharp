@@ -6,7 +6,7 @@
     <button @onclick="Submit">@Strings.Submit</button>
     @if (_passed)
     {
-        <span class="ok">@Strings.Answered</span>
+        <span class="ok">@(Run is null ? Strings.Answered : Strings.ExamItemSubmitted)</span>
     }
     else if (_submitted)
     {
@@ -19,6 +19,8 @@
     [Parameter, EditorRequired] public OpenItem Item { get; set; } = null!;
     [Parameter] public IReadOnlyList<Attempt> History { get; set; } = [];
     [Parameter] public EventCallback OnChanged { get; set; }
+    /// <summary>Set inside an exam run: the attempt is linked to the run and credits no skill.</summary>
+    [Parameter] public ExamRun? Run { get; set; }
 
     private readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
     private string _text = "";
@@ -34,7 +36,8 @@
 
     private async Task Submit()
     {
-        var attempt = State.Store.RecordAttempt(Attempts.Open(Exercise.Manifest.Id, Item, _text, _clock.Elapsed), Exercise.Manifest);
+        var attempt = Attempts.Open(Exercise.Manifest.Id, Item, _text, _clock.Elapsed);
+        attempt = Run is null ? State.Store.RecordAttempt(attempt, Exercise.Manifest) : State.Store.RecordAttempt(attempt with { ExamRunId = Run.Id });
         _submitted = true;
         _passed = attempt.Passed;
         _clock.Restart();

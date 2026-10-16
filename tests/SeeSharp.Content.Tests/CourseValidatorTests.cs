@@ -104,6 +104,66 @@ public sealed class CourseValidatorTests : IDisposable
         // b.three is taught last and never required, which is the only expected finding of the baseline course
         Assert.All(report.Findings, f => Assert.Equal((FindingCode.SkillDeadEnd, "b.three"), (f.Code, f.Message.Contains("b.three") ? "b.three" : f.Message)));
 
+    // ----- exams (task 8) ----------------------------------------------------------------------
+
+    private const string Exam = """
+        id: probe
+        title: { de: "Probeprüfung" }
+        kind: practice
+        coverage: { levels: [1] }
+        timeLimitMinutes: 45
+        maxItems: 10
+        """;
+
+    [Fact]
+    public async Task Exam_definition_is_loaded_and_summarised()
+    {
+        Write("exams/probe.yaml", Exam);
+        Write("exams/ernst.yaml", Exam.Replace("probe", "ernst").Replace("practice", "real").Replace("coverage: { levels: [1] }", "skills: [a.one]"));
+
+        var report = await Validate();
+
+        AssertClean(report);
+        Assert.Equal(["ernst", "probe"], report.Course.Exams.Select(e => e.Id)); // file order
+        Assert.True(report.Course.Exams[0].IsReal);
+        Assert.Equal(10, report.Course.Exams[1].MaxItems);
+        var probe = report.Exams.Single(e => e.Id == "probe");
+        // level 1: first (q1, q2) and second (r1) teach a.one, a.two, b.three; 3 non-review items
+        Assert.Equal(("practice", 3, 2, 2, 45), (probe.Kind, probe.Skills, probe.Exercises, probe.Items, probe.TimeLimitMinutes));
+        Assert.Equal([1], probe.Levels);
+        var ernst = report.Exams.Single(e => e.Id == "ernst");
+        Assert.Equal((1, 1), (ernst.Skills, ernst.Exercises)); // only exercises teaching a.one
+        Assert.Equal(["first"], ExamScope.CoveredExercises(report.Course, report.Course.Exams[0]).Select(e => e.Manifest.Id));
+    }
+
+    [Fact]
+    public async Task Exam_with_unknown_level_or_skill_or_kind_is_an_error()
+    {
+        Write("exams/probe.yaml", Exam.Replace("levels: [1]", "levels: [1, 7]").Replace("practice", "mock") + "\nskills: [a.one, z.unknown]\n");
+
+        var report = await Validate();
+
+        Assert.Contains("7", AssertFinding(report, FindingCode.ExamLevelUnknown).Message);
+        Assert.Contains("z.unknown", AssertFinding(report, FindingCode.ExamSkillUnknown).Message);
+        Assert.Contains("mock", AssertFinding(report, FindingCode.ExamKindInvalid).Message);
+        Assert.Equal("exams/probe", report.Findings.First(f => f.Code == FindingCode.ExamLevelUnknown).Location);
+    }
+
+    [Fact]
+    public async Task Exam_without_coverage_title_or_time_limit_is_an_error()
+    {
+        Write("exams/leer.yaml", "id: leer\nkind: real\ntimeLimitMinutes: 0\n");
+        Write("exams/kaputt.yaml", "id: [\n");
+
+        var report = await Validate();
+
+        AssertFinding(report, FindingCode.ExamCoverageEmpty);
+        AssertFinding(report, FindingCode.ExamTitleMissingDefaultLocale);
+        AssertFinding(report, FindingCode.ExamTimeLimitInvalid);
+        Assert.Equal("exams/kaputt.yaml", AssertFinding(report, FindingCode.ExamManifestInvalid).Location);
+        Assert.Equal(["leer"], report.Course.Exams.Select(e => e.Id));
+    }
+
     // ----- baseline ----------------------------------------------------------------------------
 
     [Fact]

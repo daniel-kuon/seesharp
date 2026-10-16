@@ -20,6 +20,9 @@ internal static class Strings
     public static string SummaryDangling => Resources.GetString(nameof(SummaryDangling))!;
     public static string SummaryDeadEnds => Resources.GetString(nameof(SummaryDeadEnds))!;
     public static string ValidateResultLine => Resources.GetString(nameof(ValidateResultLine))!;
+    public static string SummaryExamsHeader => Resources.GetString(nameof(SummaryExamsHeader))!;
+    public static string SummaryNoExams => Resources.GetString(nameof(SummaryNoExams))!;
+    public static string SummaryExamLine => Resources.GetString(nameof(SummaryExamLine))!;
     public static string ResultLine => Resources.GetString(nameof(ResultLine))!;
     public static string TestsLine => Resources.GetString(nameof(TestsLine))!;
     public static string ArtifactsLine => Resources.GetString(nameof(ArtifactsLine))!;

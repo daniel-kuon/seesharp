@@ -30,6 +30,9 @@
   <data name="SummaryDangling" xml:space="preserve"><value>  Required but never taught: {0}</value></data>
   <data name="SummaryDeadEnds" xml:space="preserve"><value>  Dead ends (taught, never required): {0}</value></data>
   <data name="ValidateResultLine" xml:space="preserve"><value>{0} errors, {1} warnings</value></data>
+  <data name="SummaryExamsHeader" xml:space="preserve"><value>Exams:</value></data>
+  <data name="SummaryNoExams" xml:space="preserve"><value>  none (exams/*.yaml)</value></data>
+  <data name="SummaryExamLine" xml:space="preserve"><value>  {0} ({1}): levels {2}, {3} skills from {4} exercises with {5} items, {6} minutes</value></data>
   <data name="ExportReviewUsage" xml:space="preserve"><value>Usage: seesharp export-review [--out &lt;zip file&gt;]</value></data>
   <data name="ExportReviewWritten" xml:space="preserve"><value>Review bundle written: {0} ({1} submissions)</value></data>
 </root>

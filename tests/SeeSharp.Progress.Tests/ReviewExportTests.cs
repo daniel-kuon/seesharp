@@ -11,7 +11,7 @@ public sealed class ReviewExportTests : IDisposable
 
     /// <summary>The sibling content repo; the tests run from <c>tests/x/bin/Debug/net10.0</c>.</summary>
     private static readonly string Course = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "..", "seesharp-course"));
-    private static readonly string Exercise = Path.Combine(Course, "modules", "04-klassen-und-objekte", "01-konstruktoren");
+    private static readonly string Exercise = Path.Combine(Course, "modules", "04-klassen-und-objekte", "04-konstruktoren");
 
     public void Dispose()
     {

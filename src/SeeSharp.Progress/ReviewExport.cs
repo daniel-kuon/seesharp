@@ -14,6 +14,9 @@ namespace SeeSharp.Progress;
 /// &lt;exercise&gt;/&lt;item&gt;/&lt;id&gt;_&lt;timestamp&gt;/source/...   the submitted source (coding)
 /// &lt;exercise&gt;/&lt;item&gt;/&lt;id&gt;_&lt;timestamp&gt;/grading.json
 /// &lt;exercise&gt;/&lt;item&gt;/&lt;id&gt;_&lt;timestamp&gt;/results.trx
+/// exams/&lt;run id&gt;/run.csv                        id, exam, kind, started, deadline, submitted, seed, items
+/// exams/&lt;run id&gt;/attempts.csv                   the run's attempts, same columns as above
+/// exams/&lt;run id&gt;/&lt;exercise&gt;/&lt;item&gt;/...     same layout as above
 /// </code>
 /// </summary>
 public static class ReviewExport
@@ -26,20 +29,38 @@ public static class ReviewExport
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(zipPath))!);
         using var zip = ZipFile.Open(zipPath, ZipArchiveMode.Create);
 
-        AddText(zip, "attempts.csv", Csv(
-            ["id", "exercise", "item", "timestamp", "timeSpentSeconds", "passed", "answer"],
-            attempts.Select(a => new[]
-            {
-                a.Id.ToString(CultureInfo.InvariantCulture), a.ExerciseId, a.ItemId, Iso(a.Timestamp),
-                a.TimeSpent.TotalSeconds.ToString("0", CultureInfo.InvariantCulture), a.Passed ? "true" : "false", a.Answer ?? "",
-            })));
+        AddText(zip, "attempts.csv", AttemptsCsv(attempts));
         AddText(zip, "skills.csv", Csv(
             ["skill", "state", "lastExercised", "exercise"],
             skills.Select(s => new[] { s.SkillId, s.State.ToString().ToLowerInvariant(), Iso(s.LastExercised), s.Cause })));
+        AddAttempts(zip, "", attempts);
 
+        foreach (var run in store.ExamRuns())
+        {
+            var folder = $"exams/{run.Id:D4}/";
+            AddText(zip, folder + "run.csv", Csv(
+                ["id", "exam", "kind", "started", "deadline", "submitted", "seed", "items"],
+                [[run.Id.ToString(CultureInfo.InvariantCulture), run.ExamId, run.Real ? "real" : "practice", Iso(run.StartedAt), Iso(run.Deadline),
+                  run.SubmittedAt is { } s ? Iso(s) : "", run.Seed.ToString(CultureInfo.InvariantCulture), string.Join(" ", run.Items.Select(i => i.ExerciseId + "/" + i.ItemId))]]));
+            var runAttempts = store.ExamAttempts(run.Id);
+            AddText(zip, folder + "attempts.csv", AttemptsCsv(runAttempts));
+            AddAttempts(zip, folder, runAttempts);
+        }
+    }
+
+    private static string AttemptsCsv(IEnumerable<Attempt> attempts) => Csv(
+        ["id", "exercise", "item", "timestamp", "timeSpentSeconds", "passed", "answer"],
+        attempts.Select(a => new[]
+        {
+            a.Id.ToString(CultureInfo.InvariantCulture), a.ExerciseId, a.ItemId, Iso(a.Timestamp),
+            a.TimeSpent.TotalSeconds.ToString("0", CultureInfo.InvariantCulture), a.Passed ? "true" : "false", a.Answer ?? "",
+        }));
+
+    private static void AddAttempts(ZipArchive zip, string prefix, IEnumerable<Attempt> attempts)
+    {
         foreach (var a in attempts)
         {
-            var folder = $"{a.ExerciseId}/{a.ItemId}/{a.Id:D4}_{a.Timestamp.ToUniversalTime():yyyyMMdd-HHmmss}/";
+            var folder = $"{prefix}{a.ExerciseId}/{a.ItemId}/{a.Id:D4}_{a.Timestamp.ToUniversalTime():yyyyMMdd-HHmmss}/";
             if (a.Answer is not null) AddText(zip, folder + "answer.txt", a.Answer);
             if (a.GradingJson is not null) AddText(zip, folder + "grading.json", a.GradingJson);
             if (a.Trx is not null) AddText(zip, folder + "results.trx", a.Trx);

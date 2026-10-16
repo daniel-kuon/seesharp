@@ -17,7 +17,15 @@
     </label>
 }
 <button @onclick="Submit" disabled="@(_selected.Count == 0)">@Strings.Submit</button>
-@if (_passed)
+@if (Run is not null)
+{
+    @* Exam: no right/wrong, no explanation until the run is submitted. *@
+    @if (_submitted)
+    {
+        <span class="ok">@Strings.ExamItemSubmitted</span>
+    }
+}
+else if (_passed)
 {
     <p class="ok">@Strings.AnswerCorrect</p>
 }
@@ -25,7 +33,7 @@ else if (_submitted)
 {
     <p class="bad">@Strings.AnswerWrong</p>
 }
-@if (_submitted && Item.Explanation is not null)
+@if (Run is null && _submitted && Item.Explanation is not null)
 {
     <p class="hint">@CourseState.Text(Item.Explanation)</p>
 }
@@ -36,6 +44,8 @@ else if (_submitted)
     /// <summary>Earlier attempts of this item, oldest first.</summary>
     [Parameter] public IReadOnlyList<Attempt> History { get; set; } = [];
     [Parameter] public EventCallback OnChanged { get; set; }
+    /// <summary>Set inside an exam run: the attempt is linked to the run, nothing is revealed, no skill is credited.</summary>
+    [Parameter] public ExamRun? Run { get; set; }
 
     private readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
     private HashSet<int> _selected = [];
@@ -57,7 +67,8 @@ else if (_submitted)
 
     private async Task Submit()
     {
-        var attempt = State.Store.RecordAttempt(Attempts.MultipleChoice(Exercise.Manifest.Id, Item, _selected, _clock.Elapsed), Exercise.Manifest);
+        var attempt = Attempts.MultipleChoice(Exercise.Manifest.Id, Item, _selected, _clock.Elapsed);
+        attempt = Run is null ? State.Store.RecordAttempt(attempt, Exercise.Manifest) : State.Store.RecordAttempt(attempt with { ExamRunId = Run.Id });
         _submitted = true;
         _passed = attempt.Passed;
         _clock.Restart();

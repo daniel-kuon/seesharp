@@ -104,10 +104,61 @@ public static class ItemTypes
     };
 }
 
+/// <summary><c>exams/&lt;slug&gt;.yaml</c>: an exam is defined by skill coverage (SKILL-MODEL.md §5), not an item list.</summary>
+public sealed class ExamDefinition
+{
+    public const string KindPractice = "practice";
+    public const string KindReal = "real";
+
+    public string Id { get; set; } = "";
+    public Dictionary<string, string> Title { get; set; } = new();
+    /// <summary><c>practice</c> (retake freely, answers revealed) or <c>real</c> (once per id, nothing revealed).</summary>
+    public string Kind { get; set; } = "";
+    public ExamCoverage? Coverage { get; set; }
+    /// <summary>Explicit skill ids, in addition to (or instead of) the covered levels.</summary>
+    public List<string> Skills { get; set; } = [];
+    public int TimeLimitMinutes { get; set; }
+    /// <summary>Cap on picked items; null = as many as coverage needs.</summary>
+    public int? MaxItems { get; set; }
+
+    [YamlDotNet.Serialization.YamlIgnore]
+    public bool IsReal => Kind == KindReal;
+}
+
+public sealed class ExamCoverage
+{
+    /// <summary>Level numbers (module folder prefixes); every skill their exercises teach is covered.</summary>
+    public List<int> Levels { get; set; } = [];
+}
+
+/// <summary>What an exam definition resolves to in a loaded course. The validator and the exam generator share this.</summary>
+public static class ExamScope
+{
+    /// <summary>Exercises in the covered levels plus exercises teaching an explicitly listed skill, in published order. All must be passed before the exam unlocks.</summary>
+    public static IReadOnlyList<Exercise> CoveredExercises(Course course, ExamDefinition exam)
+    {
+        var levels = exam.Coverage?.Levels ?? [];
+        return course.Modules
+            .SelectMany(m => m.Exercises.Where(e => levels.Contains(m.Order) || e.Manifest.Teaches.Any(exam.Skills.Contains)))
+            .ToList();
+    }
+
+    /// <summary>Every skill the covered levels teach, plus the explicit list.</summary>
+    public static IReadOnlySet<string> CoveredSkills(Course course, ExamDefinition exam)
+    {
+        var levels = exam.Coverage?.Levels ?? [];
+        var skills = course.Modules.Where(m => levels.Contains(m.Order))
+            .SelectMany(m => m.Exercises).SelectMany(e => e.Manifest.Teaches).ToHashSet(StringComparer.Ordinal);
+        skills.UnionWith(exam.Skills);
+        return skills;
+    }
+}
+
 // Loaded, path-aware view of a course.
 
 public sealed record Course(string Root, SkillCatalog Skills, IReadOnlyList<Module> Modules)
 {
+    public IReadOnlyList<ExamDefinition> Exams { get; init; } = [];
     public IEnumerable<Exercise> ExercisesInOrder => Modules.SelectMany(m => m.Exercises);
 }
 

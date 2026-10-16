@@ -182,6 +182,41 @@ The summary printed after the findings lists, per level, the exercise count,
 skills taught (and how many for the first time), skills required, then the
 totals, the dangling list and the dead-end list.
 
+## `exams/<slug>.yaml` (task 8)
+
+Optional folder; every `*.yaml` in it is one exam definition. An exam is
+defined by **skill coverage** (SKILL-MODEL.md §5), never by an item list:
+
+```yaml
+id: probepruefung-level-0-4             # ^[a-z0-9][a-z0-9-]*$, unique
+title: { de: "Probeprüfung Level 0–4" }
+kind: practice                           # practice | real
+coverage:
+  levels: [0, 1, 2, 3, 4]                # module folder prefixes
+skills: [oop.constructor-explicit]       # optional, in addition to or instead of levels
+timeLimitMinutes: 60
+maxItems: 20                             # optional cap on the generated run
+```
+
+- **Covered skills** = every skill the exercises of the listed levels teach,
+  plus the explicit `skills` list. **Covered exercises** = the exercises of
+  those levels plus every exercise teaching a listed skill (`ExamScope` in
+  `Model.cs`; the validator and the exam generator share it). The trainee must
+  have passed every covered exercise before the exam unlocks.
+- **Decision — the file name is free, the `id` is the key.** Progress rows
+  reference the id (a real exam is "taken once per id"), so renaming the file
+  is harmless and renaming the id is a new exam.
+- **Decision — review items are never part of an exam.** The supervisor
+  grades them; an exam needs an automatic verdict. Multiple choice, open and
+  coding items are picked alike.
+
+Validator rules (errors): file unparseable (`ExamManifestInvalid`), invalid or
+duplicate id, title missing in `de`, `kind` not `practice`/`real`,
+`timeLimitMinutes` < 1, a level no module has (`ExamLevelUnknown`), a skill not
+in `skills.yaml` (`ExamSkillUnknown`), and coverage that resolves to no skill
+at all (`ExamCoverageEmpty`). `seesharp validate` prints one line per exam:
+kind, levels, covered skills, covered exercises, pickable items, time limit.
+
 ## Known gaps
 
 - With only levels 4.3 and 4.8 authored, the manifests cannot require

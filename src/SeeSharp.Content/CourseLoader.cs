@@ -17,6 +17,7 @@ public static class CourseLoader
     public const string ModulesFolderName = "modules";
     public const string ModuleManifestFileName = "module.yaml";
     public const string ExerciseManifestFileName = "manifest.yaml";
+    public const string ExamsFolderName = "exams";
 
     /// <summary>Published order comes from the folder prefix: <c>04-klassen-und-objekte</c>, <c>01-konstruktoren</c>.</summary>
     public static readonly Regex FolderName = new(@"^(\d{2})-[a-z0-9]+(-[a-z0-9]+)*$", RegexOptions.CultureInvariant);
@@ -56,7 +57,19 @@ public static class CourseLoader
                 continue;
             modules.Add(new Module(dir, int.Parse(match.Groups[1].Value), manifest, LoadExercises(root, dir, findings)));
         }
-        return new Course(root, skills, modules);
+        return new Course(root, skills, modules) { Exams = LoadExams(root, findings) };
+    }
+
+    /// <summary><c>exams/*.yaml</c>, optional; an unreadable file is a finding and skipped.</summary>
+    private static List<ExamDefinition> LoadExams(string root, List<Finding> findings)
+    {
+        var dir = Path.Combine(root, ExamsFolderName);
+        if (!Directory.Exists(dir))
+            return [];
+        return Directory.GetFiles(dir, "*.yaml").OrderBy(Path.GetFileName, StringComparer.Ordinal)
+            .Select(file => Parse<ExamDefinition>(root, file, findings, FindingCode.ExamManifestMissing, FindingCode.ExamManifestInvalid))
+            .OfType<ExamDefinition>()
+            .ToList();
     }
 
     private static List<Exercise> LoadExercises(string root, string moduleDir, List<Finding> findings)

@@ -313,9 +313,68 @@ findings, commit blocked on an injected unknown skill plus a solved starter
 (2 errors), commit `956cf69` after fixing both, push landed on the bare
 remote, pull reported up to date, review bundle rendered next to the rubric.
 
+## Exam mode (task 8)
+
+`AGENT_TASKS.md` task 8 as amended by `SKILL-MODEL.md` §5: exams are defined
+by skill coverage in `exams/<slug>.yaml` (CONTENT-FORMAT.md); the store rules
+and the generator are in PROGRESS-STORE.md, *Exam runs*. The UI is three
+pieces, German default, every string in both resx files:
+
+- `/exams` ("Prüfungen", fourth nav link): one card per definition with kind
+  (Probeprüfung / Prüfung), state badge from `Exams.Status` — *gesperrt*
+  (a covered exercise is not passed; the card says so), *verfügbar* with
+  "Starten", *läuft* with the remaining time and "Zur Prüfung", *abgegeben*
+  with the submission time and, for practice exams, "Ergebnis ansehen" plus
+  "Erneut starten". A real exam that was taken shows only that the result goes
+  to the supervisor through the export bundle. "Starten" calls `Exams.Start`
+  and navigates to the run; the store's refusal (second real run, another run
+  still open) is shown in red. Start buttons are disabled while any run is open.
+- `/exam/{runId}`: **all items at once**, grouped by exercise with the
+  exercise's instructions in a collapsed `<details>` (the exercise page itself
+  is closed during the run, see the gate below), numbered "Aufgabe n von m".
+  The sticky timer at the top ("Verbleibend: mm:ss", red under five minutes)
+  is re-rendered by a `PeriodicTimer` every second; when it reaches zero the
+  page re-reads the run through `ExamRuns()`, whose expiry step has submitted
+  it, and switches to the submitted view. The item cards are the regular
+  `ChoiceQuestion` / `OpenQuestion` / `CodingTask` with a `Run` parameter:
+  the attempt is recorded with `ExamRunId` and no manifest, and the feedback
+  is only "abgegeben" — no right/wrong, no explanation, and for coding items
+  the grading result is stored but **withheld** (`ExamPageTests` asserts the
+  prerendered page contains neither the test names nor the explanation before
+  submission and both after). "Prüfung abgeben" asks once more, then
+  `SubmitExamRun`. Submitted practice run: score line, then per item the
+  chosen vs. correct options with the explanation, the open answer, or the
+  stored grading result (`GradingResultView`, extracted from `CodingTask`).
+  Submitted real run: the submission time and the pointer to the supervisor,
+  nothing else.
+- **The gate** (`MainLayout`): while `State.Store.ActiveRun()` is set, every
+  page outside `exams` / `exam/…` shows "Eine Prüfung läuft …" with a link to
+  the run instead of its body. Without it the exercise page would run the
+  same tests on the same starter and show the output. This is also where the
+  AI tutor (task 9) will read `ExamRun.Active`.
+
+**Decision — all items on one page**, not one after another: the trainee can
+go back to a coding item after a quiz question, the timer stays visible, and
+there is no navigation state to lose on reload. Reloading the run page shows
+the last attempt of every item again (`ExamAttempts(runId)`).
+
+**Decision — no confirm dialog from the browser** for the submit; a second
+button pair in the card does the same without JS.
+
+Verified 2026-10-16 on port 5196 against a scratch copy of the course with
+the two level 0–4 definitions, hosted through `AppHost.BuildAsync` on a
+seeded scratch store (every level 0–4 item passed; the app itself always
+opens the real DB and `LOCALAPPDATA` is not honoured by `GetFolderPath` on
+Windows): the practice exam started with 20 items (`maxItems`), one question
+answered and shown only as "abgegeben", the sticky timer counted down,
+`/modules` showed the gate, submitted, the result page showed the chosen
+option, the explanation and "falsch"; the real exam started, submitted,
+showed no result, and its card offered no second start.
+
 ## Not done, on purpose
 
-- No exam mode.
+- Exams: no per-item navigation, no pause, no supervisor override to reopen a
+  real exam (delete the `exam_run` row with the SQLite CLI if it must happen).
 - Admin: no English fields in the editor, no conflict resolution, no SSH, no
   undo (Git is the undo), no edit of module titles/summaries beyond the files
   in the IDE.

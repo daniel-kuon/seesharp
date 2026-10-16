@@ -1,0 +1,202 @@
+@page "/exam/{RunId:long}"
+@inject CourseState State
+@implements IDisposable
+
+@if (_run is null || State.Course!.Exams.FirstOrDefault(e => e.Id == _run.ExamId) is not { } exam)
+{
+    <PageTitle>@Strings.Title</PageTitle>
+    <p class="bad">@Strings.NotFound</p>
+}
+else
+{
+    var title = CourseState.Text(exam.Title);
+    var now = DateTimeOffset.UtcNow;
+    <PageTitle>@title</PageTitle>
+    <p class="crumbs"><a href="exams">@Strings.ExamsTitle</a> › @title</p>
+    <h1>@title <span class="badge">@(exam.IsReal ? Strings.ExamKindReal : Strings.ExamKindPractice)</span></h1>
+
+    @if (_run.Active)
+    {
+        <div class="timer @(_run.Remaining(now) < TimeSpan.FromMinutes(5) ? "bad" : "")">
+            @string.Format(Strings.ExamRemaining, ExamsPage.Format(_run.Remaining(now)))
+        </div>
+        <p class="hint">@Strings.ExamRunHint</p>
+    }
+    else
+    {
+        <p class="ok"><strong>@string.Format(Strings.ExamSubmittedAt, _run.SubmittedAt!.Value.ToLocalTime().ToString("g"))</strong></p>
+        @if (exam.IsReal)
+        {
+            <p>@Strings.ExamRealNoResults</p>
+        }
+        else
+        {
+            var answered = _run.Items.Count(i => Last(i) is not null);
+            var correct = _run.Items.Count(i => Last(i) is { Passed: true });
+            <p>@string.Format(Strings.ExamScore, correct, _run.Items.Count, answered)</p>
+        }
+    }
+
+    @if (_run.Active || !exam.IsReal)
+    {
+        var number = 0;
+        @foreach (var group in _run.Items.GroupBy(i => i.ExerciseId))
+        {
+            var exercise = State.FindExercise(group.Key);
+            if (exercise is null)
+            {
+                <p class="bad">@group.Key: @Strings.NotFound</p>
+                continue;
+            }
+            var module = State.ModuleOf(exercise);
+            <h2>@string.Format(Strings.LevelTitle, module.Order, CourseState.Text(module.Manifest.Title)) › @CourseState.Text(exercise.Manifest.Title)</h2>
+            <details class="card">
+                <summary>@Strings.ExamInstructions</summary>
+                <article class="md">@CourseState.RenderMarkdown(exercise.Instructions(Locale.Current).Path)</article>
+            </details>
+            @foreach (var itemRef in group)
+            {
+                number++;
+                var item = exercise.Manifest.Items.FirstOrDefault(i => i.Id == itemRef.ItemId);
+                var history = _attempts.Where(a => a.ExerciseId == itemRef.ExerciseId && a.ItemId == itemRef.ItemId).ToList();
+                <section class="item">
+                    <p class="hint">@string.Format(Strings.ExamItemNumber, number, _run.Items.Count)</p>
+                    @if (item is null)
+                    {
+                        <p class="bad">@itemRef.ItemId: @Strings.NotFound</p>
+                    }
+                    else if (_run.Active)
+                    {
+                        @switch (item)
+                        {
+                            case MultipleChoiceItem choice:
+                                <ChoiceQuestion Exercise="exercise" Item="choice" History="history" Run="_run" OnChanged="Refresh" />
+                                break;
+                            case OpenItem open:
+                                <OpenQuestion Exercise="exercise" Item="open" History="history" Run="_run" OnChanged="Refresh" />
+                                break;
+                            case CodingItem coding:
+                                <CodingTask Exercise="exercise" Item="coding" History="history" Run="_run" OnChanged="Refresh" />
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        @* Practice result: the last attempt per item, now with everything revealed. *@
+                        var last = history.LastOrDefault();
+                        @switch (item)
+                        {
+                            case MultipleChoiceItem choice:
+                                <p>@CourseState.Text(choice.Prompt)</p>
+                                <ul class="skills">
+                                    @for (var i = 0; i < choice.Options.Count; i++)
+                                    {
+                                        var chosen = (last?.Answer ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries).Contains(i.ToString());
+                                        <li class="@(choice.Correct.Contains(i) ? "ok" : chosen ? "bad" : "")">@(chosen ? "☑" : "☐") @CourseState.Text(choice.Options[i])</li>
+                                    }
+                                </ul>
+                                @if (choice.Explanation is not null)
+                                {
+                                    <p class="hint">@CourseState.Text(choice.Explanation)</p>
+                                }
+                                break;
+                            case OpenItem open:
+                                <p>@CourseState.Text(open.Prompt)</p>
+                                <pre class="answer">@(last?.Answer ?? "")</pre>
+                                break;
+                            case CodingItem coding:
+                                <p><code>@Path.GetFullPath(Path.Combine(exercise.StarterDirectory, coding.OpenFile))</code></p>
+                                @if (last?.GradingJson is { } json)
+                                {
+                                    <GradingResultView Result="System.Text.Json.JsonSerializer.Deserialize<GradingResult>(json, Attempts.GradingJson)!" Passed="last.Passed" />
+                                }
+                                break;
+                        }
+                        @if (last is null)
+                        {
+                            <p class="bad">@Strings.ExamItemNotAnswered</p>
+                        }
+                        else if (last.Passed)
+                        {
+                            <p class="ok">@Strings.ExamItemCorrect</p>
+                        }
+                        else
+                        {
+                            <p class="bad">@Strings.ExamItemWrong</p>
+                        }
+                    }
+                </section>
+            }
+        }
+    }
+
+    @if (_run.Active)
+    {
+        <div class="card">
+            <p>@string.Format(Strings.ExamAnsweredCount, _run.Items.Count(i => Last(i) is not null), _run.Items.Count)</p>
+            @if (!_confirm)
+            {
+                <button @onclick="() => _confirm = true">@Strings.ExamSubmit</button>
+            }
+            else
+            {
+                <p><strong>@Strings.ExamConfirmSubmit</strong></p>
+                <button @onclick="Submit">@Strings.ExamSubmitConfirmed</button>
+                <button @onclick="() => _confirm = false">@Strings.ExamKeepWorking</button>
+            }
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public long RunId { get; set; }
+
+    private ExamRun? _run;
+    private IReadOnlyList<Attempt> _attempts = [];
+    private bool _confirm;
+    private readonly PeriodicTimer _ticker = new(TimeSpan.FromSeconds(1));
+
+    protected override void OnParametersSet() => Refresh();
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+            _ = TickAsync();
+    }
+
+    /// <summary>Re-renders every second; when the deadline passes, the store's expiry turns the run into a submitted one.</summary>
+    private async Task TickAsync()
+    {
+        try
+        {
+            while (await _ticker.WaitForNextTickAsync())
+            {
+                if (_run is { Active: true } && _run.Remaining(DateTimeOffset.UtcNow) == TimeSpan.Zero)
+                    Refresh();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // the page is gone
+        }
+    }
+
+    /// <summary>Re-reads the run (through <see cref="ProgressStore.ExamRuns"/>, so an expired deadline submits it) and its attempts.</summary>
+    private void Refresh()
+    {
+        _run = State.Store.ExamRuns().FirstOrDefault(r => r.Id == RunId);
+        _attempts = _run is null ? [] : State.Store.ExamAttempts(_run.Id);
+    }
+
+    private Attempt? Last(ExamItemRef item) => _attempts.LastOrDefault(a => a.ExerciseId == item.ExerciseId && a.ItemId == item.ItemId);
+
+    private void Submit()
+    {
+        State.Store.SubmitExamRun(RunId);
+        _confirm = false;
+        Refresh();
+    }
+
+    public void Dispose() => _ticker.Dispose();
+}

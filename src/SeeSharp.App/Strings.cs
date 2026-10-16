@@ -2,6 +2,7 @@ using System.Resources;
 using SeeSharp.Core;
 using SeeSharp.Grading;
 using SeeSharp.Ide;
+using SeeSharp.Progress;
 
 namespace SeeSharp.App;
 
@@ -44,6 +45,14 @@ internal static class Strings
         IdeKind.Rider => OpenInRider,
         IdeKind.VsCode => OpenInVsCode,
         _ => OpenInVisualStudio,
+    };
+
+    public static string ForExamState(ExamState state) => state switch
+    {
+        ExamState.Locked => ExamStateLocked,
+        ExamState.Running => ExamStateRunning,
+        ExamState.Submitted => ExamStateSubmitted,
+        _ => ExamStateAvailable,
     };
 
     /// <summary>Language names stay in their own language, so the switcher reads the same whichever is active.</summary>
@@ -245,4 +254,42 @@ internal static class Strings
     public static string ColumnState => Resources.GetString(nameof(ColumnState))!;
     public static string ColumnLastExercised => Resources.GetString(nameof(ColumnLastExercised))!;
     public static string ColumnExercise => Resources.GetString(nameof(ColumnExercise))!;
+    public static string NavExams => Resources.GetString(nameof(NavExams))!;
+    public static string ExamsTitle => Resources.GetString(nameof(ExamsTitle))!;
+    public static string NoExams => Resources.GetString(nameof(NoExams))!;
+    public static string ExamKindPractice => Resources.GetString(nameof(ExamKindPractice))!;
+    public static string ExamKindReal => Resources.GetString(nameof(ExamKindReal))!;
+    public static string ExamStateLocked => Resources.GetString(nameof(ExamStateLocked))!;
+    public static string ExamStateAvailable => Resources.GetString(nameof(ExamStateAvailable))!;
+    public static string ExamStateRunning => Resources.GetString(nameof(ExamStateRunning))!;
+    public static string ExamStateSubmitted => Resources.GetString(nameof(ExamStateSubmitted))!;
+    public static string ExamCoversLevels => Resources.GetString(nameof(ExamCoversLevels))!;
+    public static string ExamCoversSkills => Resources.GetString(nameof(ExamCoversSkills))!;
+    public static string ExamTimeLimit => Resources.GetString(nameof(ExamTimeLimit))!;
+    public static string ExamMaxItems => Resources.GetString(nameof(ExamMaxItems))!;
+    public static string ExamLockedHint => Resources.GetString(nameof(ExamLockedHint))!;
+    public static string ExamPracticeStartHint => Resources.GetString(nameof(ExamPracticeStartHint))!;
+    public static string ExamRealStartHint => Resources.GetString(nameof(ExamRealStartHint))!;
+    public static string ExamStart => Resources.GetString(nameof(ExamStart))!;
+    public static string ExamResume => Resources.GetString(nameof(ExamResume))!;
+    public static string ExamRetake => Resources.GetString(nameof(ExamRetake))!;
+    public static string ExamShowResult => Resources.GetString(nameof(ExamShowResult))!;
+    public static string ExamStartError => Resources.GetString(nameof(ExamStartError))!;
+    public static string ExamRemaining => Resources.GetString(nameof(ExamRemaining))!;
+    public static string ExamRunHint => Resources.GetString(nameof(ExamRunHint))!;
+    public static string ExamSubmittedAt => Resources.GetString(nameof(ExamSubmittedAt))!;
+    public static string ExamRealNoResults => Resources.GetString(nameof(ExamRealNoResults))!;
+    public static string ExamScore => Resources.GetString(nameof(ExamScore))!;
+    public static string ExamInstructions => Resources.GetString(nameof(ExamInstructions))!;
+    public static string ExamItemNumber => Resources.GetString(nameof(ExamItemNumber))!;
+    public static string ExamItemSubmitted => Resources.GetString(nameof(ExamItemSubmitted))!;
+    public static string ExamItemNotAnswered => Resources.GetString(nameof(ExamItemNotAnswered))!;
+    public static string ExamItemCorrect => Resources.GetString(nameof(ExamItemCorrect))!;
+    public static string ExamItemWrong => Resources.GetString(nameof(ExamItemWrong))!;
+    public static string ExamAnsweredCount => Resources.GetString(nameof(ExamAnsweredCount))!;
+    public static string ExamSubmit => Resources.GetString(nameof(ExamSubmit))!;
+    public static string ExamConfirmSubmit => Resources.GetString(nameof(ExamConfirmSubmit))!;
+    public static string ExamSubmitConfirmed => Resources.GetString(nameof(ExamSubmitConfirmed))!;
+    public static string ExamKeepWorking => Resources.GetString(nameof(ExamKeepWorking))!;
+    public static string ExamActiveGate => Resources.GetString(nameof(ExamActiveGate))!;
 }

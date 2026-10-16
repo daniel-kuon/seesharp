@@ -63,6 +63,17 @@ public enum FindingCode
     SkillCycle,
     SkillTaughtTooOften,
     SkillDeadEnd,
+
+    ExamManifestMissing,
+    ExamManifestInvalid,
+    ExamIdInvalid,
+    ExamIdDuplicate,
+    ExamTitleMissingDefaultLocale,
+    ExamKindInvalid,
+    ExamTimeLimitInvalid,
+    ExamLevelUnknown,
+    ExamSkillUnknown,
+    ExamCoverageEmpty,
 }
 
 /// <param name="Location">Path relative to the course root, optionally with <c>#id</c>.</param>

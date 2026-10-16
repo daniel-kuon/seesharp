@@ -16,8 +16,12 @@ public sealed record SkillGraphSummary(
     IReadOnlyList<string> Dangling,
     IReadOnlyList<string> DeadEnds);
 
+/// <summary>What an exam definition resolves to, for <c>seesharp validate</c>.</summary>
+public sealed record ExamSummary(string Id, string Kind, IReadOnlyList<int> Levels, int Skills, int Exercises, int Items, int TimeLimitMinutes);
+
 public sealed record ValidationReport(IReadOnlyList<Finding> Findings, SkillGraphSummary Summary, Course Course)
 {
+    public IReadOnlyList<ExamSummary> Exams { get; init; } = [];
     public bool HasErrors => Findings.Any(f => f.Severity == Severity.Error);
 }
 
@@ -41,10 +45,11 @@ public static class CourseValidator
         var summary = catalogLoaded
             ? ValidateSkillGraph(course, aliases, findings)
             : new SkillGraphSummary(0, 0, [], [], []);
+        var exams = ValidateExams(course, aliases, findings);
         if (options.RunStarterCheck)
             await CheckStartersAsync(course, options.StarterTimeout, findings, cancellationToken);
 
-        return new ValidationReport(findings, summary, course);
+        return new ValidationReport(findings, summary, course) { Exams = exams };
     }
 
     private static void Add(List<Finding> findings, Severity severity, FindingCode code, string location, params object[] args) =>
@@ -369,6 +374,40 @@ public static class CourseValidator
             stack.RemoveAt(stack.Count - 1);
             state[node] = 2;
         }
+    }
+
+    // ----- exams -------------------------------------------------------------------------------
+
+    private static List<ExamSummary> ValidateExams(Course course, Dictionary<string, string> resolve, List<Finding> findings)
+    {
+        var ids = new HashSet<string>(StringComparer.Ordinal);
+        var summaries = new List<ExamSummary>();
+        foreach (var exam in course.Exams)
+        {
+            var location = $"{CourseLoader.ExamsFolderName}/{exam.Id}";
+            if (!SlugId.IsMatch(exam.Id))
+                Add(findings, Severity.Error, FindingCode.ExamIdInvalid, location, exam.Id);
+            else if (!ids.Add(exam.Id))
+                Add(findings, Severity.Error, FindingCode.ExamIdDuplicate, location, exam.Id);
+            if (!HasDefaultLocale(exam.Title))
+                Add(findings, Severity.Error, FindingCode.ExamTitleMissingDefaultLocale, location, CourseLoader.DefaultLocale);
+            if (exam.Kind is not (ExamDefinition.KindPractice or ExamDefinition.KindReal))
+                Add(findings, Severity.Error, FindingCode.ExamKindInvalid, location, exam.Kind);
+            if (exam.TimeLimitMinutes < 1)
+                Add(findings, Severity.Error, FindingCode.ExamTimeLimitInvalid, location);
+            var levels = exam.Coverage?.Levels ?? [];
+            foreach (var level in levels.Where(l => course.Modules.All(m => m.Order != l)))
+                Add(findings, Severity.Error, FindingCode.ExamLevelUnknown, location, level);
+            foreach (var skill in exam.Skills.Where(s => !resolve.ContainsKey(s)))
+                Add(findings, Severity.Error, FindingCode.ExamSkillUnknown, location, skill);
+            var skills = ExamScope.CoveredSkills(course, exam);
+            var exercises = ExamScope.CoveredExercises(course, exam);
+            if (skills.Count == 0)
+                Add(findings, Severity.Error, FindingCode.ExamCoverageEmpty, location);
+            summaries.Add(new ExamSummary(exam.Id, exam.Kind, levels, skills.Count, exercises.Count,
+                exercises.Sum(e => e.Manifest.Items.Count(i => i is not ReviewItem)), exam.TimeLimitMinutes));
+        }
+        return summaries;
     }
 
     // ----- starter check -----------------------------------------------------------------------

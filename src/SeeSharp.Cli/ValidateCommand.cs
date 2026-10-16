@@ -43,6 +43,13 @@ internal static class ValidateCommand
         Console.WriteLine(Strings.SummaryDangling, summary.Dangling.Count == 0 ? "–" : string.Join(", ", summary.Dangling));
         Console.WriteLine(Strings.SummaryDeadEnds, summary.DeadEnds.Count == 0 ? "–" : string.Join(", ", summary.DeadEnds));
         Console.WriteLine();
+        Console.WriteLine(Strings.SummaryExamsHeader);
+        if (report.Exams.Count == 0)
+            Console.WriteLine(Strings.SummaryNoExams);
+        foreach (var exam in report.Exams)
+            Console.WriteLine(Strings.SummaryExamLine, exam.Id, exam.Kind, exam.Levels.Count == 0 ? "–" : string.Join(", ", exam.Levels),
+                exam.Skills, exam.Exercises, exam.Items, exam.TimeLimitMinutes);
+        Console.WriteLine();
         Console.WriteLine(Strings.ValidateResultLine,
             report.Findings.Count(f => f.Severity == Severity.Error),
             report.Findings.Count(f => f.Severity == Severity.Warning));

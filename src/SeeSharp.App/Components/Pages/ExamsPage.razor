@@ -1,0 +1,92 @@
+@page "/exams"
+@inject CourseState State
+@inject NavigationManager Nav
+
+<PageTitle>@Strings.ExamsTitle</PageTitle>
+<h1>@Strings.ExamsTitle</h1>
+
+@if (State.Course!.Exams.Count == 0)
+{
+    <p>@Strings.NoExams</p>
+}
+@{
+    var progress = State.Progress();
+    var now = DateTimeOffset.UtcNow;
+    var statuses = State.Course.Exams.Select(e => Exams.Status(State.Store, State.Course, progress, e, now)).ToList();
+    var anyRunning = statuses.Any(s => s.State == ExamState.Running);
+}
+@if (_error is not null)
+{
+    <p class="bad">@string.Format(Strings.ExamStartError, _error)</p>
+}
+@foreach (var s in statuses)
+{
+    var exam = s.Exam;
+    <section class="card @(s.State == ExamState.Locked ? "locked" : "")">
+        <h2>
+            @CourseState.Text(exam.Title)
+            <span class="badge">@(exam.IsReal ? Strings.ExamKindReal : Strings.ExamKindPractice)</span>
+            <span class="badge @(s.State == ExamState.Running ? "ok" : s.State == ExamState.Locked ? "locked" : "")">@Strings.ForExamState(s.State)</span>
+        </h2>
+        <p class="hint">
+            @if (exam.Coverage is { Levels.Count: > 0 } coverage)
+            {
+                @string.Format(Strings.ExamCoversLevels, string.Join(", ", coverage.Levels.Select(l => l.ToString("00"))))
+            }
+            @if (exam.Skills.Count > 0)
+            {
+                @string.Format(Strings.ExamCoversSkills, exam.Skills.Count)
+            }
+            · @string.Format(Strings.ExamTimeLimit, exam.TimeLimitMinutes)
+            @if (exam.MaxItems is { } max)
+            {
+                <text>· @string.Format(Strings.ExamMaxItems, max)</text>
+            }
+        </p>
+        @switch (s.State)
+        {
+            case ExamState.Locked:
+                <p>@Strings.ExamLockedHint</p>
+                break;
+            case ExamState.Running:
+                <p><strong>@string.Format(Strings.ExamRemaining, Format(s.Run!.Remaining(now)))</strong></p>
+                <a class="button" href="exam/@s.Run.Id">@Strings.ExamResume</a>
+                break;
+            case ExamState.Submitted:
+                <p>@string.Format(Strings.ExamSubmittedAt, s.Run!.SubmittedAt!.Value.ToLocalTime().ToString("g"))</p>
+                @if (exam.IsReal)
+                {
+                    <p>@Strings.ExamRealNoResults</p>
+                }
+                else
+                {
+                    <a href="exam/@s.Run.Id">@Strings.ExamShowResult</a>
+                    <button @onclick="() => Start(exam)" disabled="@anyRunning">@Strings.ExamRetake</button>
+                }
+                break;
+            default:
+                <p>@(exam.IsReal ? Strings.ExamRealStartHint : Strings.ExamPracticeStartHint)</p>
+                <button @onclick="() => Start(exam)" disabled="@anyRunning">@Strings.ExamStart</button>
+                break;
+        }
+    </section>
+}
+
+@code {
+    private string? _error;
+
+    private void Start(ExamDefinition exam)
+    {
+        try
+        {
+            var run = Exams.Start(State.Store, State.Course!, exam);
+            Nav.NavigateTo($"exam/{run.Id}");
+        }
+        catch (InvalidOperationException e)
+        {
+            _error = e.Message;
+        }
+    }
+
+    public static string Format(TimeSpan remaining) => remaining.ToString(remaining.TotalHours >= 1 ? @"h\:mm\:ss" : @"mm\:ss");
+}

@@ -1,0 +1,48 @@
+@* Outcome, build errors or the per-test table of one grading run. Shared by the exercise page and the practice exam result. *@
+<div class="results">
+    <p class="@(Passed ? "ok" : "bad")">
+        <strong>@Strings.ForOutcome(Result.Outcome)</strong> (@string.Format(Strings.DurationSeconds, Result.Duration.TotalSeconds))
+    </p>
+    @if (Result.Outcome == GradingOutcome.BuildFailed)
+    {
+        @if (Result.BuildErrors.Count > 0)
+        {
+            <ul class="errors">
+                @foreach (var error in Result.BuildErrors)
+                {
+                    <li>@error</li>
+                }
+            </ul>
+        }
+        else
+        {
+            <pre>@Result.Output</pre>
+        }
+    }
+    else if (Result.Tests.Count > 0)
+    {
+        <p>@string.Format(Strings.TestsHeader, Result.Passed, Result.Failed)</p>
+        <table>
+            <thead><tr><th>@Strings.ColumnTest</th><th>@Strings.ColumnOutcome</th><th>@Strings.ColumnMessage</th></tr></thead>
+            <tbody>
+                @foreach (var test in Result.Tests)
+                {
+                    <tr>
+                        <td>@test.Name</td>
+                        <td class="@(test.Outcome == TestOutcome.Passed ? "ok" : test.Outcome == TestOutcome.Failed ? "bad" : "")">@Strings.ForTest(test.Outcome)</td>
+                        <td>@if (test.Message is not null) { <pre>@test.Message</pre> }</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <pre>@Result.Output</pre>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public GradingResult Result { get; set; } = null!;
+    [Parameter] public bool Passed { get; set; }
+}

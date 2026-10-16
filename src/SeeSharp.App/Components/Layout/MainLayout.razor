@@ -6,6 +6,7 @@
     <span class="brand">@Strings.Title</span>
     <NavLink href="" Match="NavLinkMatch.All">@Strings.NavHome</NavLink>
     <NavLink href="modules">@Strings.NavModules</NavLink>
+    <NavLink href="exams">@Strings.NavExams</NavLink>
     <NavLink href="settings">@Strings.NavSettings</NavLink>
     @if (State.Admin)
     {
@@ -34,6 +35,11 @@
     @if (State.Course is null && !Nav.ToBaseRelativePath(Nav.Uri).StartsWith("settings", StringComparison.Ordinal))
     {
         <p class="bad">@Strings.NoCourse <a href="settings">@Strings.GoToSettings</a></p>
+    }
+    else if (State.Course is not null && !Nav.ToBaseRelativePath(Nav.Uri).StartsWith("exam", StringComparison.Ordinal) && State.Store.ActiveRun() is { } run)
+    {
+        @* Exam mode: while a run is open the exercise pages would show test output for the same starters, so everything else is closed. *@
+        <p class="bad">@Strings.ExamActiveGate <a href="exam/@run.Id">@Strings.ExamResume</a></p>
     }
     else
     {

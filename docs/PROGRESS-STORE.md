@@ -26,8 +26,9 @@ time (tested). Never edit a published script.
 
 ```
 attempt          id, exercise_id, item_id, timestamp (ISO 8601 UTC), time_spent_ms,
-                 passed, answer, source (zip BLOB), grading_json, trx
+                 passed, answer, source (zip BLOB), grading_json, trx, exam_run_id (migration 2)
 skill_transition id, skill_id, state (1 introduced, 2 practiced, 3 applied), timestamp, cause
+exam_run         id, exam_id, real, started, deadline, seed, items ("exercise/item" per line), submitted
 ```
 
 Attempts are never updated or deleted. There is no `exercise passed` column,
@@ -107,9 +108,57 @@ store.PassedItems(exerciseId)
 store.HeldSkills()
 store.SkillLedger()
 ReviewExport.Write(store, zipPath);
+
+// Exam mode (task 8); see "Exam runs" below
+Exams.Status(store, course, progress, examDefinition)   // Locked / Available / Running / Submitted + the run
+Exams.Start(store, course, examDefinition)              // generates the items, opens the run
+store.ActiveRun() / store.ExamRuns(examId?) / store.ExamRun(id)
+store.RecordAttempt(attempt with { ExamRunId = run.Id })   // no manifest: exam attempts credit no skill
+store.ExamAttempts(run.Id)
+store.SubmitExamRun(run.Id)
 ```
 
 `ProgressStore` is not an interface; the UI can hold the concrete type.
+
+## Exam runs (task 8)
+
+`exam_run` is one sitting of one exam definition (`exams/<slug>.yaml`,
+CONTENT-FORMAT.md). `ProgressStore.StartExamRun` writes the row — including
+the **deadline** — before the UI shows a single item, so closing the app
+neither resets nor extends the timer. `ExamRuns`/`ActiveRun` first run
+`UPDATE exam_run SET submitted = deadline WHERE submitted IS NULL AND deadline <= now`,
+which is the whole auto-submit: the timer expiring submits on the next request,
+no background job. `RecordAttempt` refuses an attempt whose run is no longer
+active, so a late answer cannot slip in.
+
+Rules enforced by the store, not the UI: at most one open run at a time; a
+`real` exam gets one run per exam id, ever (a second `StartExamRun` throws,
+submitted or not); practice exams can be started again once the previous run
+is submitted.
+
+**Decision — exam attempts live in `attempt` with `exam_run_id` set** and are
+invisible to everything regular: `Attempts()`, `PassedItems`, `Query` and the
+skill ledger only see rows with `exam_run_id IS NULL`, and exam attempts are
+recorded without a manifest, so an exam never credits a skill or passes an
+exercise. `ExamAttempts(runId)` reads them.
+
+**Decision — attempts are persisted as they are made, not at submission.**
+The brief's "written as one unit" is the run row plus its attempts linked by
+`exam_run_id` and exported together under `exams/<run id>/`; writing them only
+at submit would lose every answer when the app closes mid-exam, which is the
+case the deadline rule exists for.
+
+**Generation** (`Exams.Start` → `ExamGenerator.Pick` in Core, pure, tested):
+candidates are every non-review item of the covered exercises, each carrying
+the covered skills its exercise `teaches`. Greedy set cover: each pick is the
+candidate hitting the most still-uncovered skills that are `practiced` but
+never `applied`, then the most uncovered skills overall; ties go by a shuffle
+from the run's seed (`Random.Shared.Next()` at start, stored in the row), so
+the same seed reproduces the exam. It stops when every covered skill is hit or
+`maxItems` is reached. Since all items of one exercise carry the same skills,
+an exercise contributes one item unless the cap or coverage needs more — a
+seven-question quiz yields one question. `Items` are stored on the run so a
+reload shows the same exam even after the course changed.
 
 ## Review bundle (`seesharp export-review [--out <zip>]`)
 
@@ -122,7 +171,14 @@ skills.csv                                      skill, state, lastExercised, exe
 <exercise>/<item>/<id>_<yyyyMMdd-HHmmss>/source/...   the submitted source tree
 <exercise>/<item>/<id>_<yyyyMMdd-HHmmss>/grading.json
 <exercise>/<item>/<id>_<yyyyMMdd-HHmmss>/results.trx
+exams/<run id>/run.csv                          id, exam, kind, started, deadline, submitted, seed, items
+exams/<run id>/attempts.csv                     the run's attempts, same columns as the top-level file
+exams/<run id>/<exercise>/<item>/<id>_<ts>/...  same layout as above
 ```
+
+Exam attempts never appear in the top-level `attempts.csv`; the supervisor
+reads a real exam's result from `exams/<run id>/` (the trainee's app shows
+nothing).
 
 **Decision — sources are unpacked into the bundle**, not nested as zips, so
 the supervisor can open `Bruch.cs` directly. Every attempt is exported, not
@@ -134,6 +190,11 @@ only the last one per item; the CSV and folder names carry the timestamps.
 - `tests/SeeSharp.Progress.Tests/ProgressStoreTests.cs` — temp DB; migrate
   twice, delete and recreate, column round trip, ledger transitions, summary
   read, `Query` lock state.
+- `tests/SeeSharp.Progress.Tests/ExamRunTests.cs` — deadline survives a reopen,
+  expiry submits and refuses late attempts, real exam once / one open run,
+  exam attempts outside progress, `Exams.Status` lock state, the bundle's
+  `exams/` folder. `tests/SeeSharp.Core.Tests/ExamGeneratorTests.cs` — full
+  coverage, never-applied first, same seed same exam, skills nobody teaches.
 - `tests/SeeSharp.Progress.Tests/ReviewExportTests.cs` — CSV escaping and the
   skill matrix; and the one end-to-end run: `GradingRunner` on
   `../seesharp-course/modules/04-klassen-und-objekte/01-konstruktoren` with its
@@ -150,5 +211,4 @@ always runs.
 - No tamper protection (task 4 constraint).
 - No per-attempt transaction with the ledger, no WAL, no vacuum.
 - No `--since` or per-exercise filter on the export; the bundle is small.
-- Exam attempts (task 8) and tutor logs (task 9) will be new tables, new
-  migration scripts.
+- Tutor logs (task 9) will be a new table, a new migration script.

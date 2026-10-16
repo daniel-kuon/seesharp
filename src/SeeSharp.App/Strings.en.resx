@@ -200,4 +200,42 @@
   <data name="ColumnState" xml:space="preserve"><value>State</value></data>
   <data name="ColumnLastExercised" xml:space="preserve"><value>Last exercised</value></data>
   <data name="ColumnExercise" xml:space="preserve"><value>Exercise</value></data>
+  <data name="NavExams" xml:space="preserve"><value>Exams</value></data>
+  <data name="ExamsTitle" xml:space="preserve"><value>Exams</value></data>
+  <data name="NoExams" xml:space="preserve"><value>The course contains no exams (exams/*.yaml).</value></data>
+  <data name="ExamKindPractice" xml:space="preserve"><value>Practice exam</value></data>
+  <data name="ExamKindReal" xml:space="preserve"><value>Real exam</value></data>
+  <data name="ExamStateLocked" xml:space="preserve"><value>locked</value></data>
+  <data name="ExamStateAvailable" xml:space="preserve"><value>available</value></data>
+  <data name="ExamStateRunning" xml:space="preserve"><value>running</value></data>
+  <data name="ExamStateSubmitted" xml:space="preserve"><value>submitted</value></data>
+  <data name="ExamCoversLevels" xml:space="preserve"><value>Levels {0}</value></data>
+  <data name="ExamCoversSkills" xml:space="preserve"><value>+ {0} individual skills</value></data>
+  <data name="ExamTimeLimit" xml:space="preserve"><value>{0} minutes</value></data>
+  <data name="ExamMaxItems" xml:space="preserve"><value>at most {0} items</value></data>
+  <data name="ExamLockedHint" xml:space="preserve"><value>Every exercise of the covered levels must be passed first.</value></data>
+  <data name="ExamPracticeStartHint" xml:space="preserve"><value>Can be retaken freely; answers and test results are shown after submission.</value></data>
+  <data name="ExamRealStartHint" xml:space="preserve"><value>One attempt only. Nothing is shown after submission; the result reaches your supervisor through the review bundle. The clock keeps running from the start, even when SeeSharp is closed.</value></data>
+  <data name="ExamStart" xml:space="preserve"><value>Start</value></data>
+  <data name="ExamResume" xml:space="preserve"><value>Go to the exam</value></data>
+  <data name="ExamRetake" xml:space="preserve"><value>Start again</value></data>
+  <data name="ExamShowResult" xml:space="preserve"><value>Show result</value></data>
+  <data name="ExamStartError" xml:space="preserve"><value>The exam cannot be started: {0}</value></data>
+  <data name="ExamRemaining" xml:space="preserve"><value>Remaining: {0}</value></data>
+  <data name="ExamRunHint" xml:space="preserve"><value>During the exam there is no feedback on answers; tests do run, but their result is shown only after submission. When the time is up, the exam counts as submitted.</value></data>
+  <data name="ExamSubmittedAt" xml:space="preserve"><value>Submitted on {0}</value></data>
+  <data name="ExamRealNoResults" xml:space="preserve"><value>The result is not shown here; it reaches your supervisor through the review bundle (seesharp export-review).</value></data>
+  <data name="ExamScore" xml:space="preserve"><value>{0} of {1} items correct ({2} answered)</value></data>
+  <data name="ExamInstructions" xml:space="preserve"><value>Instructions</value></data>
+  <data name="ExamItemNumber" xml:space="preserve"><value>Item {0} of {1}</value></data>
+  <data name="ExamItemSubmitted" xml:space="preserve"><value>submitted</value></data>
+  <data name="ExamItemNotAnswered" xml:space="preserve"><value>not answered</value></data>
+  <data name="ExamItemCorrect" xml:space="preserve"><value>correct</value></data>
+  <data name="ExamItemWrong" xml:space="preserve"><value>wrong</value></data>
+  <data name="ExamAnsweredCount" xml:space="preserve"><value>{0} of {1} items submitted</value></data>
+  <data name="ExamSubmit" xml:space="preserve"><value>Submit exam</value></data>
+  <data name="ExamConfirmSubmit" xml:space="preserve"><value>Really submit? No changes are possible afterwards.</value></data>
+  <data name="ExamSubmitConfirmed" xml:space="preserve"><value>Yes, submit</value></data>
+  <data name="ExamKeepWorking" xml:space="preserve"><value>Keep working</value></data>
+  <data name="ExamActiveGate" xml:space="preserve"><value>An exam is running; the other pages are closed until it is submitted.</value></data>
 </root>
