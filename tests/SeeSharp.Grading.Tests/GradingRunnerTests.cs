@@ -23,6 +23,33 @@ public class GradingRunnerTests
     }
 
     [Fact]
+    public async Task Locked_ide_cache_in_the_source_is_skipped()
+    {
+        // Rider keeps _ReSharper.Caches\...\~Mutex open while the project is loaded; copying it must not fail grading.
+        var source = Path.Combine(Path.GetTempPath(), "seesharp-locked-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            foreach (var file in Directory.EnumerateFiles(Path.Combine(Fixture, "source-pass"), "*", SearchOption.AllDirectories))
+            {
+                var target = Path.Combine(source, Path.GetRelativePath(Path.Combine(Fixture, "source-pass"), file));
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                File.Copy(file, target);
+            }
+            var cache = Path.Combine(source, "Rechner (C# Übung, Teil 1)", "_ReSharper.Caches", "Rider263.Rechner.00");
+            Directory.CreateDirectory(cache);
+            using var mutex = new FileStream(Path.Combine(cache, "~Mutex"), FileMode.Create, FileAccess.ReadWrite, FileShare.None);
+
+            var result = await new GradingRunner().RunAsync(Exercise, source);
+
+            Assert.Equal(GradingOutcome.Passed, result.Outcome);
+        }
+        finally
+        {
+            try { Directory.Delete(source, recursive: true); } catch (IOException) { }
+        }
+    }
+
+    [Fact]
     public async Task Failing_tests_surface_assertion_messages()
     {
         var result = await Grade("source-fail");

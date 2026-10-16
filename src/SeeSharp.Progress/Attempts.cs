@@ -54,7 +54,7 @@ public static class Attempts
             {
                 var relative = System.IO.Path.GetRelativePath(sourceDir, file);
                 var segments = relative.Split(System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar);
-                if (segments.Any(s => s.Equals("bin", StringComparison.OrdinalIgnoreCase) || s.Equals("obj", StringComparison.OrdinalIgnoreCase)))
+                if (GradingRunner.IsArtifact(segments))
                     continue;
                 zip.CreateEntryFromFile(file, relative.Replace('\\', '/'));
             }

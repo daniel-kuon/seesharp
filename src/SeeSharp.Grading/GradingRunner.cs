@@ -27,6 +27,15 @@ public sealed class GradingRunner
         "Directory.Packages.props", "nuget.config", "dotnet.config",
     };
 
+    /// <summary>Build output and IDE caches: never part of a submission. Rider's <c>_ReSharper.Caches</c> even holds a locked mutex file while the project is open.</summary>
+    private static readonly HashSet<string> ArtifactDirectories = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "bin", "obj", ".vs", ".idea", "_ReSharper.Caches", ".git",
+    };
+
+    /// <summary>True when any directory on the relative path is build output or an IDE cache.</summary>
+    public static bool IsArtifact(string[] relativeSegments) => relativeSegments[..^1].Any(ArtifactDirectories.Contains);
+
     private static readonly XNamespace Trx = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010";
 
     public async Task<GradingResult> RunAsync(
@@ -85,7 +94,7 @@ public sealed class GradingRunner
         {
             var relative = Path.GetRelativePath(from, file);
             var segments = relative.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            if (segments.Any(s => s.Equals("bin", StringComparison.OrdinalIgnoreCase) || s.Equals("obj", StringComparison.OrdinalIgnoreCase)))
+            if (IsArtifact(segments))
                 continue;
             if (!trusted && UntrustedConfigFiles.Contains(segments[^1]))
                 continue;
