@@ -70,7 +70,9 @@ project; that's the VM's state, not SeeSharp's.
 
 - Rider "Start Failed … still running and does not respond": a running Rider
   that doesn't answer its activation socket. Close it; see `docs/UI.md`.
-- `seesharp validate` prints 89 warnings on the course: dead-end skills in
-  the last authored level and two starters that intentionally don't compile.
+- `seesharp validate` prints 217 warnings on the course: dead-end skills in
+  the last authored level, two starters that intentionally don't compile, and
+  128 missing English translations (expected once the level-4 proof files
+  exist — either translate or delete `*.en.md` to silence them).
 - Admin Git page supports HTTPS remotes only (LibGit2Sharp has no SSH).
 - The exam/tutor flags in the UI are only as far as Task 8 got (below).
