@@ -93,7 +93,26 @@ else
         }
         @if (exerciseProgress.Passed)
         {
-            <p class="ok">@Strings.ExercisePassed</p>
+            // Same rule as the dashboard: first unlocked, unpassed mandatory exercise; optional ones of this module as a side offer.
+            var next = progress.Modules.SelectMany(m => m.Mandatory).FirstOrDefault(e => e.Unlocked && !e.Passed);
+            var moreOptional = progress.Modules.First(m => m.Module == module).Optional
+                .FirstOrDefault(e => e.Unlocked && !e.Passed && e.Exercise != exercise);
+            <div class="card">
+                <p class="ok">@Strings.ExercisePassed</p>
+                @if (next is not null)
+                {
+                    <p>@Strings.ContinueWith
+                        <a class="button" href="exercise/@next.Exercise.Manifest.Id">@ExerciseLabel(next.Exercise)</a></p>
+                }
+                else
+                {
+                    <p>@Strings.NothingNext</p>
+                }
+                @if (moreOptional is not null)
+                {
+                    <p class="hint">@Strings.OrOptional <a href="exercise/@moreOptional.Exercise.Manifest.Id">@CourseState.Text(moreOptional.Exercise.Manifest.Title)</a></p>
+                }
+            </div>
         }
     }
 }
@@ -106,4 +125,10 @@ else
     protected override void OnParametersSet() => Refresh();
 
     private void Refresh() => _attempts = State.Store.Attempts(Id);
+
+    private string ExerciseLabel(Exercise e)
+    {
+        var m = State.ModuleOf(e);
+        return $"{string.Format(Strings.LevelTitle, m.Order, CourseState.Text(m.Manifest.Title))} › {CourseState.Text(e.Manifest.Title)}";
+    }
 }

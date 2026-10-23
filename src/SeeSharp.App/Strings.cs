@@ -105,6 +105,8 @@ internal static class Strings
     public static string Items => Resources.GetString(nameof(Items))!;
     public static string ItemPassed => Resources.GetString(nameof(ItemPassed))!;
     public static string ExercisePassed => Resources.GetString(nameof(ExercisePassed))!;
+    public static string ContinueWith => Resources.GetString(nameof(ContinueWith))!;
+    public static string OrOptional => Resources.GetString(nameof(OrOptional))!;
     public static string Submit => Resources.GetString(nameof(Submit))!;
     public static string AnswerCorrect => Resources.GetString(nameof(AnswerCorrect))!;
     public static string AnswerWrong => Resources.GetString(nameof(AnswerWrong))!;

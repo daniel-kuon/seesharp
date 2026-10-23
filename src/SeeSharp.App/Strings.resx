@@ -51,6 +51,8 @@
   <data name="Items" xml:space="preserve"><value>Aufgaben</value></data>
   <data name="ItemPassed" xml:space="preserve"><value>erledigt</value></data>
   <data name="ExercisePassed" xml:space="preserve"><value>Übung bestanden – die Skills sind gutgeschrieben.</value></data>
+  <data name="ContinueWith" xml:space="preserve"><value>Weiter mit:</value></data>
+  <data name="OrOptional" xml:space="preserve"><value>Oder eine Zusatzaufgabe in diesem Level:</value></data>
   <data name="Submit" xml:space="preserve"><value>Abgeben</value></data>
   <data name="AnswerCorrect" xml:space="preserve"><value>Richtig.</value></data>
   <data name="AnswerWrong" xml:space="preserve"><value>Leider falsch – du hast noch einen Versuch.</value></data>
