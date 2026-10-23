@@ -348,11 +348,15 @@ public static class CourseValidator
         return result;
     }
 
-    /// <summary>Edges run from each required skill to each taught skill of the same exercise; a cycle means no valid order exists.</summary>
+    /// <summary>
+    /// Edges run from each required skill to each taught skill of the same exercise; a cycle means no valid order exists.
+    /// Optional exercises add no edges: they only re-teach skills a mandatory exercise introduces, so they never
+    /// define the order — and an optional exercise re-teaching a basic skill while requiring a later one is fine.
+    /// </summary>
     private static IEnumerable<List<string>> FindCycles(List<Exercise> exercises, Dictionary<Exercise, HashSet<string>> teaches, Dictionary<Exercise, HashSet<string>> requires)
     {
         var edges = new Dictionary<string, SortedSet<string>>(StringComparer.Ordinal);
-        foreach (var exercise in exercises)
+        foreach (var exercise in exercises.Where(e => !e.Manifest.Optional))
             foreach (var from in requires[exercise])
                 foreach (var to in teaches[exercise])
                     if (from != to)

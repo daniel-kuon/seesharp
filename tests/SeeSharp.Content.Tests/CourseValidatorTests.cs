@@ -609,6 +609,17 @@ public sealed class CourseValidatorTests : IDisposable
     }
 
     [Fact]
+    public async Task Optional_exercise_re_teaching_a_basic_skill_while_requiring_a_later_one_is_no_cycle()
+    {
+        // Mandatory: a.one -> b.three. Optional re-teaches a.one but requires b.three: b.three -> a.one would close a loop.
+        WriteExercise("01-basics/10-extra", Optional(Second, "extra").Replace("teaches: [b.three]", "teaches: [a.one]").Replace("requires: [a.one, a.two]", "requires: [b.three]"));
+
+        var report = await Validate();
+        Assert.DoesNotContain(report.Findings, f => f.Code == FindingCode.SkillCycle);
+        AssertClean(report);
+    }
+
+    [Fact]
     public async Task Mandatory_exercise_requiring_a_skill_taught_earlier_only_by_optional_ones_is_an_error()
     {
         Write("modules/01-basics/01-first/manifest.yaml", First.Replace("teaches: [a.one, a.two]", "teaches: [a.one]"));
