@@ -89,4 +89,14 @@ public static class CoursePaths
 
     public static string BookPdf(string? setting, string coursePath) =>
         string.IsNullOrWhiteSpace(setting) ? Path.GetFullPath(DefaultBookFile, coursePath) : Path.GetFullPath(setting);
+
+    /// <summary>
+    /// A translated book sits next to the original as <c>&lt;name&gt;.&lt;locale&gt;.pdf</c> (e.g. <c>csharp14.en.pdf</c>,
+    /// merged by tools/book_pdf.py with the same physical pages); use it when it exists, else the original.
+    /// </summary>
+    public static string LocalizedBook(string pdf, string locale, Func<string, bool> fileExists)
+    {
+        var translated = Path.Combine(Path.GetDirectoryName(pdf)!, $"{Path.GetFileNameWithoutExtension(pdf)}.{locale}.pdf");
+        return locale != CourseLoader.DefaultLocale && fileExists(translated) ? translated : pdf;
+    }
 }

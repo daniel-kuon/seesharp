@@ -48,7 +48,9 @@ public static class AppHost
             });
         app.UseAntiforgery();
         app.MapRazorComponents<Components.App>().AddInteractiveServerRenderMode();
-        app.MapGet("/book.pdf", () => state.BookPdfPath is { } pdf ? Results.File(pdf, "application/pdf") : Results.NotFound());
+        app.MapGet("/book.pdf", () => state.BookPdfPath is { } pdf
+            ? Results.File(CoursePaths.LocalizedBook(pdf, Locale.Current, File.Exists), "application/pdf")
+            : Results.NotFound());
         // Embedded by the EmbedBlazorScript target in SeeSharp.App.csproj; see the comment there.
         app.MapGet("/_framework/blazor.web.js", () =>
             Results.Stream(typeof(AppHost).Assembly.GetManifestResourceStream("blazor.web.js")!, "text/javascript"));

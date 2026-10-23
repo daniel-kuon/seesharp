@@ -14,3 +14,7 @@ samples/
 
 # Local Claude Code launch config
 .claude/
+
+# Book chunks for machine translation (tools/book_pdf.py)
+translation/
+csharp14.*.pdf

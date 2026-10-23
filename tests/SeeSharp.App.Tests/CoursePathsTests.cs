@@ -43,6 +43,16 @@ public class CoursePathsTests
     }
 
     [Fact]
+    public void Translated_book_is_used_for_its_locale_when_present()
+    {
+        var pdf = Path.Combine(Cwd, "csharp14.pdf");
+        var english = Path.Combine(Cwd, "csharp14.en.pdf");
+        Assert.Equal(english, CoursePaths.LocalizedBook(pdf, "en", p => p == english));
+        Assert.Equal(pdf, CoursePaths.LocalizedBook(pdf, "en", _ => false));
+        Assert.Equal(pdf, CoursePaths.LocalizedBook(pdf, "de", _ => true));
+    }
+
+    [Fact]
     public void Book_link_uses_the_physical_page()
     {
         var reading = new Reading { Section = "5.4.3", PrintedPage = 372 };
