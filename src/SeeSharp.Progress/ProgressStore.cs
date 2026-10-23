@@ -22,6 +22,14 @@ public sealed record ModuleProgress(Module Module, IReadOnlyList<ExerciseProgres
     public bool Passed => Mandatory.Any() && Mandatory.All(e => e.Passed);
 }
 
+/// <summary>One question to the AI tutor and its answer (task 9). <paramref name="CostUsd"/> is the estimate at the time; null when no price is known.</summary>
+public sealed record TutorExchange(
+    string ExerciseId, DateTimeOffset Timestamp, int Level, string Question, string Answer,
+    string Provider, string Model, int InputTokens, int OutputTokens, decimal? CostUsd)
+{
+    public long Id { get; init; }
+}
+
 public sealed record CourseProgress(IReadOnlyList<ModuleProgress> Modules, IReadOnlyDictionary<string, SkillStatus> HeldSkills)
 {
     public IEnumerable<ExerciseProgress> Exercises => Modules.SelectMany(m => m.Exercises);
@@ -71,6 +79,21 @@ public sealed class ProgressStore : IDisposable
             items     TEXT    NOT NULL,
             submitted TEXT);
         ALTER TABLE attempt ADD COLUMN exam_run_id INTEGER REFERENCES exam_run(id);
+        """,
+        // Task 9: one row per AI tutor exchange, for the supervisor. No API key, no base URL.
+        """
+        CREATE TABLE tutor_exchange (
+            id            INTEGER PRIMARY KEY,
+            exercise_id   TEXT    NOT NULL,
+            timestamp     TEXT    NOT NULL,
+            level         INTEGER NOT NULL,
+            question      TEXT    NOT NULL,
+            answer        TEXT    NOT NULL,
+            provider      TEXT    NOT NULL,
+            model         TEXT    NOT NULL,
+            input_tokens  INTEGER NOT NULL,
+            output_tokens INTEGER NOT NULL,
+            cost_usd      REAL);
         """,
     ];
 
@@ -242,6 +265,42 @@ public sealed class ProgressStore : IDisposable
 
     /// <summary>The attempts made inside one run, in submission order.</summary>
     public IReadOnlyList<Attempt> ExamAttempts(long runId) => ReadAttempts("WHERE exam_run_id = $run", ("$run", runId));
+
+    // ----- AI tutor (task 9) ------------------------------------------------------------------
+
+    public TutorExchange RecordTutorExchange(TutorExchange exchange)
+    {
+        lock (_lock)
+        {
+            var id = (long)Execute("""
+                INSERT INTO tutor_exchange (exercise_id, timestamp, level, question, answer, provider, model, input_tokens, output_tokens, cost_usd)
+                VALUES ($exercise, $timestamp, $level, $question, $answer, $provider, $model, $in, $out, $cost);
+                SELECT last_insert_rowid();
+                """,
+                ("$exercise", exchange.ExerciseId), ("$timestamp", Iso(exchange.Timestamp)), ("$level", exchange.Level),
+                ("$question", exchange.Question), ("$answer", exchange.Answer), ("$provider", exchange.Provider), ("$model", exchange.Model),
+                ("$in", exchange.InputTokens), ("$out", exchange.OutputTokens), ("$cost", exchange.CostUsd is { } c ? (double)c : null)).ExecuteScalar()!;
+            return exchange with { Id = id };
+        }
+    }
+
+    /// <summary>Tutor exchanges in order, optionally for one exercise.</summary>
+    public IReadOnlyList<TutorExchange> TutorExchanges(string? exerciseId = null)
+    {
+        lock (_lock)
+        {
+            using var reader = Execute("""
+                SELECT id, exercise_id, timestamp, level, question, answer, provider, model, input_tokens, output_tokens, cost_usd
+                FROM tutor_exchange WHERE $exercise IS NULL OR exercise_id = $exercise ORDER BY id
+                """, ("$exercise", exerciseId)).ExecuteReader();
+            var exchanges = new List<TutorExchange>();
+            while (reader.Read())
+                exchanges.Add(new TutorExchange(reader.GetString(1), ParseIso(reader.GetString(2)), reader.GetInt32(3), reader.GetString(4), reader.GetString(5),
+                    reader.GetString(6), reader.GetString(7), reader.GetInt32(8), reader.GetInt32(9), reader.IsDBNull(10) ? null : (decimal)reader.GetDouble(10))
+                    { Id = reader.GetInt64(0) });
+            return exchanges;
+        }
+    }
 
     // ----- reads ------------------------------------------------------------------------------
 

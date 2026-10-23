@@ -17,6 +17,7 @@ namespace SeeSharp.Progress;
 /// exams/&lt;run id&gt;/run.csv                        id, exam, kind, started, deadline, submitted, seed, items
 /// exams/&lt;run id&gt;/attempts.csv                   the run's attempts, same columns as above
 /// exams/&lt;run id&gt;/&lt;exercise&gt;/&lt;item&gt;/...     same layout as above
+/// tutor/&lt;exercise&gt;.md                          every AI tutor exchange for the exercise
 /// </code>
 /// </summary>
 public static class ReviewExport
@@ -46,6 +47,22 @@ public static class ReviewExport
             AddText(zip, folder + "attempts.csv", AttemptsCsv(runAttempts));
             AddAttempts(zip, folder, runAttempts);
         }
+
+        foreach (var exercise in store.TutorExchanges().GroupBy(t => t.ExerciseId))
+            AddText(zip, $"tutor/{exercise.Key}.md", TutorMarkdown(exercise.Key, exercise));
+    }
+
+    /// <summary>One section per exchange, oldest first; the answer is the model's Markdown as it was shown.</summary>
+    private static string TutorMarkdown(string exerciseId, IEnumerable<TutorExchange> exchanges)
+    {
+        var sb = new StringBuilder($"# Tutor: {exerciseId}\n");
+        foreach (var t in exchanges)
+        {
+            var cost = t.CostUsd is { } c ? string.Create(CultureInfo.InvariantCulture, $" · ≈ ${c:0.0000}") : "";
+            sb.Append(CultureInfo.InvariantCulture, $"\n## {Iso(t.Timestamp)} · level {t.Level} · {t.Provider}/{t.Model} · {t.InputTokens} in + {t.OutputTokens} out tokens{cost}\n\n");
+            sb.Append("**Question:** ").Append(t.Question).Append("\n\n**Answer:**\n\n").Append(t.Answer.TrimEnd()).Append('\n');
+        }
+        return sb.ToString();
     }
 
     private static string AttemptsCsv(IEnumerable<Attempt> attempts) => Csv(

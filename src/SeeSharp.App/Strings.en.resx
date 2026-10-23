@@ -246,4 +246,37 @@
   <data name="OptionalProgress" xml:space="preserve"><value>{0} of {1} optional exercises passed</value></data>
   <data name="OptionalOpen" xml:space="preserve"><value>Open optional exercises:</value></data>
   <data name="ColumnOptional" xml:space="preserve"><value>Optional</value></data>
+  <data name="TutorTitle" xml:space="preserve"><value>Ask the tutor for help</value></data>
+  <data name="TutorIntro" xml:space="preserve"><value>The tutor gives hints in three levels, never the solution. It is sent the exercise, your current code and the last failing test run ({0}, model {1}).</value></data>
+  <data name="TutorNextHint" xml:space="preserve"><value>Next hint (level {0} of 3)</value></data>
+  <data name="TutorNextHintQuestion" xml:space="preserve"><value>Give me a hint.</value></data>
+  <data name="TutorQuestionPlaceholder" xml:space="preserve"><value>Your own question for the tutor …</value></data>
+  <data name="TutorAsk" xml:space="preserve"><value>Ask</value></data>
+  <data name="TutorAsking" xml:space="preserve"><value>The tutor is thinking …</value></data>
+  <data name="TutorLevel" xml:space="preserve"><value>Level {0}</value></data>
+  <data name="TutorTokens" xml:space="preserve"><value>Tokens – this exercise: {0:N0}, total: {1:N0}</value></data>
+  <data name="TutorCostFree" xml:space="preserve"><value>free (local)</value></data>
+  <data name="TutorCostEstimate" xml:space="preserve"><value>estimated ≈ ${0:0.0000} for this exercise, ≈ ${1:0.0000} in total</value></data>
+  <data name="TutorUnreachable" xml:space="preserve"><value>The tutor is not reachable right now. You can keep working without it.</value></data>
+  <data name="TutorHttpError" xml:space="preserve"><value>The tutor answered with an error (HTTP {0}). Check model and key in the settings.</value></data>
+  <data name="TutorNoKey" xml:space="preserve"><value>This provider needs an API key (settings).</value></data>
+  <data name="TutorNoModel" xml:space="preserve"><value>No model set (settings).</value></data>
+  <data name="TutorNoBaseUrl" xml:space="preserve"><value>No base URL set (settings).</value></data>
+  <data name="TutorEmpty" xml:space="preserve"><value>The tutor returned no answer. Try again.</value></data>
+  <data name="TutorSettingsTitle" xml:space="preserve"><value>AI tutor</value></data>
+  <data name="TutorProviderLabel" xml:space="preserve"><value>Provider</value></data>
+  <data name="TutorProviderOff" xml:space="preserve"><value>off</value></data>
+  <data name="TutorProviderOllama" xml:space="preserve"><value>Ollama (free, local)</value></data>
+  <data name="TutorProviderOpenAi" xml:space="preserve"><value>OpenAI (paid)</value></data>
+  <data name="TutorProviderOpenAiCompatible" xml:space="preserve"><value>OpenAI-compatible (e.g. Groq, OpenRouter, Gemini)</value></data>
+  <data name="TutorProviderAnthropic" xml:space="preserve"><value>Anthropic Claude (paid)</value></data>
+  <data name="TutorHintOllama" xml:space="preserve"><value>Free and local: install Ollama from https://ollama.com, then run “ollama pull qwen2.5-coder:7b” in a terminal. No key needed; your code stays on this machine.</value></data>
+  <data name="TutorHintOpenAi" xml:space="preserve"><value>Paid: API key from https://platform.openai.com. Exercise, code and questions are sent to OpenAI.</value></data>
+  <data name="TutorHintOpenAiCompatible" xml:space="preserve"><value>Any service with an OpenAI-compatible API, e.g. Groq (https://api.groq.com/openai/v1), OpenRouter (https://openrouter.ai/api/v1, models ending in “:free”) or Google Gemini (https://generativelanguage.googleapis.com/v1beta/openai). Note: exercise, code and questions leave this machine, and free tiers have rate limits.</value></data>
+  <data name="TutorHintAnthropic" xml:space="preserve"><value>Paid: API key from https://console.anthropic.com. Exercise, code and questions are sent to Anthropic.</value></data>
+  <data name="TutorModelLabel" xml:space="preserve"><value>Model</value></data>
+  <data name="TutorBaseUrlLabel" xml:space="preserve"><value>Base URL</value></data>
+  <data name="TutorApiKeyLabel" xml:space="preserve"><value>API key</value></data>
+  <data name="TutorApiKeyStored" xml:space="preserve"><value>A key is stored; leave this empty to keep it.</value></data>
+  <data name="TutorSaved" xml:space="preserve"><value>Saved.</value></data>
 </root>

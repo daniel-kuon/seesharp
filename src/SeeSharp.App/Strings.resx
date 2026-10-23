@@ -246,4 +246,37 @@
   <data name="OptionalProgress" xml:space="preserve"><value>{0} von {1} Zusatzaufgaben bestanden</value></data>
   <data name="OptionalOpen" xml:space="preserve"><value>Offene Zusatzaufgaben:</value></data>
   <data name="ColumnOptional" xml:space="preserve"><value>Zusatzaufgaben</value></data>
+  <data name="TutorTitle" xml:space="preserve"><value>Tutor um Hilfe fragen</value></data>
+  <data name="TutorIntro" xml:space="preserve"><value>Der Tutor gibt Hinweise in drei Stufen, aber nie die Lösung. Er bekommt die Aufgabe, deinen aktuellen Code und das letzte fehlgeschlagene Testergebnis ({0}, Modell {1}).</value></data>
+  <data name="TutorNextHint" xml:space="preserve"><value>Nächster Hinweis (Stufe {0} von 3)</value></data>
+  <data name="TutorNextHintQuestion" xml:space="preserve"><value>Gib mir einen Hinweis.</value></data>
+  <data name="TutorQuestionPlaceholder" xml:space="preserve"><value>Eigene Frage an den Tutor …</value></data>
+  <data name="TutorAsk" xml:space="preserve"><value>Fragen</value></data>
+  <data name="TutorAsking" xml:space="preserve"><value>Der Tutor denkt nach …</value></data>
+  <data name="TutorLevel" xml:space="preserve"><value>Stufe {0}</value></data>
+  <data name="TutorTokens" xml:space="preserve"><value>Tokens – diese Übung: {0:N0}, insgesamt: {1:N0}</value></data>
+  <data name="TutorCostFree" xml:space="preserve"><value>kostenlos (lokal)</value></data>
+  <data name="TutorCostEstimate" xml:space="preserve"><value>geschätzt ≈ {0:0.0000} $ für diese Übung, ≈ {1:0.0000} $ insgesamt</value></data>
+  <data name="TutorUnreachable" xml:space="preserve"><value>Der Tutor ist gerade nicht erreichbar. Du kannst ohne ihn weiterarbeiten.</value></data>
+  <data name="TutorHttpError" xml:space="preserve"><value>Der Tutor hat mit einem Fehler geantwortet (HTTP {0}). Prüfe Modell und Schlüssel in den Einstellungen.</value></data>
+  <data name="TutorNoKey" xml:space="preserve"><value>Für diesen Anbieter fehlt der API-Schlüssel (Einstellungen).</value></data>
+  <data name="TutorNoModel" xml:space="preserve"><value>Kein Modell eingestellt (Einstellungen).</value></data>
+  <data name="TutorNoBaseUrl" xml:space="preserve"><value>Keine Basis-URL eingestellt (Einstellungen).</value></data>
+  <data name="TutorEmpty" xml:space="preserve"><value>Der Tutor hat keine Antwort geliefert. Versuch es noch einmal.</value></data>
+  <data name="TutorSettingsTitle" xml:space="preserve"><value>KI-Tutor</value></data>
+  <data name="TutorProviderLabel" xml:space="preserve"><value>Anbieter</value></data>
+  <data name="TutorProviderOff" xml:space="preserve"><value>aus</value></data>
+  <data name="TutorProviderOllama" xml:space="preserve"><value>Ollama (kostenlos, lokal)</value></data>
+  <data name="TutorProviderOpenAi" xml:space="preserve"><value>OpenAI (kostenpflichtig)</value></data>
+  <data name="TutorProviderOpenAiCompatible" xml:space="preserve"><value>OpenAI-kompatibel (z. B. Groq, OpenRouter, Gemini)</value></data>
+  <data name="TutorProviderAnthropic" xml:space="preserve"><value>Anthropic Claude (kostenpflichtig)</value></data>
+  <data name="TutorHintOllama" xml:space="preserve"><value>Kostenlos und lokal: Ollama von https://ollama.com installieren, dann im Terminal „ollama pull qwen2.5-coder:7b“ ausführen. Kein Schlüssel nötig, dein Code verlässt den Rechner nicht.</value></data>
+  <data name="TutorHintOpenAi" xml:space="preserve"><value>Kostenpflichtig: API-Schlüssel von https://platform.openai.com. Aufgabe, Code und Fragen werden an OpenAI gesendet.</value></data>
+  <data name="TutorHintOpenAiCompatible" xml:space="preserve"><value>Jeder Dienst mit OpenAI-kompatibler Schnittstelle, z. B. Groq (https://api.groq.com/openai/v1), OpenRouter (https://openrouter.ai/api/v1, Modelle mit „:free“) oder Google Gemini (https://generativelanguage.googleapis.com/v1beta/openai). Achtung: Aufgabe, Code und Fragen verlassen den Rechner, und kostenlose Kontingente haben Ratenlimits.</value></data>
+  <data name="TutorHintAnthropic" xml:space="preserve"><value>Kostenpflichtig: API-Schlüssel von https://console.anthropic.com. Aufgabe, Code und Fragen werden an Anthropic gesendet.</value></data>
+  <data name="TutorModelLabel" xml:space="preserve"><value>Modell</value></data>
+  <data name="TutorBaseUrlLabel" xml:space="preserve"><value>Basis-URL</value></data>
+  <data name="TutorApiKeyLabel" xml:space="preserve"><value>API-Schlüssel</value></data>
+  <data name="TutorApiKeyStored" xml:space="preserve"><value>Ein Schlüssel ist gespeichert; leer lassen, um ihn zu behalten.</value></data>
+  <data name="TutorSaved" xml:space="preserve"><value>Gespeichert.</value></data>
 </root>

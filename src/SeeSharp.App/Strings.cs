@@ -300,4 +300,55 @@ internal static class Strings
     public static string ExamSubmitConfirmed => Resources.GetString(nameof(ExamSubmitConfirmed))!;
     public static string ExamKeepWorking => Resources.GetString(nameof(ExamKeepWorking))!;
     public static string ExamActiveGate => Resources.GetString(nameof(ExamActiveGate))!;
+
+    public static string ForTutorProvider(string provider) => provider switch
+    {
+        Tutor.Ollama => TutorProviderOllama,
+        Tutor.OpenAi => TutorProviderOpenAi,
+        Tutor.OpenAiCompatible => TutorProviderOpenAiCompatible,
+        Tutor.Anthropic => TutorProviderAnthropic,
+        _ => TutorProviderOff,
+    };
+
+    public static string ForTutorProviderHint(string provider) => provider switch
+    {
+        Tutor.Ollama => TutorHintOllama,
+        Tutor.OpenAi => TutorHintOpenAi,
+        Tutor.OpenAiCompatible => TutorHintOpenAiCompatible,
+        _ => TutorHintAnthropic,
+    };
+
+    public static string TutorTitle => Resources.GetString(nameof(TutorTitle))!;
+    public static string TutorIntro => Resources.GetString(nameof(TutorIntro))!;
+    public static string TutorNextHint => Resources.GetString(nameof(TutorNextHint))!;
+    public static string TutorNextHintQuestion => Resources.GetString(nameof(TutorNextHintQuestion))!;
+    public static string TutorQuestionPlaceholder => Resources.GetString(nameof(TutorQuestionPlaceholder))!;
+    public static string TutorAsk => Resources.GetString(nameof(TutorAsk))!;
+    public static string TutorAsking => Resources.GetString(nameof(TutorAsking))!;
+    public static string TutorLevel => Resources.GetString(nameof(TutorLevel))!;
+    public static string TutorTokens => Resources.GetString(nameof(TutorTokens))!;
+    public static string TutorCostFree => Resources.GetString(nameof(TutorCostFree))!;
+    public static string TutorCostEstimate => Resources.GetString(nameof(TutorCostEstimate))!;
+    public static string TutorUnreachable => Resources.GetString(nameof(TutorUnreachable))!;
+    public static string TutorHttpError => Resources.GetString(nameof(TutorHttpError))!;
+    public static string TutorNoKey => Resources.GetString(nameof(TutorNoKey))!;
+    public static string TutorNoModel => Resources.GetString(nameof(TutorNoModel))!;
+    public static string TutorNoBaseUrl => Resources.GetString(nameof(TutorNoBaseUrl))!;
+    public static string TutorEmpty => Resources.GetString(nameof(TutorEmpty))!;
+    public static string TutorSettingsTitle => Resources.GetString(nameof(TutorSettingsTitle))!;
+    public static string TutorProviderLabel => Resources.GetString(nameof(TutorProviderLabel))!;
+    public static string TutorProviderOff => Resources.GetString(nameof(TutorProviderOff))!;
+    public static string TutorProviderOllama => Resources.GetString(nameof(TutorProviderOllama))!;
+    public static string TutorProviderOpenAi => Resources.GetString(nameof(TutorProviderOpenAi))!;
+    public static string TutorProviderOpenAiCompatible => Resources.GetString(nameof(TutorProviderOpenAiCompatible))!;
+    public static string TutorProviderAnthropic => Resources.GetString(nameof(TutorProviderAnthropic))!;
+    public static string TutorHintOllama => Resources.GetString(nameof(TutorHintOllama))!;
+    public static string TutorHintOpenAi => Resources.GetString(nameof(TutorHintOpenAi))!;
+    public static string TutorHintOpenAiCompatible => Resources.GetString(nameof(TutorHintOpenAiCompatible))!;
+    public static string TutorHintAnthropic => Resources.GetString(nameof(TutorHintAnthropic))!;
+    public static string TutorModelLabel => Resources.GetString(nameof(TutorModelLabel))!;
+    public static string TutorBaseUrlLabel => Resources.GetString(nameof(TutorBaseUrlLabel))!;
+    public static string TutorApiKeyLabel => Resources.GetString(nameof(TutorApiKeyLabel))!;
+    public static string TutorApiKeyStored => Resources.GetString(nameof(TutorApiKeyStored))!;
+    public static string TutorSaved => Resources.GetString(nameof(TutorSaved))!;
 }

@@ -24,6 +24,14 @@ public sealed class Settings
     /// <summary>Admin mode: credentials for push/pull over HTTPS (a personal access token as the password). Unset = anonymous.</summary>
     public string? GitUserName { get; set; }
     public string? GitToken { get; set; }
+    /// <summary>AI tutor (task 9): <c>off</c> (null), <c>ollama</c>, <c>openai</c>, <c>openai-compatible</c> or <c>anthropic</c>; see <see cref="Tutor"/>.</summary>
+    public string? TutorProvider { get; set; }
+    /// <summary>Null = the provider's default (<see cref="Tutor.DefaultModel"/>).</summary>
+    public string? TutorModel { get; set; }
+    /// <summary>Only ever sent to the provider; never logged, stored in the progress DB or exported.</summary>
+    public string? TutorApiKey { get; set; }
+    /// <summary>Null = the provider's default (<see cref="Tutor.DefaultBaseUrl"/>); required for <c>openai-compatible</c>.</summary>
+    public string? TutorBaseUrl { get; set; }
 
     public static Settings Load(string? path = null)
     {

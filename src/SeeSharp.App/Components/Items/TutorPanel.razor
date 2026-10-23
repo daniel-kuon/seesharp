@@ -1,0 +1,77 @@
+@inject CourseState State
+
+@* Task 9: only for coding exercises, only when a provider is set, never while an exam runs (the layout gate closes this page then too). *@
+@if (Tutor.Enabled(State.Settings) && Exercise.Manifest.Items.Any(i => i is CodingItem) && State.Store.ActiveRun() is null)
+{
+    var all = State.Store.TutorExchanges();
+    var mine = all.Where(t => t.ExerciseId == Exercise.Manifest.Id).ToList();
+    var provider = Tutor.Provider(State.Settings);
+    <details class="card tutor">
+        <summary>@Strings.TutorTitle</summary>
+        <p class="hint">@string.Format(Strings.TutorIntro, Strings.ForTutorProvider(provider), Tutor.Model(State.Settings))</p>
+        @foreach (var exchange in mine)
+        {
+            <p class="tutor-question"><span class="badge">@string.Format(Strings.TutorLevel, exchange.Level)</span> @exchange.Question</p>
+            <article class="md">@Tutor.Render(exchange.Answer)</article>
+        }
+        <p><button @onclick="NextHint" disabled="@_asking">@string.Format(Strings.TutorNextHint, Math.Min(_level + 1, Tutor.MaxLevel))</button></p>
+        <p>
+            <textarea rows="2" placeholder="@Strings.TutorQuestionPlaceholder" @bind="_question" @bind:event="oninput"></textarea><br />
+            <button @onclick="AskQuestion" disabled="@(_asking || string.IsNullOrWhiteSpace(_question))">@Strings.TutorAsk</button>
+        </p>
+        @if (_asking)
+        {
+            <p class="hint">@Strings.TutorAsking</p>
+        }
+        @if (_error is not null)
+        {
+            <p class="bad">@_error</p>
+        }
+        <p class="hint">
+            @string.Format(Strings.TutorTokens, mine.Sum(t => t.InputTokens + t.OutputTokens), all.Sum(t => t.InputTokens + t.OutputTokens))
+            @if (all.Any(t => t.CostUsd > 0)) @* paid exchanges from earlier, whatever the provider is now *@
+            {
+                <text> · @string.Format(Strings.TutorCostEstimate, mine.Sum(t => t.CostUsd ?? 0), all.Sum(t => t.CostUsd ?? 0))</text>
+            }
+            @if (provider == Tutor.Ollama)
+            {
+                <text> · @Strings.TutorCostFree</text>
+            }
+        </p>
+    </details>
+}
+
+@code {
+    [Parameter, EditorRequired] public Exercise Exercise { get; set; } = null!;
+
+    private int _level;
+    private string _question = "";
+    private string? _error;
+    private bool _asking;
+
+    // The level survives a reload: it is the highest one already asked for this exercise.
+    protected override void OnParametersSet() =>
+        _level = State.Store.TutorExchanges(Exercise.Manifest.Id).Select(t => t.Level).DefaultIfEmpty(0).Max();
+
+    private Task NextHint() => Ask(Math.Min(_level + 1, Tutor.MaxLevel), Strings.TutorNextHintQuestion);
+
+    /// <summary>A free question is answered at the current level (at least 1): asking cannot skip the escalation.</summary>
+    private async Task AskQuestion()
+    {
+        if (await Ask(Math.Max(_level, 1), _question.Trim()))
+            _question = "";
+    }
+
+    private async Task<bool> Ask(int level, string question)
+    {
+        _asking = true;
+        _error = null;
+        StateHasChanged();
+        var (exchange, error) = await Tutor.AskAsync(Tutor.Http, State.Settings, State.Store, Tutor.Context(State, Exercise), level, question);
+        _asking = false;
+        _error = error;
+        if (exchange is not null)
+            _level = Math.Max(_level, level);
+        return exchange is not null;
+    }
+}

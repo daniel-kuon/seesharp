@@ -29,6 +29,8 @@ attempt          id, exercise_id, item_id, timestamp (ISO 8601 UTC), time_spent_
                  passed, answer, source (zip BLOB), grading_json, trx, exam_run_id (migration 2)
 skill_transition id, skill_id, state (1 introduced, 2 practiced, 3 applied), timestamp, cause
 exam_run         id, exam_id, real, started, deadline, seed, items ("exercise/item" per line), submitted
+tutor_exchange   id, exercise_id, timestamp, level (1–3), question, answer, provider, model,
+                 input_tokens, output_tokens, cost_usd (null = price unknown)            (migration 3)
 ```
 
 Attempts are never updated or deleted. There is no `exercise passed` column,
@@ -119,6 +121,9 @@ store.ActiveRun() / store.ExamRuns(examId?) / store.ExamRun(id)
 store.RecordAttempt(attempt with { ExamRunId = run.Id })   // no manifest: exam attempts credit no skill
 store.ExamAttempts(run.Id)
 store.SubmitExamRun(run.Id)
+
+// AI tutor (task 9); written by Tutor.AskAsync in SeeSharp.App, see UI.md
+store.RecordTutorExchange(exchange) / store.TutorExchanges(exerciseId?)
 ```
 
 `ProgressStore` is not an interface; the UI can hold the concrete type.
@@ -177,7 +182,14 @@ skills.csv                                      skill, state, lastExercised, exe
 exams/<run id>/run.csv                          id, exam, kind, started, deadline, submitted, seed, items
 exams/<run id>/attempts.csv                     the run's attempts, same columns as the top-level file
 exams/<run id>/<exercise>/<item>/<id>_<ts>/...  same layout as above
+tutor/<exercise>.md                             every tutor exchange: timestamp, level, provider/model,
+                                                tokens, cost estimate, question, answer (Markdown)
 ```
+
+**Decision — tutor logs are Markdown, not CSV**: the answers are Markdown and
+multi-line, and the supervisor reads them, so one file per exercise opens
+directly. Only successful exchanges are rows; a failed request (offline, bad
+key) has no answer to log. The API key and base URL are never stored or exported.
 
 Exam attempts never appear in the top-level `attempts.csv`; the supervisor
 reads a real exam's result from `exams/<run id>/` (the trainee's app shows
@@ -205,6 +217,9 @@ only the last one per item; the CSV and folder names carry the timestamps.
   recorded, exported, zip asserted to contain `results.trx`, `grading.json` and
   `source/b2 Konstruktoren/Bruch.cs`.
 
+- `tests/SeeSharp.App.Tests/TutorTests.cs` — the tutor table through `Tutor.AskAsync`,
+  and `tutor/<exercise>.md` in the bundle (with the API key absent from DB and zip).
+
 **Decision — the end-to-end test returns early when `../seesharp-course` is
 absent.** The course repo has no remote, so CI cannot clone it; locally it
 always runs.
@@ -214,4 +229,4 @@ always runs.
 - No tamper protection (task 4 constraint).
 - No per-attempt transaction with the ledger, no WAL, no vacuum.
 - No `--since` or per-exercise filter on the export; the bundle is small.
-- Tutor logs (task 9) will be a new table, a new migration script.
+- No tutor exchange is ever deleted or edited; there is no per-trainee token budget.

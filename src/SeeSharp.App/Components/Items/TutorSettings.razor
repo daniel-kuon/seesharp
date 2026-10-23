@@ -1,0 +1,63 @@
+@inject CourseState State
+
+@* Task 9: provider, model, base URL and key for the AI tutor. The key is never rendered back into the page. *@
+<h2>@Strings.TutorSettingsTitle</h2>
+<p>
+    <label>@Strings.TutorProviderLabel<br />
+        <select @bind="_provider">
+            @foreach (var provider in Tutor.Providers)
+            {
+                <option value="@provider">@Strings.ForTutorProvider(provider)</option>
+            }
+        </select>
+    </label>
+</p>
+@if (_provider != Tutor.Off)
+{
+    <p class="hint">@Strings.ForTutorProviderHint(_provider)</p>
+    <p><label>@Strings.TutorModelLabel<br /><input type="text" @bind="_model" placeholder="@Tutor.DefaultModel(_provider)" /></label></p>
+    <p><label>@Strings.TutorBaseUrlLabel<br /><input type="text" @bind="_baseUrl" placeholder="@Tutor.DefaultBaseUrl(_provider)" /></label></p>
+    @if (_provider != Tutor.Ollama)
+    {
+        <p>
+            <label>@Strings.TutorApiKeyLabel<br /><input type="password" autocomplete="off" @bind="_key" /></label>
+            @if (!string.IsNullOrEmpty(State.Settings.TutorApiKey))
+            {
+                <br /><span class="hint">@Strings.TutorApiKeyStored</span>
+            }
+        </p>
+    }
+}
+<button @onclick="Save">@Strings.Save</button>
+@if (_saved)
+{
+    <span class="ok">@Strings.TutorSaved</span>
+}
+
+@code {
+    private string _provider = Tutor.Off;
+    private string _model = "", _baseUrl = "", _key = "";
+    private bool _saved;
+
+    protected override void OnInitialized()
+    {
+        _provider = Tutor.Provider(State.Settings);
+        _model = State.Settings.TutorModel ?? "";
+        _baseUrl = State.Settings.TutorBaseUrl ?? "";
+    }
+
+    /// <summary>A blank key field keeps the stored key, so it never has to be shown again.</summary>
+    private async Task Save()
+    {
+        var settings = Settings.Load();
+        settings.TutorProvider = _provider == Tutor.Off ? null : _provider;
+        settings.TutorModel = string.IsNullOrWhiteSpace(_model) ? null : _model.Trim();
+        settings.TutorBaseUrl = string.IsNullOrWhiteSpace(_baseUrl) ? null : _baseUrl.Trim();
+        if (!string.IsNullOrWhiteSpace(_key))
+            settings.TutorApiKey = _key.Trim();
+        settings.Save();
+        _key = "";
+        await State.LoadAsync();
+        _saved = true;
+    }
+}

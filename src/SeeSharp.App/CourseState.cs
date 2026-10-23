@@ -19,7 +19,8 @@ public sealed class CourseState(ProgressStore store, string? courseArgument, boo
     public bool Admin { get; } = admin;
     /// <summary>Skill graph summary of the last load, for the admin skills view.</summary>
     public SkillGraphSummary Summary { get; private set; } = new(0, 0, [], [], []);
-    public Settings Settings { get; private set; } = Settings.Load();
+    /// <summary>Re-read from disk by <see cref="LoadAsync"/>; tests and scratch hosts set it directly to avoid the real settings.json.</summary>
+    public Settings Settings { get; set; } = Settings.Load();
     public string? CoursePath { get; private set; }
     public Course? Course { get; private set; }
     public IReadOnlyList<Finding> Findings { get; private set; } = [];

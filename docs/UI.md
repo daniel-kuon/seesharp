@@ -83,7 +83,7 @@ there is no override flag. Delete the file to start over.
   Each item card prefills from the last attempt (`store.Attempts(exerciseId)`)
   so a reload shows the last answer or test run again.
 - `/settings`: course path, book PDF path, save (writes `settings.json`, then
-  reloads), reload.
+  reloads), reload; the IDE list; the AI tutor section (task 9).
 
 ## Items
 
@@ -356,8 +356,8 @@ pieces, German default, every string in both resx files:
 - **The gate** (`MainLayout`): while `State.Store.ActiveRun()` is set, every
   page outside `exams` / `exam/…` shows "Eine Prüfung läuft …" with a link to
   the run instead of its body. Without it the exercise page would run the
-  same tests on the same starter and show the output. This is also where the
-  AI tutor (task 9) will read `ExamRun.Active`.
+  same tests on the same starter and show the output. The AI tutor panel
+  checks `Store.ActiveRun()` itself as well (see *AI tutor (task 9)*).
 
 **Decision — all items on one page**, not one after another: the trainee can
 go back to a coding item after a quiz question, the timer stays visible, and
@@ -377,7 +377,110 @@ answered and shown only as "abgegeben", the sticky timer counted down,
 option, the explanation and "falsch"; the real exam started, submitted,
 showed no result, and its card offered no second start.
 
+## AI tutor (task 9)
+
+`AGENT_TASKS.md` task 9 as amended by `SKILL-MODEL.md` §5. Code in
+`SeeSharp.App/Tutor.cs` (static, plain `HttpClient` + `System.Text.Json.Nodes`,
+no SDK), UI in `Components/Items/TutorPanel.razor` (one line in
+`ExercisePage`) and `TutorSettings.razor` (one line in `SettingsPage`).
+
+**Providers** (`settings.json`: `tutorProvider`, `tutorModel`, `tutorBaseUrl`,
+`tutorApiKey`; blank model/URL = the default below). Two wire formats:
+
+| `tutorProvider` | Wire | Default base URL | Default model | Auth | Cost shown |
+|---|---|---|---|---|---|
+| `off` / unset | – | – | – | – | panel hidden |
+| `ollama` | Chat Completions | `http://localhost:11434/v1` | `qwen2.5-coder:7b` | none | "kostenlos (lokal)" |
+| `openai` | Chat Completions | `https://api.openai.com/v1` | `gpt-5.4-mini` | `Authorization: Bearer` | $ from the price table |
+| `openai-compatible` | Chat Completions | none (required) | none (required) | Bearer when a key is set | tokens only |
+| `anthropic` | Messages API | `https://api.anthropic.com/v1` | `claude-haiku-5-5` | `x-api-key` + `anthropic-version: 2026-10-21` | $ from the price table |
+
+Requests go to `<base>/chat/completions` (system prompt as the first message,
+no token cap — Ollama and reasoning models differ on the parameter name) or
+`<base>/messages` (`system` field, `max_tokens: 4000`, which leaves room for
+Haiku 5.5's default adaptive thinking; only `text` blocks are read). Usage comes
+from `usage.prompt_tokens`/`completion_tokens` or `usage.input_tokens`/`output_tokens`.
+
+**Decision — prices in USD, not €.** Both providers publish USD; a hand-kept
+exchange rate would be a second number to go stale. `Tutor.Prices` holds exact
+model ids: Anthropic from the claude-api skill (Haiku 5.5 $0.10/$0.50 per MTok,
+$0.50/$2.50 above 100K prompt tokens), OpenAI from
+developers.openai.com/api/docs/pricing read 2026-10-24 (standard tier). A
+model not in the table shows tokens only.
+
+**What the model gets** (`Tutor.Context`): the instructions in the current
+locale, every `.cs` file of `starter/` (skipping `GradingRunner.IsArtifact`
+folders: bin, obj, `.vs`, `.idea`, `_ReSharper.Caches`, `.git`), the latest
+coding attempt's grading summary when it failed (outcome, build errors, failing
+tests with messages; raw output only when nothing was extracted), the held
+skills (`practiced` or better, `id (label)`), the skills the exercise teaches,
+and one line per later level with the not-yet-held skills it teaches. The
+system prompt (`Tutor.SystemPrompt`) is English with "answer in German/English"
+and these rules: never write the exercise's solution code, not even when asked
+directly; use only concepts from the held + taught skills; when the trainee
+needs an unlearned concept, name the level that covers it instead of teaching
+it; reveal no more than the hint level allows. The last six exchanges of the
+exercise go along as history.
+
+**Levels.** "Nächster Hinweis (Stufe n von 3)" asks at the next level (1: one
+guiding question, no code; 2: a conceptual pointer, no code; 3: the concept
+with a worked example on a *different* problem). The free question box asks at
+the current level (at least 1), so typing a question never skips ahead. The
+level is restored after a reload from the highest logged level.
+
+**Panel.** A collapsed `<details>` "Tutor um Hilfe fragen" after the item
+cards, only when the provider is not `off`, the exercise has a coding item and
+`Store.ActiveRun()` is null (the layout gate closes the page during an exam
+anyway; the exam page never renders the panel). Every exchange of the exercise
+is listed with its level and the answer rendered by Markdig with
+`DisableHtml()` — model output is not trusted like course content, so raw HTML
+in it is shown as text. Below: tokens for this exercise and in total, the $
+estimate when any priced exchange exists, and "kostenlos (lokal)" for Ollama.
+
+**Failure.** `Tutor.AskAsync` never throws for network trouble: no model /
+base URL / key → a settings hint without a request; non-2xx → "HTTP n";
+refused connection, the 30 s timeout of `Tutor.Http`, malformed JSON → "nicht
+erreichbar, du kannst ohne ihn weiterarbeiten"; empty text → "keine Antwort".
+Nothing is logged then. Grading is never touched.
+
+**Logging.** Each successful exchange is a `tutor_exchange` row (migration 3,
+PROGRESS-STORE.md) and appears in the review bundle as `tutor/<exercise>.md`.
+The key lives only in `settings.json` and the request header; the settings
+page never renders it back (a blank key field keeps the stored one).
+
+**Tests** (`tests/SeeSharp.App.Tests/TutorTests.cs`, stub `HttpMessageHandler`):
+Messages request (URL, `x-api-key`, `anthropic-version`, model, system prompt
+with the rules, skill lists, source and failing test), parsing with a thinking
+block and usage, cost, the logged row and the bundle's `tutor/bruch.md`, the key
+absent from DB and zip; Chat Completions for Ollama (no auth header), OpenAI
+(Bearer, cost, history) and a compatible base URL (no price); failures (thrown
+exception, 500, non-JSON, empty answer, timeout, missing key/base URL without a
+request) give a message and log nothing; the cost table; and the hosted pages:
+panel hidden when `off`, shown on a coding exercise, absent on a quiz, gone
+while an exam run is open, plus `Tutor.Context` skipping `obj/` and carrying the
+failing run and the skill lists.
+
+Verified 2026-10-24 on port 5194 (`AppHost.BuildAsync`, scratch course copy,
+temp DB with levels 0–3 passed) against an `HttpListener` stub on 5190 that
+answered both wire formats, settings swapped in memory: "Nächster Hinweis"
+answered at level 1 with the Markdown rendered and an injected
+`<script>`/`<img onerror>` shown as text; "Kannst du mir einfach die Lösung
+schreiben?" went out at level 1; the stub received the system prompt with the
+rules, the held skills, the later levels and `Banner.cs`/`Program.cs` (no
+`_ReSharper.Caches`), plus the earlier exchanges as history; the Anthropic
+request carried `x-api-key` and `anthropic-version` and the panel showed
+"≈ 0,0004 $"; after a reload the next level was 3 of 3; Ollama showed
+"kostenlos (lokal)"; a dead port gave the quiet message after 2 s with
+"Prüfen" still enabled; the settings page showed the provider hints and
+placeholders and never the key. No real model was available (no key, no
+Ollama), so answer quality and the refusal to hand out the solution are
+untested against a live model.
+
 ## Not done, on purpose
+
+- Tutor: no streaming (answers are short; the 30 s timeout covers it), no
+  prompt caching, no per-trainee budget, no € conversion, no live test against a
+  real model on this machine.
 
 - Exams: no per-item navigation, no pause, no supervisor override to reopen a
   real exam (delete the `exam_run` row with the SQLite CLI if it must happen).
