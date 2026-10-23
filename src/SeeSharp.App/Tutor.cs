@@ -3,6 +3,8 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Markdig;
+using Markdig.Syntax;
+using Markdig.Syntax.Inlines;
 using Microsoft.AspNetCore.Components;
 using SeeSharp.Content;
 using SeeSharp.Core;
@@ -41,7 +43,10 @@ public static class Tutor
     /// <summary>The app's one client; the 30 s timeout is what turns a dead endpoint into a quiet message.</summary>
     public static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(30) };
 
-    private static readonly MarkdownPipeline SafeMarkdown = new MarkdownPipelineBuilder().UseAdvancedExtensions().DisableHtml().Build();
+    // Untrusted input: no raw HTML, and only the plain-text extensions (no generic attributes, which would allow
+    // {onclick=...}). Link and image URLs are filtered in Render.
+    private static readonly MarkdownPipeline SafeMarkdown = new MarkdownPipelineBuilder()
+        .UsePipeTables().UseEmphasisExtras().UseAutoLinks().DisableHtml().Build();
 
     // USD per million tokens (input, output), exact model ids. Anthropic: claude-api skill (cached 2026-10-06; Claude Haiku 5.5
     // up to 100K prompt tokens). OpenAI: developers.openai.com/api/docs/pricing, standard tier, read 2026-10-24.
@@ -257,6 +262,24 @@ public static class Tutor
         return sb.ToString();
     }
 
-    /// <summary>Model output is not trusted like course content: raw HTML in it is escaped, not rendered.</summary>
-    public static MarkupString Render(string markdown) => new(Markdig.Markdown.ToHtml(markdown, SafeMarkdown));
+    /// <summary>
+    /// Model output is not trusted like course content: raw HTML is escaped, and any link or image whose URL is not
+    /// http(s) or mailto (javascript:, data:, vbscript:, ...) loses its URL.
+    /// </summary>
+    public static MarkupString Render(string markdown)
+    {
+        var document = Markdig.Markdown.Parse(markdown, SafeMarkdown);
+        foreach (var link in document.Descendants<LinkInline>())
+            if (!IsSafeUrl(link.Url))
+                link.Url = "";
+        foreach (var link in document.Descendants<AutolinkInline>())
+            if (!IsSafeUrl(link.Url))
+                link.Url = "";
+        return new(document.ToHtml(SafeMarkdown));
+    }
+
+    private static bool IsSafeUrl(string? url) =>
+        url is not null && (url.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+                            || url.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+                            || url.StartsWith("mailto:", StringComparison.OrdinalIgnoreCase));
 }
