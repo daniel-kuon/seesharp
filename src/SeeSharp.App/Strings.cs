@@ -207,6 +207,11 @@ internal static class Strings
     public static string ColumnExercises => Resources.GetString(nameof(ColumnExercises))!;
     public static string ColumnTaught => Resources.GetString(nameof(ColumnTaught))!;
     public static string ColumnNew => Resources.GetString(nameof(ColumnNew))!;
+    public static string ColumnOptional => Resources.GetString(nameof(ColumnOptional))!;
+    public static string OptionalBadge => Resources.GetString(nameof(OptionalBadge))!;
+    public static string OptionalExercises => Resources.GetString(nameof(OptionalExercises))!;
+    public static string OptionalProgress => Resources.GetString(nameof(OptionalProgress))!;
+    public static string OptionalOpen => Resources.GetString(nameof(OptionalOpen))!;
     public static string ColumnRequired => Resources.GetString(nameof(ColumnRequired))!;
     public static string DanglingLabel => Resources.GetString(nameof(DanglingLabel))!;
     public static string DeadEndsLabel => Resources.GetString(nameof(DeadEndsLabel))!;

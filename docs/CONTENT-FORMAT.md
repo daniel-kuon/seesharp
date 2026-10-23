@@ -92,6 +92,7 @@ reading:                                 # optional
   printedPage: 340                       # printed page; physical = printed + 32 (Reading.PrintedToPhysicalOffset)
 teaches: [oop.constructor-explicit, …]   # skill ids credited on pass
 requires: [oop.method-instance, …]       # skill ids that must be held to unlock
+optional: true                           # optional, default false: a Zusatzaufgabe (see below)
 items:
   - type: coding
     id: bruch                            # item id, unique within the exercise
@@ -132,6 +133,28 @@ items:
   project.
 - Multiple choice: at least two options, `correct` non-empty and in range.
 
+### Optional exercises (Zusatzaufgaben)
+
+`optional: true` marks extra practice a trainee may do but never has to. An
+optional exercise unlocks like any other (by its `requires`), records attempts
+and credits skills normally when passed (`teaches` → practiced, `requires` →
+applied), but it never blocks a module from counting as passed, never locks an
+exam and is never picked for one. The UI lists it under "Zusatzaufgaben
+(optional)" on the module page.
+
+- **Folder convention:** optional exercises come after the mandatory ones of
+  their module and are numbered from 10 (`10-…`, `11-…`), so the mandatory
+  sequence keeps its numbers when extras are added.
+- **Rule — mandatory progression never depends on optional work.** A mandatory
+  exercise whose `requires` skill is taught, earlier in published order, only
+  by optional exercises is an error (`SkillRequiresOptionalOnly`).
+- **Rule — optional exercises deepen, they never introduce.** An optional
+  exercise teaching a skill that no mandatory exercise teaches anywhere is an
+  error (`OptionalTeachesNewSkill`).
+- Forward-reference, dangling and dead-end checks treat optional exercises like
+  any other. The "taught by more than three exercises" warning counts
+  mandatory teachers only.
+
 ## Validator rules
 
 `seesharp validate <course-path> [--skip-starter-check]`. Exit 0 with no
@@ -155,13 +178,16 @@ Errors:
   `requires` of one exercise; **dangling** (required, taught nowhere);
   **forward reference** (required, taught only later in published order);
   cycle in the derived skill graph.
+- A mandatory exercise requires a skill taught earlier only by optional
+  exercises (`SkillRequiresOptionalOnly`); an optional exercise teaches a skill
+  no mandatory exercise teaches (`OptionalTeachesNewSkill`).
 
 Warnings:
 
 - `rubric.md` missing; module without exercises; `teaches` empty.
 - Starter does not compile together with the tests (legitimate for a
   "fix the compiler error" exercise).
-- Skill taught by more than three exercises; skill taught but never required
+- Skill taught by more than three mandatory exercises; skill taught but never required
   (dead end).
 - `TranslationMissing`: a module or exercise lacks `summary.xx.md` /
   `instructions.xx.md` or an `xx` title key for a non-default locale that at
@@ -178,8 +204,8 @@ later requires them yet.
 `SeeSharp.Core`). The alternative, running the check in the CLI, would have
 left the most valuable rule untested in the content test suite.
 
-The summary printed after the findings lists, per level, the exercise count,
-skills taught (and how many for the first time), skills required, then the
+The summary printed after the findings lists, per level, the mandatory exercise
+count and the number of optional exercises (Zusatzaufgaben), skills taught (and how many for the first time), skills required, then the
 totals, the dangling list and the dead-end list.
 
 ## `exams/<slug>.yaml` (task 8)
@@ -202,7 +228,9 @@ maxItems: 20                             # optional cap on the generated run
   plus the explicit `skills` list. **Covered exercises** = the exercises of
   those levels plus every exercise teaching a listed skill (`ExamScope` in
   `Model.cs`; the validator and the exam generator share it). The trainee must
-  have passed every covered exercise before the exam unlocks.
+  have passed every covered exercise before the exam unlocks. Optional
+  exercises are never covered: they neither lock an exam nor supply items, and
+  their `teaches` do not add covered skills.
 - **Decision — the file name is free, the `id` is the key.** Progress rows
   reference the id (a real exam is "taken once per id"), so renaming the file
   is harmless and renaming the id is a new exam.

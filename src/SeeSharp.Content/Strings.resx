@@ -58,6 +58,8 @@
   <data name="SkillCycle" xml:space="preserve"><value>Zyklus im Skill-Graphen: {0}</value></data>
   <data name="SkillTaughtTooOften" xml:space="preserve"><value>Skill „{0}“ wird von {1} Übungen vermittelt – vermutlich zu grob, aufteilen</value></data>
   <data name="SkillDeadEnd" xml:space="preserve"><value>Skill „{0}“ wird vermittelt, aber nie vorausgesetzt (Sackgasse)</value></data>
+  <data name="SkillRequiresOptionalOnly" xml:space="preserve"><value>Skill „{0}“ wird vorausgesetzt, aber vorher nur von Zusatzaufgaben vermittelt – Pflichtübungen dürfen nicht von optionalen abhängen</value></data>
+  <data name="OptionalTeachesNewSkill" xml:space="preserve"><value>Die Zusatzaufgabe vermittelt Skill „{0}“, den keine Pflichtübung vermittelt – Zusatzaufgaben vertiefen, sie führen nichts Neues ein</value></data>
   <data name="ExamManifestMissing" xml:space="preserve"><value>Prüfungsdatei fehlt</value></data>
   <data name="ExamManifestInvalid" xml:space="preserve"><value>Prüfungsdatei kann nicht gelesen werden: {0}</value></data>
   <data name="ExamIdInvalid" xml:space="preserve"><value>Ungültige Prüfungs-Id „{0}“ (erwartet: Kleinbuchstaben, Ziffern, Bindestriche)</value></data>

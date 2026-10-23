@@ -174,4 +174,25 @@ public sealed class ExamRunTests : IDisposable
         using var reader = new StreamReader(zip.GetEntry(name)!.Open());
         return reader.ReadToEnd();
     }
+
+    [Fact]
+    public void Optional_exercises_neither_lock_an_exam_nor_appear_in_it()
+    {
+        using var store = new ProgressStore(DbPath);
+        var course = Course(Practice);
+        var extra = Manifest("extra", ["a.two"], ["a.one"], "q1");
+        extra.Optional = true;
+        var basics = course.Modules[0];
+        course = course with { Modules = [basics with { Exercises = [.. basics.Exercises, new Exercise("/course/modules/01-basics/10-extra", 10, extra)] }, course.Modules[1]] };
+        PassLevelOne(store, course);
+
+        Assert.Equal(ExamState.Available, Exams.Status(store, course, store.Query(course), Practice, T0).State);
+        Assert.DoesNotContain(ExamScope.CoveredExercises(course, Practice), e => e.Manifest.Optional);
+        for (var seed = 0; seed < 10; seed++) // extra ties with second on a.two; without the filter some seed would pick it
+        {
+            var run = Exams.Start(store, course, Practice, seed, T0);
+            Assert.DoesNotContain(run.Items, i => i.ExerciseId == "extra");
+            store.SubmitExamRun(run.Id, T0);
+        }
+    }
 }

@@ -6,8 +6,10 @@ namespace SeeSharp.Content;
 /// <param name="RunStarterCheck">Run every coding exercise's tests against the untouched <c>starter/</c>. Slow (one <c>dotnet test</c> per exercise).</param>
 public sealed record ValidationOptions(bool RunStarterCheck = true, TimeSpan? StarterTimeout = null);
 
+/// <param name="Exercises">Mandatory exercises.</param>
 /// <param name="SkillsNew">Skills taught here for the first time in published order.</param>
-public sealed record ModuleSummary(int Order, string Id, int Exercises, int SkillsTaught, int SkillsRequired, int SkillsNew);
+/// <param name="Optional">Optional exercises (Zusatzaufgaben).</param>
+public sealed record ModuleSummary(int Order, string Id, int Exercises, int SkillsTaught, int SkillsRequired, int SkillsNew, int Optional = 0);
 
 public sealed record SkillGraphSummary(
     int SkillsInCatalog,
@@ -292,6 +294,8 @@ public static class CourseValidator
                 {
                     if (!teachers.Any(j => j < i))
                         Add(findings, Severity.Error, FindingCode.SkillForwardReference, locations[exercises[i]], skill, exercises[teachers[0]].Manifest.Id);
+                    else if (!exercises[i].Manifest.Optional && teachers.Where(j => j < i).All(j => exercises[j].Manifest.Optional))
+                        Add(findings, Severity.Error, FindingCode.SkillRequiresOptionalOnly, locations[exercises[i]], skill);
                 }
                 else
                 {
@@ -305,8 +309,14 @@ public static class CourseValidator
             Add(findings, Severity.Error, FindingCode.SkillCycle, CourseLoader.SkillsFileName, string.Join(" -> ", cycle));
 
         foreach (var (skill, teachers) in taughtBy.OrderBy(p => p.Key, StringComparer.Ordinal))
-            if (teachers.Count > TaughtTooOftenThreshold)
-                Add(findings, Severity.Warning, FindingCode.SkillTaughtTooOften, locations[exercises[teachers[0]]], skill, teachers.Count);
+        {
+            var mandatory = teachers.Where(j => !exercises[j].Manifest.Optional).ToList();
+            if (mandatory.Count == 0)
+                foreach (var j in teachers)
+                    Add(findings, Severity.Error, FindingCode.OptionalTeachesNewSkill, locations[exercises[j]], skill);
+            else if (mandatory.Count > TaughtTooOftenThreshold)
+                Add(findings, Severity.Warning, FindingCode.SkillTaughtTooOften, locations[exercises[mandatory[0]]], skill, mandatory.Count);
+        }
 
         var deadEnds = taughtBy.Keys.Where(s => !required.Contains(s)).Order(StringComparer.Ordinal).ToList();
         foreach (var skill in deadEnds)
@@ -319,7 +329,8 @@ public static class CourseValidator
             var taught = module.Exercises.SelectMany(e => teaches[e]).ToHashSet(StringComparer.Ordinal);
             var req = module.Exercises.SelectMany(e => requires[e]).ToHashSet(StringComparer.Ordinal);
             var fresh = taught.Count(seen.Add);
-            modules.Add(new ModuleSummary(module.Order, module.Manifest.Id, module.Exercises.Count, taught.Count, req.Count, fresh));
+            var optional = module.Exercises.Count(e => e.Manifest.Optional);
+            modules.Add(new ModuleSummary(module.Order, module.Manifest.Id, module.Exercises.Count - optional, taught.Count, req.Count, fresh, optional));
         }
         return new SkillGraphSummary(course.Skills.Skills.Count, taughtBy.Count, modules, dangling.ToList(), deadEnds);
     }

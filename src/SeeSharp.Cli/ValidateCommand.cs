@@ -38,7 +38,7 @@ internal static class ValidateCommand
         Console.WriteLine();
         Console.WriteLine(Strings.SummaryHeader);
         foreach (var module in summary.Modules)
-            Console.WriteLine(Strings.SummaryModuleLine, module.Order, module.Id, module.Exercises, module.SkillsTaught, module.SkillsNew, module.SkillsRequired);
+            Console.WriteLine(Strings.SummaryModuleLine, module.Order, module.Id, module.Exercises, module.SkillsTaught, module.SkillsNew, module.SkillsRequired, module.Optional);
         Console.WriteLine(Strings.SummaryTotals, summary.SkillsTaught, summary.SkillsInCatalog);
         Console.WriteLine(Strings.SummaryDangling, summary.Dangling.Count == 0 ? "–" : string.Join(", ", summary.Dangling));
         Console.WriteLine(Strings.SummaryDeadEnds, summary.DeadEnds.Count == 0 ? "–" : string.Join(", ", summary.DeadEnds));

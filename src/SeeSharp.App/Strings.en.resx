@@ -238,4 +238,9 @@
   <data name="ExamSubmitConfirmed" xml:space="preserve"><value>Yes, submit</value></data>
   <data name="ExamKeepWorking" xml:space="preserve"><value>Keep working</value></data>
   <data name="ExamActiveGate" xml:space="preserve"><value>An exam is running; the other pages are closed until it is submitted.</value></data>
+  <data name="OptionalBadge" xml:space="preserve"><value>optional</value></data>
+  <data name="OptionalExercises" xml:space="preserve"><value>Optional exercises</value></data>
+  <data name="OptionalProgress" xml:space="preserve"><value>{0} of {1} optional exercises passed</value></data>
+  <data name="OptionalOpen" xml:space="preserve"><value>Open optional exercises:</value></data>
+  <data name="ColumnOptional" xml:space="preserve"><value>Optional</value></data>
 </root>

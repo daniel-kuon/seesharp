@@ -25,7 +25,7 @@
   <data name="SeverityError" xml:space="preserve"><value>ERROR  </value></data>
   <data name="SeverityWarning" xml:space="preserve"><value>WARNING</value></data>
   <data name="SummaryHeader" xml:space="preserve"><value>Skill graph:</value></data>
-  <data name="SummaryModuleLine" xml:space="preserve"><value>  Level {0:00} {1}: {2} exercises, {3} skills taught ({4} new), {5} required</value></data>
+  <data name="SummaryModuleLine" xml:space="preserve"><value>  Level {0:00} {1}: {2} exercises, {6} optional, {3} skills taught ({4} new), {5} required</value></data>
   <data name="SummaryTotals" xml:space="preserve"><value>  Taught: {0} of {1} skills in skills.yaml</value></data>
   <data name="SummaryDangling" xml:space="preserve"><value>  Required but never taught: {0}</value></data>
   <data name="SummaryDeadEnds" xml:space="preserve"><value>  Dead ends (taught, never required): {0}</value></data>

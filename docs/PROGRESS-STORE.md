@@ -86,7 +86,10 @@ costs one ledger row that the next pass of the same exercise recreates.
 - `Transitions(skills, state, cause, timestamp, held)` — rows to append.
 
 Exercise passed = every item in the manifest has a passing attempt. Module
-unlocked = any exercise unlocked. Module passed = all exercises passed.
+unlocked = any exercise unlocked. Module passed = all **mandatory** exercises
+passed; exercises with `optional: true` never block it (`ModuleProgress.Mandatory`
+/ `.Optional` split the list). Passing an optional exercise still appends
+attempts and ledger rows like any other — it is just not required.
 
 ## API the UI calls
 

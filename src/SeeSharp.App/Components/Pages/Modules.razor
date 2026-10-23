@@ -32,7 +32,13 @@
                 <span class="badge locked">@Strings.Locked</span>
             }
         </h2>
-        <p>@string.Format(Strings.ExerciseProgress, m.Exercises.Count(e => e.Passed), m.Exercises.Count)</p>
+        <p>
+            @string.Format(Strings.ExerciseProgress, m.Mandatory.Count(e => e.Passed), m.Mandatory.Count())
+            @if (m.Optional.Any())
+            {
+                <span class="hint"> · @string.Format(Strings.OptionalProgress, m.Optional.Count(e => e.Passed), m.Optional.Count())</span>
+            }
+        </p>
         @if (!m.Unlocked)
         {
             <p>@Strings.MissingSkillsLabel</p>

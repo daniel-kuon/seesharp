@@ -56,9 +56,13 @@ there is no override flag. Delete the file to start over.
 
 ## Screens
 
-- `/` dashboard: modules passed, exercises passed, skills practiced/applied,
-  the next exercise (first unlocked, unpassed in published order), passed list.
-- `/modules`: every module with lock badge, passed/total exercises and — when
+- `/` dashboard: modules passed, mandatory exercises passed, skills practiced/applied,
+  the next exercise (first unlocked, unpassed **mandatory** one in published
+  order), a hint line "Offene Zusatzaufgaben:" linking the unlocked, unpassed
+  optional exercises of unlocked modules, and the passed list (optional ones
+  with an "optional" badge).
+- `/modules`: every module with lock badge, passed/total mandatory exercises,
+  "n von m Zusatzaufgaben bestanden" when the module has optional ones, and — when
   locked — the union of its exercises' missing skills, each with "vermittelt
   in Level NN" linking to the module that first teaches it (or a note that
   nothing teaches it yet).
@@ -66,11 +70,13 @@ there is no override flag. Delete the file to start over.
   teaches as a disabled checklist (checked = practiced or better, state text
   next to it), the "Gelesen" button (`MarkSummaryRead`; shown as done once
   every taught skill has a ledger row), the exercise list with lock state,
-  item progress, reading link and missing skills.
+  item progress, reading link and missing skills. Optional exercises follow in
+  their own section "Zusatzaufgaben (optional)", each with an "optional" badge.
   **Decision — module pages are always openable**, even when every exercise in
   them is locked: the summary is reading material and `introduced` unlocks
   nothing (PROGRESS-STORE.md). Only exercises are gated.
-- `/exercise/{id}`: locked → title, reading link and the missing skills with
+- `/exercise/{id}`: an optional exercise carries an "optional" badge next to
+  its title. Locked → title, reading link and the missing skills with
   module links, nothing else. Unlocked → rendered `instructions.de.md`, the
   `requires` skills with held state and the module that teaches each, then one
   card per item (`ChoiceQuestion`, `OpenQuestion`, `ReviewTask`, `CodingTask`).

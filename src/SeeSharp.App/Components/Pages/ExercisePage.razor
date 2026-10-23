@@ -18,6 +18,10 @@ else
     <p class="crumbs"><a href="modules">@Strings.ModulesTitle</a> › <a href="module/@module.Manifest.Id">@moduleTitle</a> › @title</p>
     <h1>
         @title
+        @if (exercise.Manifest.Optional)
+        {
+            <span class="badge">@Strings.OptionalBadge</span>
+        }
         @if (exerciseProgress.Passed)
         {
             <span class="badge ok">@Strings.Passed</span>

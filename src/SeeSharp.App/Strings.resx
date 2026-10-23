@@ -238,4 +238,9 @@
   <data name="ExamSubmitConfirmed" xml:space="preserve"><value>Ja, abgeben</value></data>
   <data name="ExamKeepWorking" xml:space="preserve"><value>Weiterarbeiten</value></data>
   <data name="ExamActiveGate" xml:space="preserve"><value>Eine Prüfung läuft – bis zur Abgabe sind die anderen Seiten gesperrt.</value></data>
+  <data name="OptionalBadge" xml:space="preserve"><value>optional</value></data>
+  <data name="OptionalExercises" xml:space="preserve"><value>Zusatzaufgaben (optional)</value></data>
+  <data name="OptionalProgress" xml:space="preserve"><value>{0} von {1} Zusatzaufgaben bestanden</value></data>
+  <data name="OptionalOpen" xml:space="preserve"><value>Offene Zusatzaufgaben:</value></data>
+  <data name="ColumnOptional" xml:space="preserve"><value>Zusatzaufgaben</value></data>
 </root>

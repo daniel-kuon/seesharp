@@ -63,6 +63,8 @@ public enum FindingCode
     SkillCycle,
     SkillTaughtTooOften,
     SkillDeadEnd,
+    SkillRequiresOptionalOnly,
+    OptionalTeachesNewSkill,
 
     ExamManifestMissing,
     ExamManifestInvalid,

@@ -25,7 +25,7 @@
   <data name="SeverityError" xml:space="preserve"><value>FEHLER </value></data>
   <data name="SeverityWarning" xml:space="preserve"><value>WARNUNG</value></data>
   <data name="SummaryHeader" xml:space="preserve"><value>Skill-Graph:</value></data>
-  <data name="SummaryModuleLine" xml:space="preserve"><value>  Level {0:00} {1}: {2} Übungen, {3} Skills vermittelt ({4} neu), {5} vorausgesetzt</value></data>
+  <data name="SummaryModuleLine" xml:space="preserve"><value>  Level {0:00} {1}: {2} Übungen, {6} Zusatzaufgaben, {3} Skills vermittelt ({4} neu), {5} vorausgesetzt</value></data>
   <data name="SummaryTotals" xml:space="preserve"><value>  Vermittelt: {0} von {1} Skills in skills.yaml</value></data>
   <data name="SummaryDangling" xml:space="preserve"><value>  Vorausgesetzt, aber nie vermittelt: {0}</value></data>
   <data name="SummaryDeadEnds" xml:space="preserve"><value>  Sackgassen (vermittelt, nie vorausgesetzt): {0}</value></data>

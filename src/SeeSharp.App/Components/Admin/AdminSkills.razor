@@ -13,11 +13,11 @@
 }
 <p>@string.Format(Strings.SkillsCoverage, summary.SkillsTaught, summary.SkillsInCatalog)</p>
 <table>
-    <thead><tr><th>@Strings.ColumnLevel</th><th>@Strings.ColumnModule</th><th>@Strings.ColumnExercises</th><th>@Strings.ColumnTaught</th><th>@Strings.ColumnNew</th><th>@Strings.ColumnRequired</th></tr></thead>
+    <thead><tr><th>@Strings.ColumnLevel</th><th>@Strings.ColumnModule</th><th>@Strings.ColumnExercises</th><th>@Strings.ColumnOptional</th><th>@Strings.ColumnTaught</th><th>@Strings.ColumnNew</th><th>@Strings.ColumnRequired</th></tr></thead>
     <tbody>
         @foreach (var m in summary.Modules)
         {
-            <tr><td>@m.Order.ToString("00")</td><td>@m.Id</td><td>@m.Exercises</td><td>@m.SkillsTaught</td><td>@m.SkillsNew</td><td>@m.SkillsRequired</td></tr>
+            <tr><td>@m.Order.ToString("00")</td><td>@m.Id</td><td>@m.Exercises</td><td>@m.Optional</td><td>@m.SkillsTaught</td><td>@m.SkillsNew</td><td>@m.SkillsRequired</td></tr>
         }
     </tbody>
 </table>

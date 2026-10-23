@@ -58,6 +58,8 @@
   <data name="SkillCycle" xml:space="preserve"><value>Cycle in the skill graph: {0}</value></data>
   <data name="SkillTaughtTooOften" xml:space="preserve"><value>Skill "{0}" is taught by {1} exercises – probably too coarse, split it</value></data>
   <data name="SkillDeadEnd" xml:space="preserve"><value>Skill "{0}" is taught but never required (dead end)</value></data>
+  <data name="SkillRequiresOptionalOnly" xml:space="preserve"><value>Skill "{0}" is required but taught earlier only by optional exercises – mandatory exercises must not depend on optional ones</value></data>
+  <data name="OptionalTeachesNewSkill" xml:space="preserve"><value>The optional exercise teaches skill "{0}", which no mandatory exercise teaches – optional exercises deepen skills, they never introduce new ones</value></data>
   <data name="ExamManifestMissing" xml:space="preserve"><value>Exam file missing</value></data>
   <data name="ExamManifestInvalid" xml:space="preserve"><value>Exam file cannot be read: {0}</value></data>
   <data name="ExamIdInvalid" xml:space="preserve"><value>Invalid exam id "{0}" (expected: lowercase letters, digits, hyphens)</value></data>

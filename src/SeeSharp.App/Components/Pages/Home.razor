@@ -6,13 +6,14 @@
 
 @{
     var progress = State.Progress();
-    var exercises = progress.Exercises.ToList();
+    var exercises = progress.Modules.SelectMany(m => m.Mandatory).ToList();
     var next = exercises.FirstOrDefault(e => e.Unlocked && !e.Passed);
-    var done = exercises.Where(e => e.Passed).ToList();
+    var done = progress.Exercises.Where(e => e.Passed).ToList();
+    var openOptional = progress.Modules.Where(m => m.Unlocked).SelectMany(m => m.Optional).Where(e => e.Unlocked && !e.Passed).ToList();
 }
 <ul>
     <li>@string.Format(Strings.ModulesDone, progress.Modules.Count(m => m.Passed), progress.Modules.Count)</li>
-    <li>@string.Format(Strings.ExercisesDone, done.Count, exercises.Count)</li>
+    <li>@string.Format(Strings.ExercisesDone, exercises.Count(e => e.Passed), exercises.Count)</li>
     <li>@string.Format(Strings.SkillsHeld,
             progress.HeldSkills.Values.Count(s => s.State >= SkillState.Practiced),
             progress.HeldSkills.Values.Count(s => s.State == SkillState.Applied))</li>
@@ -29,6 +30,17 @@ else
         <a href="exercise/@next.Exercise.Manifest.Id">@ExerciseTitle(next.Exercise)</a>
     </p>
 }
+@if (openOptional.Count > 0)
+{
+    <p class="hint">
+        @Strings.OptionalOpen
+        @for (var i = 0; i < openOptional.Count; i++)
+        {
+            var e = openOptional[i];
+            <a href="exercise/@e.Exercise.Manifest.Id">@CourseState.Text(e.Exercise.Manifest.Title)</a>@(i < openOptional.Count - 1 ? ", " : "")
+        }
+    </p>
+}
 
 <h2>@Strings.Done</h2>
 @if (done.Count == 0)
@@ -40,7 +52,7 @@ else
     <ul>
         @foreach (var e in done)
         {
-            <li><a href="exercise/@e.Exercise.Manifest.Id">@ExerciseTitle(e.Exercise)</a></li>
+            <li><a href="exercise/@e.Exercise.Manifest.Id">@ExerciseTitle(e.Exercise)</a> @if (e.Exercise.Manifest.Optional) { <span class="badge">@Strings.OptionalBadge</span> }</li>
         }
     </ul>
 }

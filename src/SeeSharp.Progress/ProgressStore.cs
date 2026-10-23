@@ -13,11 +13,13 @@ public sealed record ExerciseProgress(Exercise Exercise, IReadOnlySet<string> Pa
     public bool Unlocked => MissingSkills.Count == 0;
 }
 
-/// <summary>A module unlocks when any of its exercises does.</summary>
+/// <summary>A module unlocks when any of its exercises does, and is passed when every mandatory one is; optional exercises never block it.</summary>
 public sealed record ModuleProgress(Module Module, IReadOnlyList<ExerciseProgress> Exercises)
 {
+    public IEnumerable<ExerciseProgress> Mandatory => Exercises.Where(e => !e.Exercise.Manifest.Optional);
+    public IEnumerable<ExerciseProgress> Optional => Exercises.Where(e => e.Exercise.Manifest.Optional);
     public bool Unlocked => Exercises.Any(e => e.Unlocked);
-    public bool Passed => Exercises.Count > 0 && Exercises.All(e => e.Passed);
+    public bool Passed => Mandatory.Any() && Mandatory.All(e => e.Passed);
 }
 
 public sealed record CourseProgress(IReadOnlyList<ModuleProgress> Modules, IReadOnlyDictionary<string, SkillStatus> HeldSkills)

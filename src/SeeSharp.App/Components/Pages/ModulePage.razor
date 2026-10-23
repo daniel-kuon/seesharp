@@ -44,45 +44,54 @@ else
         @(read ? Strings.SummaryReadDone : Strings.SummaryRead)
     </button>
 
-    <h2>@Strings.Exercises</h2>
-    @foreach (var e in moduleProgress.Exercises)
+    @foreach (var (heading, group) in new[] { (Strings.Exercises, moduleProgress.Mandatory.ToList()), (Strings.OptionalExercises, moduleProgress.Optional.ToList()) })
     {
-        var exerciseTitle = CourseState.Text(e.Exercise.Manifest.Title);
-        <section class="card @(e.Unlocked ? "" : "locked")">
-            <h3>
-                @if (e.Unlocked)
-                {
-                    <a href="exercise/@e.Exercise.Manifest.Id">@exerciseTitle</a>
-                }
-                else
-                {
-                    @exerciseTitle
-                }
-                @if (e.Passed)
-                {
-                    <span class="badge ok">@Strings.Passed</span>
-                }
-                else if (!e.Unlocked)
-                {
-                    <span class="badge locked">@Strings.Locked</span>
-                }
-            </h3>
-            <p>@string.Format(Strings.ItemProgress, e.PassedItems.Count, e.Exercise.Manifest.Items.Count)</p>
-            @if (e.Exercise.Manifest.Reading is { } exerciseReading)
-            {
-                <p>@Strings.BookLabel <BookLink Reading="exerciseReading" /></p>
-            }
-            @if (!e.Unlocked)
-            {
-                <p>@Strings.MissingSkillsLabel</p>
-                <ul class="skills">
-                    @foreach (var skill in e.MissingSkills)
+        if (group.Count == 0)
+            continue;
+        <h2>@heading</h2>
+        @foreach (var e in group)
+        {
+            var exerciseTitle = CourseState.Text(e.Exercise.Manifest.Title);
+            <section class="card @(e.Unlocked ? "" : "locked")">
+                <h3>
+                    @if (e.Unlocked)
                     {
-                        <li>@State.SkillLabel(skill) <span class="state"><SkillSource SkillId="@skill" /></span></li>
+                        <a href="exercise/@e.Exercise.Manifest.Id">@exerciseTitle</a>
                     }
-                </ul>
-            }
-        </section>
+                    else
+                    {
+                        @exerciseTitle
+                    }
+                    @if (e.Exercise.Manifest.Optional)
+                    {
+                        <span class="badge">@Strings.OptionalBadge</span>
+                    }
+                    @if (e.Passed)
+                    {
+                        <span class="badge ok">@Strings.Passed</span>
+                    }
+                    else if (!e.Unlocked)
+                    {
+                        <span class="badge locked">@Strings.Locked</span>
+                    }
+                </h3>
+                <p>@string.Format(Strings.ItemProgress, e.PassedItems.Count, e.Exercise.Manifest.Items.Count)</p>
+                @if (e.Exercise.Manifest.Reading is { } exerciseReading)
+                {
+                    <p>@Strings.BookLabel <BookLink Reading="exerciseReading" /></p>
+                }
+                @if (!e.Unlocked)
+                {
+                    <p>@Strings.MissingSkillsLabel</p>
+                    <ul class="skills">
+                        @foreach (var skill in e.MissingSkills)
+                        {
+                            <li>@State.SkillLabel(skill) <span class="state"><SkillSource SkillId="@skill" /></span></li>
+                        }
+                    </ul>
+                }
+            </section>
+        }
     }
 }
 

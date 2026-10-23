@@ -137,21 +137,24 @@ public sealed class ExamCoverage
 /// <summary>What an exam definition resolves to in a loaded course. The validator and the exam generator share this.</summary>
 public static class ExamScope
 {
-    /// <summary>Exercises in the covered levels plus exercises teaching an explicitly listed skill, in published order. All must be passed before the exam unlocks.</summary>
+    /// <summary>
+    /// Mandatory exercises in the covered levels plus mandatory exercises teaching an explicitly listed skill, in published order.
+    /// All must be passed before the exam unlocks; they are also the generator's only candidates. Optional exercises never count.
+    /// </summary>
     public static IReadOnlyList<Exercise> CoveredExercises(Course course, ExamDefinition exam)
     {
         var levels = exam.Coverage?.Levels ?? [];
         return course.Modules
-            .SelectMany(m => m.Exercises.Where(e => levels.Contains(m.Order) || e.Manifest.Teaches.Any(exam.Skills.Contains)))
+            .SelectMany(m => m.Exercises.Where(e => !e.Manifest.Optional && (levels.Contains(m.Order) || e.Manifest.Teaches.Any(exam.Skills.Contains))))
             .ToList();
     }
 
-    /// <summary>Every skill the covered levels teach, plus the explicit list.</summary>
+    /// <summary>Every skill the covered levels' mandatory exercises teach, plus the explicit list.</summary>
     public static IReadOnlySet<string> CoveredSkills(Course course, ExamDefinition exam)
     {
         var levels = exam.Coverage?.Levels ?? [];
         var skills = course.Modules.Where(m => levels.Contains(m.Order))
-            .SelectMany(m => m.Exercises).SelectMany(e => e.Manifest.Teaches).ToHashSet(StringComparer.Ordinal);
+            .SelectMany(m => m.Exercises).Where(e => !e.Manifest.Optional).SelectMany(e => e.Manifest.Teaches).ToHashSet(StringComparer.Ordinal);
         skills.UnionWith(exam.Skills);
         return skills;
     }

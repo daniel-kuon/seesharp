@@ -590,4 +590,49 @@ public sealed class CourseValidatorTests : IDisposable
         var finding = AssertFinding(await Validate(), FindingCode.SkillDeadEnd, Severity.Warning);
         Assert.Contains("b.three", finding.Message);
     }
+
+    // ----- optional exercises ------------------------------------------------------------------
+
+    private static string Optional(string manifest, string id) => manifest.Replace("id: second", $"id: {id}\noptional: true");
+
+    [Fact]
+    public async Task Optional_teachers_do_not_count_toward_taught_too_often_and_are_summarised()
+    {
+        for (var i = 3; i <= 5; i++)
+            WriteExercise($"01-basics/1{i}-extra{i}", Optional(Second, $"extra{i}"));
+
+        var report = await Validate();
+        AssertClean(report);
+        var module = Assert.Single(report.Summary.Modules);
+        Assert.Equal((2, 3), (module.Exercises, module.Optional));
+        Assert.True(report.Course.Modules[0].Exercises[2].Manifest.Optional);
+    }
+
+    [Fact]
+    public async Task Mandatory_exercise_requiring_a_skill_taught_earlier_only_by_optional_ones_is_an_error()
+    {
+        Write("modules/01-basics/01-first/manifest.yaml", First.Replace("teaches: [a.one, a.two]", "teaches: [a.one]"));
+        Delete("modules/01-basics/02-second");
+        WriteExercise("01-basics/02-extra", Optional(Second, "extra").Replace("teaches: [b.three]", "teaches: [a.two]").Replace("requires: [a.one, a.two]", "requires: [a.one]"));
+        WriteExercise("01-basics/03-second", Second);
+        WriteExercise("01-basics/04-later", Second.Replace("id: second", "id: later").Replace("teaches: [b.three]", "teaches: [a.two]").Replace("requires: [a.one, a.two]", "requires: [a.one]"));
+
+        var report = await Validate();
+        var finding = AssertFinding(report, FindingCode.SkillRequiresOptionalOnly);
+        Assert.Contains("a.two", finding.Message);
+        Assert.Contains("03-second", finding.Location);
+        Assert.DoesNotContain(report.Findings, f => f.Code is FindingCode.OptionalTeachesNewSkill or FindingCode.SkillForwardReference);
+    }
+
+    [Fact]
+    public async Task Optional_exercise_teaching_a_skill_no_mandatory_one_teaches_is_an_error()
+    {
+        Write("modules/01-basics/01-first/manifest.yaml", First.Replace("teaches: [a.one, a.two]", "teaches: [a.one]"));
+        Write("modules/01-basics/02-second/manifest.yaml", Second.Replace("requires: [a.one, a.two]", "requires: [a.one]"));
+        WriteExercise("01-basics/10-extra", Optional(Second, "extra").Replace("teaches: [b.three]", "teaches: [a.two]").Replace("requires: [a.one, a.two]", "requires: [a.one]"));
+
+        var finding = AssertFinding(await Validate(), FindingCode.OptionalTeachesNewSkill);
+        Assert.Contains("a.two", finding.Message);
+        Assert.Contains("10-extra", finding.Location);
+    }
 }

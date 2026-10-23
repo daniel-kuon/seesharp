@@ -156,4 +156,23 @@ public sealed class ProgressStoreTests : IDisposable
         Assert.Equal(["a.two"], after.Modules[1].Exercises[0].MissingSkills);
         Assert.Equal(SkillState.Practiced, after.HeldSkills["a.one"].State);
     }
+
+    [Fact]
+    public void Module_is_passed_without_its_optional_exercises_which_still_credit_skills()
+    {
+        using var store = new ProgressStore(DbPath);
+        var extra = Manifest("extra", ["a.one"], ["a.one"], "q1");
+        extra.Teaches = [];
+        extra.Optional = true;
+        var course = Course(("basics", [Manifest("first", ["a.one"], [], "q1"), extra]));
+
+        store.RecordAttempt(Attempt("first", "q1", true, 1), course.Modules[0].Exercises[0].Manifest);
+        var module = store.Query(course).Modules[0];
+        Assert.True(module.Passed);
+        Assert.Equal((1, 1), (module.Mandatory.Count(), module.Optional.Count()));
+        Assert.True(module.Optional.Single().Unlocked);
+
+        store.RecordAttempt(Attempt("extra", "q1", true, 2), extra);
+        Assert.Equal(SkillState.Applied, store.Query(course).HeldSkills["a.one"].State);
+    }
 }
