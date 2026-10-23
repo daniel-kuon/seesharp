@@ -58,8 +58,17 @@ public static class ProgressDerivation
     }
 
     /// <summary>Item ids with at least one passing attempt, for one exercise.</summary>
+    /// <summary>A quiz question gets this many tries; after that it is locked with the correct answer shown.</summary>
+    public const int QuizAttempts = 2;
+
+    /// <summary>
+    /// Items that are done: any passing attempt, or a question (attempt without source) that used up its
+    /// <see cref="QuizAttempts"/> — a locked wrong answer must not block the trainee forever.
+    /// </summary>
     public static IReadOnlySet<string> PassedItems(IEnumerable<Attempt> attempts, string exerciseId) =>
-        attempts.Where(a => a.Passed && a.ExerciseId == exerciseId).Select(a => a.ItemId).ToHashSet(StringComparer.Ordinal);
+        attempts.Where(a => a.ExerciseId == exerciseId).GroupBy(a => a.ItemId)
+            .Where(g => g.Any(a => a.Passed) || g.Count(a => a.Source is null && !a.Passed) >= QuizAttempts)
+            .Select(g => g.Key).ToHashSet(StringComparer.Ordinal);
 
     /// <summary>Skills in <paramref name="requires"/> not held at least <see cref="SkillState.Practiced"/>. Empty means unlocked.</summary>
     public static IReadOnlyList<string> MissingSkills(IEnumerable<string> requires, IReadOnlyDictionary<string, SkillStatus> held) =>

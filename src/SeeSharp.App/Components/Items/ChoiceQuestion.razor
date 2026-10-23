@@ -7,16 +7,26 @@
     <label class="option">
         @if (Item.Correct.Count > 1)
         {
-            <input type="checkbox" checked="@_selected.Contains(index)" @onchange="e => Toggle(index, (bool)e.Value!)" />
+            <input type="checkbox" disabled="@Locked" checked="@_selected.Contains(index)" @onchange="e => Toggle(index, (bool)e.Value!)" />
         }
         else
         {
-            <input type="radio" name="@Item.Id" checked="@_selected.Contains(index)" @onchange="() => _selected = [index]" />
+            <input type="radio" disabled="@Locked" name="@Item.Id" checked="@_selected.Contains(index)" @onchange="() => _selected = [index]" />
         }
-        @CourseState.Text(Item.Options[index])
+        @if (Locked && Run is null && Item.Correct.Contains(index))
+        {
+            <strong>@CourseState.Text(Item.Options[index])</strong>
+        }
+        else
+        {
+            @CourseState.Text(Item.Options[index])
+        }
     </label>
 }
-<button @onclick="Submit" disabled="@(_selected.Count == 0)">@Strings.Submit</button>
+@if (!Locked)
+{
+    <button @onclick="Submit" disabled="@(_selected.Count == 0)">@Strings.Submit</button>
+}
 @if (Run is not null)
 {
     @* Exam: no right/wrong, no explanation until the run is submitted. *@
@@ -29,11 +39,15 @@ else if (_passed)
 {
     <p class="ok">@Strings.AnswerCorrect</p>
 }
+else if (Locked)
+{
+    <p class="bad">@Strings.AnswerWrongLocked</p>
+}
 else if (_submitted)
 {
     <p class="bad">@Strings.AnswerWrong</p>
 }
-@if (Run is null && _submitted && Item.Explanation is not null)
+@if (Run is null && Locked && Item.Explanation is not null)
 {
     <p class="hint">@CourseState.Text(Item.Explanation)</p>
 }
@@ -50,6 +64,10 @@ else if (_submitted)
     private readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
     private HashSet<int> _selected = [];
     private bool _submitted, _passed;
+    private int _failed;
+
+    /// <summary>Correct, or out of tries (one retry): the answer is final. In an exam one submission is final.</summary>
+    private bool Locked => Run is not null ? _submitted : _passed || _failed >= ProgressDerivation.QuizAttempts;
 
     protected override void OnInitialized()
     {
@@ -57,6 +75,7 @@ else if (_submitted)
             return;
         _submitted = true;
         _passed = History.Any(a => a.Passed);
+        _failed = History.Count(a => !a.Passed);
         _selected = (History[^1].Answer ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToHashSet();
     }
 
@@ -71,6 +90,8 @@ else if (_submitted)
         attempt = Run is null ? State.Store.RecordAttempt(attempt, Exercise.Manifest) : State.Store.RecordAttempt(attempt with { ExamRunId = Run.Id });
         _submitted = true;
         _passed = attempt.Passed;
+        if (!attempt.Passed)
+            _failed++;
         _clock.Restart();
         await OnChanged.InvokeAsync();
     }

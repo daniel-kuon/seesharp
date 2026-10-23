@@ -53,7 +53,8 @@
   <data name="ExercisePassed" xml:space="preserve"><value>Übung bestanden – die Skills sind gutgeschrieben.</value></data>
   <data name="Submit" xml:space="preserve"><value>Abgeben</value></data>
   <data name="AnswerCorrect" xml:space="preserve"><value>Richtig.</value></data>
-  <data name="AnswerWrong" xml:space="preserve"><value>Leider falsch – versuch es noch einmal.</value></data>
+  <data name="AnswerWrong" xml:space="preserve"><value>Leider falsch – du hast noch einen Versuch.</value></data>
+  <data name="AnswerWrongLocked" xml:space="preserve"><value>Leider wieder falsch. Die richtige Antwort ist fett markiert.</value></data>
   <data name="Answered" xml:space="preserve"><value>Antwort gespeichert.</value></data>
   <data name="AnswerEmpty" xml:space="preserve"><value>Bitte eine Antwort eingeben.</value></data>
   <data name="ReviewDone" xml:space="preserve"><value>Als erledigt markieren</value></data>

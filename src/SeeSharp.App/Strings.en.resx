@@ -53,7 +53,8 @@
   <data name="ExercisePassed" xml:space="preserve"><value>Exercise passed – the skills are credited.</value></data>
   <data name="Submit" xml:space="preserve"><value>Submit</value></data>
   <data name="AnswerCorrect" xml:space="preserve"><value>Correct.</value></data>
-  <data name="AnswerWrong" xml:space="preserve"><value>Not quite – try again.</value></data>
+  <data name="AnswerWrong" xml:space="preserve"><value>Not quite – you have one more try.</value></data>
+  <data name="AnswerWrongLocked" xml:space="preserve"><value>Wrong again. The correct answer is shown in bold.</value></data>
   <data name="Answered" xml:space="preserve"><value>Answer saved.</value></data>
   <data name="AnswerEmpty" xml:space="preserve"><value>Please enter an answer.</value></data>
   <data name="ReviewDone" xml:space="preserve"><value>Mark as done</value></data>

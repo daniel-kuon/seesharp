@@ -108,6 +108,7 @@ internal static class Strings
     public static string Submit => Resources.GetString(nameof(Submit))!;
     public static string AnswerCorrect => Resources.GetString(nameof(AnswerCorrect))!;
     public static string AnswerWrong => Resources.GetString(nameof(AnswerWrong))!;
+    public static string AnswerWrongLocked => Resources.GetString(nameof(AnswerWrongLocked))!;
     public static string Answered => Resources.GetString(nameof(Answered))!;
     public static string AnswerEmpty => Resources.GetString(nameof(AnswerEmpty))!;
     public static string ReviewDone => Resources.GetString(nameof(ReviewDone))!;
