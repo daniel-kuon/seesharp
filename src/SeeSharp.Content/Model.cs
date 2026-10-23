@@ -31,6 +31,9 @@ public sealed class ExerciseManifest
     public Reading? Reading { get; set; }
     public List<string> Teaches { get; set; } = [];
     public List<string> Requires { get; set; } = [];
+    /// <summary>Extra practice: never needed to finish a module, unlock anything or take an exam.</summary>
+    [YamlDotNet.Serialization.YamlMember(DefaultValuesHandling = YamlDotNet.Serialization.DefaultValuesHandling.OmitDefaults)]
+    public bool Optional { get; set; }
     public List<ExerciseItem> Items { get; set; } = [];
 }
 
