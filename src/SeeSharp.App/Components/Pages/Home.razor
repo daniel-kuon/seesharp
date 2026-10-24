@@ -32,14 +32,8 @@ else
 }
 @if (openOptional.Count > 0)
 {
-    <p class="hint">
-        @Strings.OptionalOpen
-        @for (var i = 0; i < openOptional.Count; i++)
-        {
-            var e = openOptional[i];
-            <a href="exercise/@e.Exercise.Manifest.Id">@CourseState.Text(e.Exercise.Manifest.Title)</a>@(i < openOptional.Count - 1 ? ", " : "")
-        }
-    </p>
+    <h2>@Strings.OptionalExercises</h2>
+    @ByModule(openOptional, open: false)
 }
 
 <h2>@Strings.Done</h2>
@@ -49,15 +43,33 @@ else
 }
 else
 {
-    <ul>
-        @foreach (var e in done)
-        {
-            <li><a href="exercise/@e.Exercise.Manifest.Id">@ExerciseTitle(e.Exercise)</a> @if (e.Exercise.Manifest.Optional) { <span class="badge">@Strings.OptionalBadge</span> }</li>
-        }
-    </ul>
+    @ByModule(done, open: false)
 }
 
 @code {
+    /// <summary>One collapsible block per module, in course order; the summary shows the module and how many entries it holds.</summary>
+    private RenderFragment ByModule(IReadOnlyList<ExerciseProgress> exercises, bool open) => __builder =>
+    {
+        foreach (var group in exercises.GroupBy(e => State.ModuleOf(e.Exercise)).OrderBy(g => g.Key.Order))
+        {
+            <details class="card" open="@open">
+                <summary>@string.Format(Strings.LevelTitle, group.Key.Order, CourseState.Text(group.Key.Manifest.Title)) (@group.Count())</summary>
+                <ul>
+                    @foreach (var e in group)
+                    {
+                        <li>
+                            <a href="exercise/@e.Exercise.Manifest.Id">@CourseState.Text(e.Exercise.Manifest.Title)</a>
+                            @if (e.Exercise.Manifest.Optional)
+                            {
+                                <span class="badge">@Strings.OptionalBadge</span>
+                            }
+                        </li>
+                    }
+                </ul>
+            </details>
+        }
+    };
+
     private string ExerciseTitle(Exercise exercise)
     {
         var module = State.ModuleOf(exercise);
