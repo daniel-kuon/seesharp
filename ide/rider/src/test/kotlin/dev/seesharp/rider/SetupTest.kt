@@ -30,11 +30,17 @@ class SetupTest {
 
     @Test
     fun `argument lists keep paths with spaces, umlauts and commas as one argument`() {
-        assertEquals(listOf("tool", "install", "-g", "SeeSharp.Cli"), Setup.toolArgs(false, null))
-        assertEquals(listOf("tool", "install", "-g", "SeeSharp.Cli"), Setup.toolArgs(false, "  "))
-        assertEquals(listOf("tool", "update", "-g", "SeeSharp.Cli", "--add-source", "D:\\Rider Projects 2\\SeeSharp\\nupkg"),
+        val nuget = listOf("--add-source", "https://api.nuget.org/v3/index.json")
+        assertEquals(listOf("tool", "install", "-g", "SeeSharp.Cli") + nuget, Setup.toolArgs(false, null))
+        assertEquals(listOf("tool", "install", "-g", "SeeSharp.Cli") + nuget, Setup.toolArgs(false, "  "))
+        assertEquals(listOf("tool", "update", "-g", "SeeSharp.Cli") + nuget + listOf("--add-source", "D:\\Rider Projects 2\\SeeSharp\\nupkg"),
             Setup.toolArgs(true, " D:\\Rider Projects 2\\SeeSharp\\nupkg "))
         assertEquals(listOf("init", "--dir", "C:\\Kurs Ü, 1"), Setup.initArgs("C:\\Kurs Ü, 1"))
         assertEquals(listOf("start", "--no-browser"), Setup.startArgs())
+    }
+
+    @Test
+    fun `setup processes run in the home folder, not the project`() {
+        assertEquals(System.getProperty("user.home"), Setup.workDirectory())
     }
 }

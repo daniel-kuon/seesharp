@@ -400,7 +400,7 @@ class SeeSharpPanel(private val project: Project) : SimpleToolWindowPanel(true, 
         background {
             val sdks = StringBuffer()
             try {
-                OSProcessHandler(GeneralCommandLine("dotnet", "--list-sdks").withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.CONSOLE)).apply {
+                OSProcessHandler(setupCommand(listOf("dotnet", "--list-sdks"))).apply {
                     addProcessListener(object : ProcessListener {
                         override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) { sdks.append(event.text) }
                     })
@@ -469,14 +469,20 @@ class SeeSharpPanel(private val project: Project) : SimpleToolWindowPanel(true, 
 
     private fun commandText(command: List<String>) = command.joinToString(" ") { if (it.any(Char::isWhitespace)) "\"$it\"" else it }
 
+    /**
+     * Argument list (no shell), and the home folder as working directory, never the project's: its NuGet.config or
+     * global.json (or a parent folder's) could redirect `dotnet tool install` to another package source or SDK.
+     */
+    private fun setupCommand(command: List<String>) = GeneralCommandLine(command)
+        .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.CONSOLE)
+        .withCharset(StandardCharsets.UTF_8) // seesharp writes UTF-8 when piped
+        .withWorkDirectory(Setup.workDirectory())
+
     /** One process, argument list (no shell), output in the console; true on exit code 0. */
     private fun step(console: ConsoleView, command: List<String>): Boolean {
         console.print("> " + commandText(command) + "\n", ConsoleViewContentType.SYSTEM_OUTPUT)
         return try {
-            val handler = OSProcessHandler(GeneralCommandLine(command)
-                .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.CONSOLE)
-                .withCharset(StandardCharsets.UTF_8) // seesharp writes UTF-8 when piped
-                .withWorkDirectory(System.getProperty("user.home")))
+            val handler = OSProcessHandler(setupCommand(command))
             console.attachToProcess(handler)
             handler.startNotify()
             handler.waitFor()
