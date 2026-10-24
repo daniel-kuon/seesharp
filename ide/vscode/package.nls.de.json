@@ -6,5 +6,9 @@
   "command.refresh": "Aktualisieren",
   "command.grade": "Prüfen",
   "command.openExercise": "Übung öffnen",
-  "config.cliPath": "Pfad zu einem SeeSharp-Checkout (oder seinem Projekt `src/SeeSharp.Cli`). Wenn gesetzt, startet *SeeSharp starten* mit `dotnet run --project` statt mit dem installierten Tool `seesharp`."
+  "config.cliPath": "Pfad zu einem SeeSharp-Checkout (oder seinem Projekt `src/SeeSharp.Cli`). Wenn gesetzt, startet *SeeSharp starten* mit `dotnet run --project` statt mit dem installierten Tool `seesharp`.",
+  "welcome.setup": "Zum ersten Mal hier? *SeeSharp einrichten* installiert das Tool, klont den Kurs und startet SeeSharp.",
+  "welcome.noCourse": "SeeSharp läuft, aber es ist noch kein Kurs eingerichtet.",
+  "command.setup": "SeeSharp einrichten",
+  "config.extraPackageSource": "Zusätzliche NuGet-Quelle (ein Ordner mit `SeeSharp.Cli.*.nupkg` oder eine Feed-URL) für *SeeSharp einrichten*, an `dotnet tool install` als `--add-source` übergeben. Leer = nur nuget.org."
 }

@@ -2,6 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { Api, ApiError, Course, Exercise, ExerciseDetail, Grade, Module, readServer } from './api';
+import { defaultCourseDir, findTool, hasSdk, initArgs, run, SDK_DOWNLOAD, startArgs, toolArgs } from './setup';
 
 const t = vscode.l10n.t;
 /** Exercise to continue with after vscode.openFolder reloaded the window. */
@@ -17,6 +18,7 @@ let panel: vscode.WebviewPanel | undefined;
 let detail: ExerciseDetail | undefined;
 let lastGrade: Grade | undefined;
 let running = false;
+let output: vscode.OutputChannel | undefined;
 
 class Tree implements vscode.TreeDataProvider<Module | Exercise> {
   private readonly changed = new vscode.EventEmitter<void>();
@@ -67,6 +69,7 @@ export async function activate(ctx: vscode.ExtensionContext) {
   ctx.subscriptions.push(view,
     vscode.commands.registerCommand('seesharp.refresh', () => load(tree)),
     vscode.commands.registerCommand('seesharp.start', () => start(tree)),
+    vscode.commands.registerCommand('seesharp.setup', () => setup(tree)),
     vscode.commands.registerCommand('seesharp.openExercise', (id: string) => openExercise(id)),
     vscode.commands.registerCommand('seesharp.grade', () => grade(tree)));
 
@@ -91,14 +94,17 @@ async function load(tree: Tree): Promise<boolean> {
   serverUrl = server?.url ?? '';
   course = undefined;
   view.message = undefined;
+  let noCourse = false;
   if (api)
     try {
       course = await api.course();
     } catch (e) {
-      if (e instanceof ApiError && e.status !== 0) view.message = e.message; // exam running, no course loaded, ...
+      noCourse = e instanceof ApiError && e.status === 503; // the welcome view then offers "Set up SeeSharp"
+      if (e instanceof ApiError && e.status !== 0) view.message = noCourse ? undefined : e.message; // exam running, ...
       else api = undefined;
     }
   await vscode.commands.executeCommand('setContext', 'seesharp.offline', !api);
+  await vscode.commands.executeCommand('setContext', 'seesharp.noCourse', noCourse);
   tree.refresh();
   return course !== undefined;
 }
@@ -114,7 +120,7 @@ async function start(tree: Tree) {
   const project = cli && fs.existsSync(path.join(cli, 'src', 'SeeSharp.Cli')) ? path.join(cli, 'src', 'SeeSharp.Cli') : cli;
   const terminal = project
     ? vscode.window.createTerminal({ name: 'SeeSharp', shellPath: 'dotnet', shellArgs: ['run', '--project', project, '--', 'start', '--no-browser'] })
-    : vscode.window.createTerminal({ name: 'SeeSharp', shellPath: 'seesharp', shellArgs: ['start', '--no-browser'] });
+    : vscode.window.createTerminal({ name: 'SeeSharp', shellPath: findTool() ?? 'seesharp', shellArgs: startArgs() });
   terminal.show(true);
   const started = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: t('Starting SeeSharp …') }, async () => {
     for (let i = 0; i < 120; i++) { // dotnet run builds first
@@ -124,6 +130,83 @@ async function start(tree: Tree) {
     return false;
   });
   if (!started) void vscode.window.showErrorMessage(t('SeeSharp did not start. See the "SeeSharp" terminal.'));
+}
+
+/**
+ * "Set up SeeSharp": .NET 10 SDK check, `dotnet tool install|update -g SeeSharp.Cli`, `seesharp init --dir <folder>`,
+ * then reload a running server or start one. Each step runs without a shell; its output goes to the "SeeSharp" channel.
+ */
+async function setup(tree: Tree) {
+  const out = output ??= vscode.window.createOutputChannel('SeeSharp');
+  out.show(true);
+  const step = async (command: string, args: string[]) => {
+    out.appendLine(`> ${command} ${args.map(a => /\s/.test(a) ? `"${a}"` : a).join(' ')}`);
+    try {
+      const code = await run(command, args, s => out.append(s));
+      out.appendLine(`(exit ${code})`);
+      return code === 0;
+    } catch (e) {
+      out.appendLine(e instanceof Error ? e.message : String(e));
+      return false;
+    }
+  };
+
+  let sdks = '';
+  await run('dotnet', ['--list-sdks'], s => sdks += s).catch(() => -1); // no dotnet at all = no SDK
+  out.appendLine('> dotnet --list-sdks');
+  out.append(sdks);
+  if (!hasSdk(sdks)) {
+    const download = t('Download .NET 10');
+    if (await vscode.window.showErrorMessage(t('SeeSharp needs the .NET 10 SDK. Install it, restart VS Code and run "Set up SeeSharp" again.'), download) === download)
+      void vscode.env.openExternal(vscode.Uri.parse(SDK_DOWNLOAD));
+    return;
+  }
+
+  let tool = findTool();
+  let install = !tool;
+  if (tool) {
+    const update = t('Update'), keep = t('Keep version');
+    const choice = await vscode.window.showInformationMessage(t('SeeSharp is already installed. Update it to the latest version?'), { modal: true }, update, keep);
+    if (!choice) return;
+    install = choice === update;
+  }
+  const folder = await vscode.window.showInputBox({
+    title: t('Set up SeeSharp'), prompt: t('Course folder: the course is cloned there, or updated if it is already a clone.'),
+    value: defaultCourseDir(), ignoreFocusOut: true,
+  });
+  if (!folder?.trim()) return;
+
+  const ok = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: t('Setting up SeeSharp') }, async progress => {
+    if (install) {
+      progress.report({ message: tool ? t('Updating the seesharp tool …') : t('Installing the seesharp tool …') });
+      const source = vscode.workspace.getConfiguration('seesharp').get<string>('extraPackageSource');
+      // An update fails while SeeSharp runs (the .exe is in use); the installed version then carries on.
+      if (!await step('dotnet', toolArgs(!!tool, source)) && !tool) {
+        void vscode.window.showErrorMessage(t('Installing SeeSharp failed. See the "SeeSharp" output.'));
+        return false;
+      }
+      tool = findTool();
+    }
+    if (!tool) {
+      void vscode.window.showErrorMessage(t('The seesharp tool was not found after installing it. See the "SeeSharp" output.'));
+      return false;
+    }
+    progress.report({ message: t('Cloning the course and downloading the book …') });
+    if (!await step(tool, initArgs(folder.trim()))) {
+      void vscode.window.showErrorMessage(t('"seesharp init" failed. See the "SeeSharp" output.'));
+      return false;
+    }
+    return true;
+  });
+  if (!ok) return;
+
+  await load(tree);
+  if (api) { // already running: let it re-read the course path from settings.json
+    await api.reload().catch(report);
+    await load(tree);
+    void vscode.window.showInformationMessage(t('SeeSharp is set up.'));
+  } else
+    await start(tree);
 }
 
 async function openExercise(id: string) {

@@ -49,6 +49,8 @@ export class Api {
   constructor(private readonly server: Server) {}
 
   course(): Promise<Course> { return this.call('GET', '/api/course'); }
+  /** Re-reads settings.json and the course (after `seesharp init`); also answers while no course is loaded. */
+  reload(): Promise<{ loaded: boolean }> { return this.call('POST', '/api/reload'); }
   exercise(id: string): Promise<ExerciseDetail> { return this.call('GET', `/api/exercise/${encodeURIComponent(id)}`); }
   grade(id: string): Promise<Grade> { return this.call('POST', `/api/exercise/${encodeURIComponent(id)}/grade`); }
   workspace(id: string): Promise<WorkspaceFiles> { return this.call('POST', `/api/exercise/${encodeURIComponent(id)}/workspace`); }

@@ -2,10 +2,10 @@
   "name": "seesharp",
   "displayName": "SeeSharp",
   "description": "%description%",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "seesharp",
   "license": "CC-BY-NC-SA-4.0",
-  "repository": { "type": "git", "url": "https://github.com/daniel-kuon/seesharp.git", "directory": "ide/vscode" },
+  "repository": { "type": "git", "url": "https://github.com/wollume-studios/seesharp.git", "directory": "ide/vscode" },
   "engines": { "vscode": "^1.95.0" },
   "categories": ["Education"],
   "main": "./out/extension.js",
@@ -19,10 +19,12 @@
       "seesharp": [{ "id": "seesharp.exercises", "name": "%view.exercises%" }]
     },
     "viewsWelcome": [
-      { "view": "seesharp.exercises", "contents": "%welcome.offline%\n[$(play) %command.start%](command:seesharp.start)\n[$(refresh) %command.refresh%](command:seesharp.refresh)" }
+      { "view": "seesharp.exercises", "when": "!seesharp.noCourse", "contents": "%welcome.offline%\n[$(play) %command.start%](command:seesharp.start)\n%welcome.setup%\n[$(tools) %command.setup%](command:seesharp.setup)\n[$(refresh) %command.refresh%](command:seesharp.refresh)" },
+      { "view": "seesharp.exercises", "when": "seesharp.noCourse", "contents": "%welcome.noCourse%\n[$(tools) %command.setup%](command:seesharp.setup)\n[$(refresh) %command.refresh%](command:seesharp.refresh)" }
     ],
     "commands": [
       { "command": "seesharp.refresh", "title": "%command.refresh%", "category": "SeeSharp", "icon": "$(refresh)" },
+      { "command": "seesharp.setup", "title": "%command.setup%", "category": "SeeSharp", "icon": "$(tools)" },
       { "command": "seesharp.start", "title": "%command.start%", "category": "SeeSharp", "icon": "$(play)" },
       { "command": "seesharp.grade", "title": "%command.grade%", "category": "SeeSharp", "icon": "$(beaker)", "enablement": "seesharp.hasExercise" },
       { "command": "seesharp.openExercise", "title": "%command.openExercise%", "category": "SeeSharp" }
@@ -39,13 +41,18 @@
           "type": "string",
           "default": "",
           "markdownDescription": "%config.cliPath%"
+        },
+        "seesharp.extraPackageSource": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "%config.extraPackageSource%"
         }
       }
     }
   },
   "scripts": {
     "compile": "tsc -p .",
-    "test": "tsc -p . && node --test out/test/api.test.js",
+    "test": "tsc -p . && node --test out/test/*.test.js",
     "vscode:prepublish": "tsc -p ."
   },
   "devDependencies": {

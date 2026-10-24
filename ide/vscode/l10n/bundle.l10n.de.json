@@ -25,5 +25,20 @@
   "optional": "optional",
   "{0} (level {1})": "{0} (Level {1})",
   "{0} of {1} tasks done": "{0} von {1} Aufgaben erledigt",
-  "{0} of {1} tests passed.": "{0} von {1} Tests bestanden."
+  "{0} of {1} tests passed.": "{0} von {1} Tests bestanden.",
+  "Download .NET 10": "Download .NET 10",
+  "SeeSharp needs the .NET 10 SDK. Install it, restart VS Code and run \"Set up SeeSharp\" again.": "SeeSharp braucht das .NET 10 SDK. Installiere es, starte VS Code neu und rufe „SeeSharp einrichten“ erneut auf.",
+  "Update": "Aktualisieren",
+  "Keep version": "Version behalten",
+  "SeeSharp is already installed. Update it to the latest version?": "SeeSharp ist schon installiert. Auf die neueste Version aktualisieren?",
+  "Set up SeeSharp": "SeeSharp einrichten",
+  "Course folder: the course is cloned there, or updated if it is already a clone.": "Kursordner: Der Kurs wird dorthin geklont oder, wenn er schon dort liegt, aktualisiert.",
+  "Setting up SeeSharp": "SeeSharp wird eingerichtet",
+  "Updating the seesharp tool …": "Aktualisiere das Tool seesharp …",
+  "Installing the seesharp tool …": "Installiere das Tool seesharp …",
+  "Installing SeeSharp failed. See the \"SeeSharp\" output.": "Die Installation von SeeSharp ist fehlgeschlagen. Details in der Ausgabe „SeeSharp“.",
+  "The seesharp tool was not found after installing it. See the \"SeeSharp\" output.": "Das Tool seesharp wurde nach der Installation nicht gefunden. Details in der Ausgabe „SeeSharp“.",
+  "Cloning the course and downloading the book …": "Klone den Kurs und lade das Buch …",
+  "\"seesharp init\" failed. See the \"SeeSharp\" output.": "„seesharp init“ ist fehlgeschlagen. Details in der Ausgabe „SeeSharp“.",
+  "SeeSharp is set up.": "SeeSharp ist eingerichtet."
 }
