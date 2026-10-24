@@ -30,6 +30,7 @@ data class TestResult(val name: String, val outcome: String, val duration: Strin
 data class GradingResult(val outcome: String, val duration: String, val tests: List<TestResult>?, val buildErrors: List<String>?, val output: String?)
 data class Grade(val passed: Boolean, val result: GradingResult)
 data class WorkspaceFiles(val directory: String, val files: List<String>)
+data class Reload(val loaded: Boolean)
 
 /** HTTP status 0 = not reachable. The message is the server's `error` (in SeeSharp's locale) or `HTTP <status>`. */
 class ApiException(val status: Int, message: String) : Exception(message)
@@ -53,6 +54,8 @@ class Api(private val server: Server) {
     private val client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).connectTimeout(Duration.ofSeconds(3)).build()
 
     fun course(): Course = call("GET", "/api/course")
+    /** Re-reads settings.json and the course (after `seesharp init`); also answers while no course is loaded. */
+    fun reload(): Reload = call("POST", "/api/reload")
     fun exercise(id: String): ExerciseDetail = call("GET", "/api/exercise/${encodePath(id)}")
     fun grade(id: String): Grade = call("POST", "/api/exercise/${encodePath(id)}/grade")
     fun workspace(id: String): WorkspaceFiles = call("POST", "/api/exercise/${encodePath(id)}/workspace")

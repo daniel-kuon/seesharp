@@ -2,9 +2,15 @@ package dev.seesharp.rider
 
 import com.intellij.execution.ExecutionException
 import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.execution.executors.DefaultRunExecutor
+import com.intellij.execution.filters.TextConsoleBuilderFactory
 import com.intellij.execution.process.OSProcessHandler
 import com.intellij.execution.process.ProcessEvent
 import com.intellij.execution.process.ProcessListener
+import com.intellij.execution.ui.ConsoleView
+import com.intellij.execution.ui.ConsoleViewContentType
+import com.intellij.execution.ui.RunContentDescriptor
+import com.intellij.execution.ui.RunContentManager
 import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.impl.ProjectUtil
@@ -59,6 +65,7 @@ import org.cef.browser.CefFrame
 import org.cef.handler.CefRequestHandlerAdapter
 import org.cef.network.CefRequest
 import java.awt.BorderLayout
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import javax.swing.JButton
@@ -76,6 +83,8 @@ private const val TOOL_WINDOW = "SeeSharp"
 /** Exercise to continue with in the project that opening its folder brings up (application-wide). */
 private const val PENDING = "seesharp.pendingExercise"
 private const val CLI_PATH = "seesharp.cliPath"
+/** Application-level (PropertiesComponent.getInstance()), never per project: an opened repository cannot set it. */
+private const val EXTRA_SOURCE = "seesharp.extraPackageSource"
 
 class SeeSharpToolWindowFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
@@ -95,11 +104,18 @@ class SeeSharpConfigurable : BoundConfigurable("SeeSharp") {
                 .align(AlignX.FILL)
                 .comment(t("cliPathComment"))
         }
+        row(t("extraSource")) {
+            textField()
+                .bindText({ PropertiesComponent.getInstance().getValue(EXTRA_SOURCE).orEmpty() },
+                    { PropertiesComponent.getInstance().setValue(EXTRA_SOURCE, it.trim(), "") })
+                .align(AlignX.FILL)
+                .comment(t("extraSourceComment"))
+        }
     }
 }
 
-/** What one GET /api/course gave: a course, or an API error to show (exam running, no course), or neither (not running). */
-private class Snapshot(val api: Api?, val url: String, val course: Course?, val message: String?)
+/** What one GET /api/course gave: a course, or an API error to show (exam running, no course = 503), or neither (not running). */
+private class Snapshot(val api: Api?, val url: String, val course: Course?, val message: String?, val noCourse: Boolean = false)
 
 private fun fetch(): Snapshot {
     val server = readServer() ?: return Snapshot(null, "", null, null)
@@ -107,7 +123,7 @@ private fun fetch(): Snapshot {
     return try {
         Snapshot(api, server.url, api.course(), null)
     } catch (e: ApiException) {
-        if (e.status == 0) Snapshot(null, "", null, null) else Snapshot(api, server.url, null, e.message)
+        if (e.status == 0) Snapshot(null, "", null, null) else Snapshot(api, server.url, null, e.message, e.status == 503)
     }
 }
 
@@ -140,7 +156,7 @@ class SeeSharpPanel(private val project: Project) : SimpleToolWindowPanel(true, 
             if (!rebuilding) ((tree.lastSelectedPathComponent as? DefaultMutableTreeNode)?.userObject as? Exercise)?.let { openExercise(it.id, true) }
         }
 
-        val toolbar = ActionManager.getInstance().createActionToolbar("SeeSharp", DefaultActionGroup(RefreshAction(), StartAction()), true)
+        val toolbar = ActionManager.getInstance().createActionToolbar("SeeSharp", DefaultActionGroup(RefreshAction(), StartAction(), SetupAction()), true)
         toolbar.targetComponent = this
         setToolbar(toolbar.component)
 
@@ -193,7 +209,7 @@ class SeeSharpPanel(private val project: Project) : SimpleToolWindowPanel(true, 
         serverUrl = s.url
         course = s.course
         s.course?.let { Strings.locale = it.locale }
-        rebuildTree(s.message)
+        rebuildTree(s.message, s.noCourse)
         render()
         if (s.course != null) resume(firstLoad)
     }
@@ -215,7 +231,7 @@ class SeeSharpPanel(private val project: Project) : SimpleToolWindowPanel(true, 
             }
     }
 
-    private fun rebuildTree(message: String?) {
+    private fun rebuildTree(message: String?, noCourse: Boolean = false) {
         val root = DefaultMutableTreeNode()
         for (m in course?.modules.orEmpty())
             root.add(DefaultMutableTreeNode(m).apply { m.exercises.forEach { add(DefaultMutableTreeNode(it, false)) } })
@@ -231,10 +247,17 @@ class SeeSharpPanel(private val project: Project) : SimpleToolWindowPanel(true, 
         tree.emptyText.clear()
         when {
             course != null -> {}
-            message != null -> tree.emptyText.text = message // exam running, no course loaded, ...
+            noCourse -> {
+                tree.emptyText.text = t("noCourse")
+                tree.emptyText.appendLine(t("setup"), SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES) { setup() }
+                tree.emptyText.appendLine(t("refresh"), SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES) { load() }
+            }
+            message != null -> tree.emptyText.text = message // exam running, ...
             else -> {
                 tree.emptyText.text = t("notRunning")
                 tree.emptyText.appendLine(t("start"), SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES) { start() }
+                tree.emptyText.appendLine(t("firstTime"))
+                tree.emptyText.appendLine(t("setup"), SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES) { setup() }
                 tree.emptyText.appendLine(t("refresh"), SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES) { load() }
             }
         }
@@ -334,9 +357,8 @@ class SeeSharpPanel(private val project: Project) : SimpleToolWindowPanel(true, 
     private fun start() {
         val cli = PropertiesComponent.getInstance().getValue(CLI_PATH)?.trim().orEmpty()
         val command = if (cli.isEmpty()) {
-            // Installed after Rider started: ~/.dotnet/tools is not on Rider's PATH yet.
-            val tool = Path.of(System.getProperty("user.home"), ".dotnet", "tools", "seesharp.exe")
-            GeneralCommandLine(if (Files.isRegularFile(tool)) tool.toString() else "seesharp", "start", "--no-browser")
+            // Installed after Rider started: ~/.dotnet/tools is not on Rider's PATH yet, findTool looks there too.
+            GeneralCommandLine(listOf(Setup.findTool()?.toString() ?: "seesharp") + Setup.startArgs())
         } else {
             val checkout = Path.of(cli, "src", "SeeSharp.Cli").takeIf { Files.isDirectory(it) } ?: Path.of(cli)
             GeneralCommandLine("dotnet", "run", "--project", checkout.toString(), "--", "start", "--no-browser")
@@ -368,6 +390,101 @@ class SeeSharpPanel(private val project: Project) : SimpleToolWindowPanel(true, 
 
             private fun failed(details: String) = ui { notify(t("startFailed", details), NotificationType.ERROR) }
         }.queue()
+    }
+
+    /**
+     * "Set up SeeSharp": .NET 10 SDK check, `dotnet tool install|update -g SeeSharp.Cli`, `seesharp init --dir <folder>`,
+     * then reload a running server or start one. Processes run without a shell; their output goes to a "Run" console.
+     */
+    private fun setup() {
+        background {
+            val sdks = StringBuffer()
+            try {
+                OSProcessHandler(GeneralCommandLine("dotnet", "--list-sdks").withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.CONSOLE)).apply {
+                    addProcessListener(object : ProcessListener {
+                        override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) { sdks.append(event.text) }
+                    })
+                    startNotify()
+                    waitFor(30_000)
+                }
+            } catch (e: ExecutionException) {
+                // no dotnet at all = no SDK
+            }
+            val tool = Setup.findTool()
+            ui { setupAsk(Setup.hasSdk(sdks.toString()), tool) }
+        }
+    }
+
+    private fun setupAsk(hasSdk: Boolean, tool: Path?) {
+        if (!hasSdk)
+            return notify(t("sdkMissing"), NotificationType.ERROR, NotificationAction.createSimple(t("downloadSdk")) { BrowserUtil.browse(Setup.SDK_DOWNLOAD) })
+        val source = PropertiesComponent.getInstance().getValue(EXTRA_SOURCE)?.trim().orEmpty()
+        val command = (listOf("dotnet") + Setup.toolArgs(tool != null, source)).let(::commandText)
+        val sources = if (source.isEmpty()) "nuget.org" else t("sourceBoth", source)
+        // The exact command and package source are shown before anything is installed.
+        val install = if (tool == null) {
+            if (Messages.showDialog(project, t("installQuestion", command, sources), t("setup"), arrayOf(t("install"), t("cancel")), 0, Messages.getQuestionIcon()) != 0) return
+            true
+        } else when (Messages.showDialog(project, t("updateQuestion", command, sources), t("setup"), arrayOf(t("update"), t("keepVersion"), t("cancel")), 0, Messages.getQuestionIcon())) {
+            0 -> true
+            1 -> false
+            else -> return
+        }
+        val folder = Messages.showInputDialog(project, t("courseFolder"), t("setup"), null, Setup.defaultCourseDir(), null)?.trim()
+        if (folder.isNullOrEmpty()) return
+
+        val console = TextConsoleBuilderFactory.getInstance().createBuilder(project).console
+        Disposer.register(this, console)
+        RunContentManager.getInstance(project).showRunContent(DefaultRunExecutor.getRunExecutorInstance(),
+            RunContentDescriptor(console, null, console.component, t("setup")))
+
+        object : Task.Backgroundable(project, t("setup"), true) {
+            override fun run(indicator: ProgressIndicator) {
+                var found = tool
+                if (install) {
+                    indicator.text = t(if (tool == null) "installing" else "updating")
+                    // An update fails while SeeSharp runs (the .exe is in use); the installed version then carries on.
+                    if (!step(console, listOf("dotnet") + Setup.toolArgs(tool != null, source)) && tool == null)
+                        return failed(t("installFailed"))
+                    found = Setup.findTool()
+                }
+                val seesharp = found ?: return failed(t("toolNotFound"))
+                indicator.text = t("initializing")
+                if (!step(console, listOf(seesharp.toString()) + Setup.initArgs(folder))) return failed(t("initFailed"))
+                val running = fetch().api ?: return ui { start() }
+                try {
+                    running.reload() // let the running server re-read the course path from settings.json
+                } catch (e: ApiException) {
+                    return ui { report(e) }
+                }
+                ui {
+                    load()
+                    notify(t("setUpDone"), NotificationType.INFORMATION)
+                }
+            }
+
+            private fun failed(text: String) = ui { notify(text, NotificationType.ERROR) }
+        }.queue()
+    }
+
+    private fun commandText(command: List<String>) = command.joinToString(" ") { if (it.any(Char::isWhitespace)) "\"$it\"" else it }
+
+    /** One process, argument list (no shell), output in the console; true on exit code 0. */
+    private fun step(console: ConsoleView, command: List<String>): Boolean {
+        console.print("> " + commandText(command) + "\n", ConsoleViewContentType.SYSTEM_OUTPUT)
+        return try {
+            val handler = OSProcessHandler(GeneralCommandLine(command)
+                .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.CONSOLE)
+                .withCharset(StandardCharsets.UTF_8) // seesharp writes UTF-8 when piped
+                .withWorkDirectory(System.getProperty("user.home")))
+            console.attachToProcess(handler)
+            handler.startNotify()
+            handler.waitFor()
+            handler.exitCode == 0
+        } catch (e: ExecutionException) {
+            console.print(e.message.orEmpty() + "\n", ConsoleViewContentType.ERROR_OUTPUT)
+            false
+        }
     }
 
     private fun offline() {
@@ -444,6 +561,14 @@ class SeeSharpPanel(private val project: Project) : SimpleToolWindowPanel(true, 
             e.presentation.text = t("refresh")
         }
         override fun actionPerformed(e: AnActionEvent) = load()
+    }
+
+    private inner class SetupAction : DumbAwareAction(AllIcons.General.Settings) {
+        override fun getActionUpdateThread() = ActionUpdateThread.EDT
+        override fun update(e: AnActionEvent) {
+            e.presentation.text = t("setup")
+        }
+        override fun actionPerformed(e: AnActionEvent) = setup()
     }
 
     private inner class StartAction : DumbAwareAction(AllIcons.Actions.Execute) {
