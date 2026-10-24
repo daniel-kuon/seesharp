@@ -245,6 +245,42 @@ in `skills.yaml` (`ExamSkillUnknown`), and coverage that resolves to no skill
 at all (`ExamCoverageEmpty`). `seesharp validate` prints one line per exam:
 kind, levels, covered skills, covered exercises, pickable items, time limit.
 
+## Translating the course
+
+`tools/translate_course.py` machine-translates German content to English with
+the DeepL API (free tier, standard library only):
+
+```
+python -I tools/translate_course.py <course> --key-file <deepl.key> [--dry-run] [--only GLOB ...] [--max-chars N] [--ca-file BUNDLE]
+```
+
+- **Markdown:** every `summary.de.md` / `instructions.de.md` without an
+  `.en.md` twin gets one. Fenced code is copied verbatim; inline code, URLs and
+  link targets are sent as `<code translate="no">` / restored from a side
+  table, so test names and identifiers come back byte for byte (a unit whose
+  code went missing aborts the run). Hard-wrapped lines are joined into one
+  unit per paragraph or list item; the English files are not re-wrapped.
+- **YAML:** in `module.yaml`, `manifest.yaml` and `exams/*.yaml`, every locale
+  map with `de` and no `en` gets an `en` value. A line-based editor inserts it
+  (`, en: "…"` into a flow map, an `en:` line after a block-map `de:`) and
+  leaves every other byte alone; values are Markdown-protected like the files.
+- **Idempotent and resumable:** existing `.en.md` files and `en` keys are never
+  touched, each file is written atomically, so a rerun continues where an
+  interrupted run stopped. `--max-chars` stops before a batch would exceed it.
+- **Budget:** DeepL bills only the text outside tags and outside
+  `translate="no"` elements (checked against `/v2/usage` to the character);
+  `--dry-run` prints exactly that per file type and module, calling only
+  `/v2/usage`. Identical texts are sent once per run.
+- **Glossary:** `GLOSSARY` in the script pins course terms DeepL got wrong
+  (`Zusatz:` → `Extra:`, `Zusatzaufgabe` → `optional exercise`, `ggT` → `GCD`).
+- **Review the output.** DeepL places protected code by alignment and
+  occasionally puts a span in the wrong spot; a span glued inside a word is
+  printed as a warning. Book section titles are translated too (the book is
+  German), and the result needs a read-through before it is committed.
+- If Python's Windows certificate store fails (`certificate has expired`),
+  pass `--ca-file` with a CA bundle, e.g. Git's
+  `C:\Program Files\Git\mingw64\etc\ssl\certs\ca-bundle.crt`.
+
 ## Known gaps
 
 - With only levels 4.3 and 4.8 authored, the manifests cannot require
