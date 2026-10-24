@@ -1,0 +1,26 @@
+<idea-plugin>
+  <id>dev.seesharp.rider</id>
+  <name>SeeSharp</name>
+  <vendor>SeeSharp</vendor>
+  <!-- JCEF is a bundled plugin whose classes live in content modules: those need the module form of dependencies. -->
+  <dependencies>
+    <plugin id="com.intellij.modules.rider"/>
+    <module name="intellij.libraries.jcef"/>
+    <module name="intellij.platform.ui.jcef"/>
+  </dependencies>
+
+  <description><![CDATA[
+    <p>SeeSharp C# training in Rider: the course's modules and exercises, the instructions and a <b>Prüfen</b> button
+    that grades the exercise in the running SeeSharp app (its local plugin API) and records the attempt.</p>
+    <p>A thin client: all gating, grading and progress stay in SeeSharp. Start SeeSharp (<code>seesharp</code>) or use
+    <i>SeeSharp starten</i> in the tool window.</p>
+  ]]></description>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <toolWindow id="SeeSharp" anchor="right" icon="AllIcons.Toolwindows.Documentation"
+                factoryClass="dev.seesharp.rider.SeeSharpToolWindowFactory"/>
+    <notificationGroup id="SeeSharp" displayType="BALLOON"/>
+    <applicationConfigurable parentId="tools" id="dev.seesharp.rider" displayName="SeeSharp"
+                             instance="dev.seesharp.rider.SeeSharpConfigurable"/>
+  </extensions>
+</idea-plugin>

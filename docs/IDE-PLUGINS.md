@@ -1,4 +1,4 @@
-# IDE plugins: local API and VS Code extension
+# IDE plugins: local API, VS Code extension and Rider plugin
 
 Requested by the user on 2026-10-24 (CLAUDE.md, *Out of scope*): IDE plugins are thin
 clients of a JSON API that the running SeeSharp app serves. All logic — gating, grading,
@@ -141,6 +141,97 @@ terminal start) — no VS Code UI automation here; it was not installed into the
 
 ### Not done, on purpose
 
-- Rider plugin: the API is ready for it (same four calls); not started.
 - No push from the server (the tree refreshes after a grade and on demand), no quiz answering
   in VS Code (the link opens the browser), no relative images in the webview.
+
+## Rider plugin (`ide/rider`)
+
+Kotlin, frontend only (no ReSharper backend part), id `dev.seesharp.rider`, name and vendor
+"SeeSharp", `since-build` 262 (Rider 2026.2 and later), no `until-build`. Same behaviour as the
+VS Code extension, on the same four calls. `Api.kt` is the client (`java.net.http`, HTTP/1.1, no
+`Origin`; JSON via the platform's bundled Gson), `Text.kt` the strings and the exercise HTML,
+`SeeSharpToolWindow.kt` the rest. The token is read from `server.json` at each refresh and never
+logged.
+
+- **Tool window "SeeSharp"** (right): tree modules (`NN Title`, the first unlocked-unpassed one
+  expanded) → exercises; icons lock / green check / open circle, "optional" in grey; the tooltip
+  shows tasks done and, when locked, the missing skills with their level. Toolbar: *Aktualisieren*,
+  *SeeSharp starten*.
+- **Not running** (no `server.json` or connection refused): the tree's empty text says "SeeSharp
+  läuft nicht" with the links *SeeSharp starten* and *Aktualisieren*. Start runs
+  `seesharp start --no-browser` (`~/.dotnet/tools/seesharp.exe` when it exists, else from `PATH`)
+  or, when *Settings → Tools → SeeSharp → SeeSharp-Checkout* is set, `dotnet run --project
+  <checkout>/src/SeeSharp.Cli -- start --no-browser` — a plain background process, argument list,
+  no shell — then polls for up to two minutes; on failure a balloon shows the output's tail. API
+  errors such as the exam gate show as the tree's empty text.
+- **Selecting an exercise**: `GET /api/exercise`; for an unlocked coding exercise `POST
+  …/workspace`. If `openFile` is neither under the project's base path nor in the project's
+  content, it asks "Den Projektordner von „…“ in Rider öffnen?" (*Projekt öffnen* / *Neues Fenster*
+  / *Nicht jetzt*) and opens the starter's single `.csproj` (else the folder) with
+  `ProjectUtil.openOrImport`; the new project's SeeSharp tool window continues with that exercise
+  (application-wide `PropertiesComponent` key). Otherwise it opens `openFile` at `openLine`.
+- **Details** below the tree: title, **Prüfen** button, and the HTML (last result, then the
+  instructions) in a `JBCefBrowser` when `JBCefApp.isSupported()`, else in a read-only
+  `JEditorPane`. CSP `default-src 'none'` (no scripts), test names, messages, build errors and
+  output HTML-escaped; links open in the system browser.
+- **Prüfen** saves all documents, `POST …/grade` as a background task, then a balloon
+  ("Bestanden! 2 von 2 Tests bestanden." / "Noch nicht bestanden. …"), the per-test table and a
+  tree refresh.
+- **Strings**: `messages/SeeSharp.properties` (English fallback) and `SeeSharp_de.properties`. Unlike
+  VS Code they follow **SeeSharp's** locale (from `GET /api/course`, German until known), not the
+  IDE's language.
+- **JCEF** is a bundled plugin in 2026.2 whose classes live in content modules, so `plugin.xml` uses
+  the module form `<dependencies>` (`com.intellij.modules.rider`, `intellij.libraries.jcef`,
+  `intellij.platform.ui.jcef`).
+
+### Build
+
+```
+cd ide/rider
+./gradlew buildPlugin                       # build/distributions/SeeSharp-0.1.0.zip
+./gradlew unitTest [-PserverJson=<path>]    # JUnit 5 without the platform; the API test needs a running host
+./gradlew runIde [-PserverJson=<path>]      # sandbox Rider; -PserverJson talks to that host instead
+./gradlew publishLocal                      # stamps 0.1.yyMMdd.HHmm and publishes to the local feed
+```
+
+Gradle 9.1.0 wrapper, IntelliJ Platform Gradle plugin 2.19.0, Kotlin 2.4.21, Rider 2026.2.3 to
+build against; JDK 21 comes from the `me.filippov.gradle.jvm.wrapper` plugin (use `./gradlew`, not a
+system Gradle/Java). `build/`, `.gradle/`, `.intellijPlatform/` and `.kotlin/` are git-ignored.
+`-PserverJson` sets `SEESHARP_SERVER_JSON`, which the plugin (like the VS Code client) prefers over
+`%LOCALAPPDATA%\SeeSharp\server.json` — use a host on a *copy* of the course.
+
+**Local feed.** `publishLocal` copies the zip to `C:\Users\<you>\.lamarider\plugin-repo` (override
+with `-PlocalRepoDir=`), keeps the three newest `SeeSharp-*.zip` there, and in `updatePlugins.xml`
+replaces only the `dev.seesharp.rider` entry (or adds it before `</plugins>`); the other plugins'
+entries and zips in that shared feed stay as they are.
+
+### Install and use
+
+The feed `file:///C:/Users/<you>/.lamarider/plugin-repo/updatePlugins.xml` is already a custom
+plugin repository in Rider here (else: *Settings → Plugins → ⚙ → Manage Plugin Repositories…*).
+*Settings → Plugins → Marketplace* then lists **SeeSharp**; install it and restart Rider. Updates
+appear there too after a `publishLocal`; restart Rider after each update. Then open the SeeSharp
+tool window (right), start SeeSharp if needed, pick an exercise, let Rider open its project, edit,
+press **Prüfen**.
+
+### Verified (2026-10-24)
+
+`buildPlugin` against Rider 2026.2.3; `unitTest` (JSON mapping incl. nulls and a path with comma and
+umlaut, escaping of test names/messages/build errors, locked exercise without instructions, both
+property files with the same keys and the German/English/fallback lookup, broken or missing
+`server.json`, unreachable server = status 0) and, against a scratch host on port 5191
+(`AppHost.BuildAsync` on a copy of the course, temp progress DB): wrong token 403, course listing
+with absolute existing paths, instructions HTML, 404 with the server's message, 409 on grading a
+locked exercise, workspace files, a real grade of `werkzeuge-hallo-seesharp`. `runIde`: the sandbox
+Rider loaded the plugin ("Loaded custom plugins: SeeSharp") with the module dependencies resolved
+and opened a starter `.csproj` through `ProjectUtil` / `RiderProjectOpenProcessor`. Published as
+`0.1.261024.0254`. **Not verified:** the tool window itself (tree, dialogs, JCEF view, *Prüfen*,
+*SeeSharp starten*) — no UI automation on the desktop here.
+
+### Limits
+
+- Same as VS Code: no push from the server, no quiz answering (the link opens the browser), no
+  relative images in the instructions.
+- Rider may ask itself whether to open the project in this or a new window, depending on
+  *Settings → Appearance & Behavior → System Settings → Project → Open project in*.
+- The Swing fallback (no JCEF) renders simpler CSS.
