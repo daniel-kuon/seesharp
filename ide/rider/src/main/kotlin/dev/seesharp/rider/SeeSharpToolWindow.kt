@@ -18,6 +18,7 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.WriteIntentReadAction
 import com.intellij.openapi.application.runReadActionBlocking
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
@@ -299,7 +300,9 @@ class SeeSharpPanel(private val project: Project) : SimpleToolWindowPanel(true, 
     private fun grade() {
         val client = api ?: return offline()
         val ex = detail?.exercise ?: return
-        FileDocumentManager.getInstance().saveAllDocuments() // grading copies the files from disk
+        // Grading copies the files from disk. Saving needs the write-intent lock, which a Swing/JCEF button handler
+        // doesn't hold in Rider 2026 ("Access is allowed from write thread only").
+        WriteIntentReadAction.run(Runnable { FileDocumentManager.getInstance().saveAllDocuments() })
         running = true
         render()
         object : Task.Backgroundable(project, t("runningTitle", ex.title), false) {
