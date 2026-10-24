@@ -48,7 +48,7 @@ Rider plugin repository to GitHub Pages:
   latest release); install notes at `https://wollume-studios.github.io/seesharp/`.
 - Pages is set to *GitHub Actions* as its source, and the `github-pages` environment allows
   deployments from `main` and from `v*` tags (set up once via the API on 2026-10-24).
-- Only the `feed` job holds `pages: write` / `id-token: write`; `plugins` only `contents: write`.
+- Only the `feed` job holds `pages: write` / `id-token: write`. `plugins` builds with `contents: read` (no persisted credentials); `plugins-release`, which runs no third-party code, attaches the files with `contents: write`. `vsce` is pinned in `ide/vscode/package-lock.json`.
 - `since-build` in the feed is written as 262 and must follow `SinceBuild` in
   `ide/rider/gradle.properties`.
 
