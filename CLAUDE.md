@@ -38,8 +38,10 @@ clean temp directory at grade time and run against a copy of the trainee's
 source. The trainee's working copy of the test project is never trusted and
 never used for grading.
 
-**Out of scope.** Cloud anything. Docker. Telemetry. A Rider plugin. Auto-grading
-of free-text answers.
+**Out of scope.** Cloud anything. Docker. Telemetry. Auto-grading of free-text
+answers. (IDE plugins were out of scope until the user asked for them on 2026-10-24:
+VS Code and Rider plugins are in scope as thin clients of the local `/api` —
+docs/IDE-PLUGINS.md; all logic stays in the tool.)
 
 **Repo facts (from task 0).**
 - `samples/` is a cleaned extract of `csharp14.zip` (the zip stays untouched as the
