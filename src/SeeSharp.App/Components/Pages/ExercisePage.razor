@@ -52,6 +52,7 @@ else
             <p class="hint fallback">@Strings.TranslationFallback</p>
         }
         <article class="md">@CourseState.RenderMarkdown(instructions.Path)</article>
+        <TutorPanel Exercise="exercise" />
 
         @if (exercise.Manifest.Requires.Count > 0)
         {
@@ -91,7 +92,6 @@ else
                 }
             </section>
         }
-        <TutorPanel Exercise="exercise" />
         @if (exerciseProgress.Passed)
         {
             // Same rule as the dashboard: first unlocked, unpassed mandatory exercise; optional ones of this module as a side offer.

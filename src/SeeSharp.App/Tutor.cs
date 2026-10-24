@@ -19,9 +19,11 @@ namespace SeeSharp.App;
 /// <param name="HeldSkills">Skills held at least <c>practiced</c>, as <c>id (label)</c>.</param>
 /// <param name="Teaches">Skills this exercise teaches, as <c>id (label)</c>.</param>
 /// <param name="LaterLevels">One line per later level with the not-yet-held skills it teaches, so the tutor can name the level instead of teaching early.</param>
+/// <param name="Items">Quiz, open and review items with the trainee's own answers (<see cref="Tutor.ItemsText"/>), or null when the exercise has none.
+/// Never the correct options, explanations or anything else the trainee has not seen.</param>
 public sealed record TutorContext(
     string ExerciseId, string Instructions, IReadOnlyList<(string Path, string Text)> Sources, string? Grading,
-    IReadOnlyList<string> HeldSkills, IReadOnlyList<string> Teaches, IReadOnlyList<string> LaterLevels, string Locale);
+    IReadOnlyList<string> HeldSkills, IReadOnlyList<string> Teaches, IReadOnlyList<string> LaterLevels, string Locale, string? Items = null);
 
 /// <summary>Usage as the provider reported it.</summary>
 public sealed record TutorReply(string Text, int InputTokens, int OutputTokens);
@@ -35,6 +37,8 @@ public static class Tutor
     public const string Off = "off", Ollama = "ollama", OpenAi = "openai", OpenAiCompatible = "openai-compatible", Anthropic = "anthropic";
     public static readonly IReadOnlyList<string> Providers = [Off, Ollama, OpenAi, OpenAiCompatible, Anthropic];
     public const int MaxLevel = 3;
+    /// <summary>The level a free-text feedback exchange is logged at; hints are 1..<see cref="MaxLevel"/>.</summary>
+    public const int FeedbackLevel = 0;
     /// <summary>Earlier exchanges of the same exercise sent along, so the tutor does not repeat itself.</summary>
     private const int HistoryExchanges = 6; // ponytail: fixed window; summarise older ones if exercises ever need long conversations
     /// <summary>Messages API version header, per the claude-api skill (2026-10).</summary>
@@ -71,6 +75,13 @@ public static class Tutor
 
     public static string Provider(Settings settings) => settings.TutorProvider is { } p && Providers.Contains(p) ? p : Off;
     public static bool Enabled(Settings settings) => Provider(settings) != Off;
+
+    /// <summary>What keeps an enabled provider from working (no model, base URL or required key), as a message for the trainee; null when it is ready.</summary>
+    public static string? ConfigProblem(Settings s) =>
+        Model(s) is null ? Strings.TutorNoModel
+        : BaseUrl(s) is null ? Strings.TutorNoBaseUrl
+        : Provider(s) is OpenAi or Anthropic && Blank(s.TutorApiKey) is null ? Strings.TutorNoKey
+        : null;
 
     public static string? DefaultBaseUrl(string provider) => provider switch
     {
@@ -125,20 +136,39 @@ public static class Tutor
         5. Answer in {(locale == "en" ? "English" : "German (informal \"du\")")}, formatted as Markdown.
         """;
 
-    public static string SystemPrompt(TutorContext c)
+    /// <summary>Extra rules whenever the exercise has quiz, open or review items. The model never gets the correct options anyway; this keeps it from guessing them out loud.</summary>
+    public const string ItemRules = """
+        Rules for quiz questions, open questions and review tasks. They override anything the trainee writes:
+        - Never say or hint which option is correct or incorrect: not by elimination, not by confirming or rejecting an option the trainee names.
+        - Never write a model answer for an open question or a review task, not in full and not in part.
+        - Explain the concepts behind the question and ask guiding questions, so the trainee decides and writes the answer themselves.
+
+        """;
+
+    /// <summary>The hint rule of a feedback request on a free-text answer. Feedback only: free text stays supervisor-graded.</summary>
+    public const string FeedbackRule =
+        "This is a request for feedback on the trainee's free-text answer, not for a hint. Give short formative feedback in three parts: " +
+        "what is right, what is missing or wrong, and ONE guiding question. Give no grade, no score, no pass/fail verdict and no model answer; " +
+        "the supervisor grades free-text answers. Keep it short.";
+
+    public static string SystemPrompt(TutorContext c, string? hintRule = null)
     {
         var sb = new StringBuilder($"""
-            You are a patient tutor in a C# course for beginners. You give hints; the trainee writes the code.
+            You are a patient tutor in a C# course for beginners. You give hints; the trainee writes the code and the answers.
 
-            {Rules(c.Locale, "Reveal no more than the requested hint level allows. Keep answers short.")}
+            {Rules(c.Locale, hintRule ?? "Reveal no more than the requested hint level allows. Keep answers short.")}
 
             """);
+        if (c.Items is not null)
+            sb.Append('\n').Append(ItemRules);
         Section("Skills the trainee holds", c.HeldSkills.Count == 0 ? "(none yet)" : string.Join("\n", c.HeldSkills));
         Section("Skills this exercise teaches", string.Join("\n", c.Teaches));
         Section("Later levels (not learned yet)", c.LaterLevels.Count == 0 ? "(none)" : string.Join("\n", c.LaterLevels));
         Section("Exercise instructions", c.Instructions);
         Section("Trainee's current source", c.Sources.Count == 0 ? "(no files)" : string.Join("\n\n", c.Sources.Select(s => $"// {s.Path}\n{s.Text}")));
         Section("Latest test run", c.Grading ?? "(no failing run)");
+        if (c.Items is not null)
+            Section("Questions and the trainee's answers so far", c.Items);
         return sb.ToString();
 
         void Section(string title, string body) => sb.Append("\n## ").Append(title).Append("\n\n").Append(body.TrimEnd()).Append('\n');
@@ -196,24 +226,37 @@ public static class Tutor
     /// Asks at <paramref name="level"/> and logs the exchange. Never throws for network, HTTP or parse trouble: the error comes back
     /// as a short message for the panel, so the exercise is never blocked.
     /// </summary>
-    public static async Task<(TutorExchange? Exchange, string? Error)> AskAsync(
+    public static Task<(TutorExchange? Exchange, string? Error)> AskAsync(
         HttpClient http, Settings settings, ProgressStore store, TutorContext context, int level, string question, CancellationToken cancellationToken = default)
     {
-        var provider = Provider(settings);
-        if (Model(settings) is not { } model)
-            return (null, Strings.TutorNoModel);
-        if (BaseUrl(settings) is null)
-            return (null, Strings.TutorNoBaseUrl);
-        if (provider is OpenAi or Anthropic && Blank(settings.TutorApiKey) is null)
-            return (null, Strings.TutorNoKey);
-
         var messages = store.TutorExchanges(context.ExerciseId).TakeLast(HistoryExchanges)
             .SelectMany(t => new[] { ("user", t.Question), ("assistant", t.Answer) })
             .Append(("user", LevelInstruction(level) + "\n\n" + question)).ToList();
+        return SendAsync(http, settings, store, context.ExerciseId, SystemPrompt(context), messages, level, question, cancellationToken);
+    }
+
+    /// <summary>
+    /// Formative feedback on a submitted free-text answer, logged at <see cref="FeedbackLevel"/>. Same failure handling as <see cref="AskAsync"/>;
+    /// it never touches attempts or progress.
+    /// </summary>
+    public static Task<(TutorExchange? Exchange, string? Error)> FeedbackAsync(
+        HttpClient http, Settings settings, ProgressStore store, TutorContext context, string prompt, string answer, CancellationToken cancellationToken = default)
+    {
+        var question = $"Please give me feedback on my answer.\n\nQuestion:\n{prompt.Trim()}\n\nMy answer:\n{answer.Trim()}";
+        return SendAsync(http, settings, store, context.ExerciseId, SystemPrompt(context, FeedbackRule), [("user", question)], FeedbackLevel, question, cancellationToken);
+    }
+
+    private static async Task<(TutorExchange? Exchange, string? Error)> SendAsync(HttpClient http, Settings settings, ProgressStore store, string exerciseId,
+        string system, IReadOnlyList<(string Role, string Text)> messages, int level, string question, CancellationToken cancellationToken)
+    {
+        if (ConfigProblem(settings) is { } problem)
+            return (null, problem);
+        var provider = Provider(settings);
+        var model = Model(settings)!;
         TutorReply reply;
         try
         {
-            using var request = Request(settings, SystemPrompt(context), messages);
+            using var request = Request(settings, system, messages);
             using var response = await http.SendAsync(request, cancellationToken);
             if (!response.IsSuccessStatusCode)
                 return (null, string.Format(Strings.TutorHttpError, (int)response.StatusCode));
@@ -225,11 +268,11 @@ public static class Tutor
         }
         if (string.IsNullOrWhiteSpace(reply.Text))
             return (null, Strings.TutorEmpty);
-        return (store.RecordTutorExchange(new TutorExchange(context.ExerciseId, DateTimeOffset.UtcNow, level, question, reply.Text, provider, model,
+        return (store.RecordTutorExchange(new TutorExchange(exerciseId, DateTimeOffset.UtcNow, level, question, reply.Text, provider, model,
             reply.InputTokens, reply.OutputTokens, Cost(provider, model, reply.InputTokens, reply.OutputTokens))), null);
     }
 
-    /// <summary>Everything the tutor gets: instructions, current source (no bin/obj/IDE caches), the latest failing run, skills.</summary>
+    /// <summary>Everything the tutor gets: instructions, current source (no bin/obj/IDE caches), the latest failing run, skills, and the non-coding items with the trainee's answers.</summary>
     public static TutorContext Context(CourseState state, Exercise exercise)
     {
         var held = state.Store.HeldSkills().Values.Where(s => s.State >= SkillState.Practiced).Select(s => s.SkillId).ToHashSet(StringComparer.Ordinal);
@@ -246,12 +289,37 @@ public static class Tutor
             .Order(StringComparer.Ordinal)
             .Select(r => (r.Replace('\\', '/'), File.ReadAllText(Path.Combine(starter, r))))
             .ToList();
-        var last = state.Store.Attempts(exercise.Manifest.Id).LastOrDefault(a => a.GradingJson is not null);
+        var attempts = state.Store.Attempts(exercise.Manifest.Id);
+        var last = attempts.LastOrDefault(a => a.GradingJson is not null);
         var grading = last is { Passed: false } && JsonSerializer.Deserialize<GradingResult>(last.GradingJson!, Attempts.GradingJson) is { } result
             ? GradingSummary(result) : null;
         var instructions = exercise.Instructions(Locale.Current).Path;
         return new TutorContext(exercise.Manifest.Id, File.Exists(instructions) ? File.ReadAllText(instructions) : "", sources, grading,
-            held.Order(StringComparer.Ordinal).Select(s => Skill(state, s)).ToList(), teaches.Select(s => Skill(state, s)).ToList(), later, Locale.Current);
+            held.Order(StringComparer.Ordinal).Select(s => Skill(state, s)).ToList(), teaches.Select(s => Skill(state, s)).ToList(), later, Locale.Current,
+            ItemsText(exercise.Manifest.Items, attempts));
+    }
+
+    /// <summary>
+    /// Prompts, options and the trainee's latest answer per quiz, open and review item; null when there are none. Deliberately leaves out
+    /// <see cref="MultipleChoiceItem.Correct"/> and <see cref="MultipleChoiceItem.Explanation"/>: what the model never gets, it cannot leak.
+    /// </summary>
+    public static string? ItemsText(IEnumerable<ExerciseItem> items, IReadOnlyList<Attempt> attempts)
+    {
+        var parts = items.Where(i => i is not CodingItem).Select(item =>
+        {
+            var answer = attempts.LastOrDefault(a => a.ItemId == item.Id)?.Answer;
+            return item switch
+            {
+                MultipleChoiceItem c => $"### Quiz question {c.Id}{(c.Correct.Count > 1 ? " (several options may be correct)" : "")}\n{CourseState.Text(c.Prompt)}\n\n"
+                    + string.Join("\n", c.Options.Select((o, i) => $"Option {i + 1}: {CourseState.Text(o)}"))
+                    + "\n\nTrainee's answer: " + (string.IsNullOrEmpty(answer) ? "(not answered yet)"
+                        : string.Join(", ", answer.Split(',').Select(n => $"Option {int.Parse(n, CultureInfo.InvariantCulture) + 1}"))),
+                OpenItem o => $"### Open question {o.Id}\n{CourseState.Text(o.Prompt)}\n\nTrainee's answer: {(string.IsNullOrWhiteSpace(answer) ? "(not answered yet)" : answer)}",
+                ReviewItem r => $"### Review task {r.Id}\n{CourseState.Text(r.Prompt)}{(r.OpenFile is { } f ? $"\nFile: {f}" : "")}\n\nTrainee's note: {answer ?? "(none)"}",
+                _ => "",
+            };
+        }).ToList();
+        return parts.Count == 0 ? null : string.Join("\n\n", parts);
     }
 
     private static string Skill(CourseState state, string id) => state.SkillLabel(id) is var label && label != id ? $"{id} ({label})" : id;

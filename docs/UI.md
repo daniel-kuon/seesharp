@@ -433,7 +433,8 @@ showed no result, and its card offered no second start.
 `AGENT_TASKS.md` task 9 as amended by `SKILL-MODEL.md` §5. Code in
 `SeeSharp.App/Tutor.cs` (static, plain `HttpClient` + `System.Text.Json.Nodes`,
 no SDK), UI in `Components/Items/TutorPanel.razor` (one line in
-`ExercisePage`) and `TutorSettings.razor` (one line in `SettingsPage`).
+`ExercisePage`), the feedback button in `OpenQuestion.razor`, and
+`TutorSettings.razor` (one line in `SettingsPage`).
 
 **Providers** (`settings.json`: `tutorProvider`, `tutorModel`, `tutorBaseUrl`,
 `tutorApiKey`; blank model/URL = the default below). Two wire formats:
@@ -466,7 +467,15 @@ workspace folders `.vscode`, `.github`, `.junie`, `.aiassistant`), the latest
 coding attempt's grading summary when it failed (outcome, build errors, failing
 tests with messages; raw output only when nothing was extracted), the held
 skills (`practiced` or better, `id (label)`), the skills the exercise teaches,
-and one line per later level with the not-yet-held skills it teaches. The
+one line per later level with the not-yet-held skills it teaches, and
+(`Tutor.ItemsText`) every quiz, open and review item: prompt, options as
+"Option n", and the trainee's latest submitted answer or note. **Never** the
+`correct` indices, the explanation or anything else the trainee has not seen —
+what the model never gets, it cannot leak. With such items the system prompt
+adds `Tutor.ItemRules`: never say or hint which option is correct or wrong
+(not by elimination, not by confirming an option the trainee names), never
+write a model answer for an open question or review task, explain concepts
+and ask guiding questions instead. The
 system prompt (`Tutor.SystemPrompt`) is English with "answer in German/English"
 and these rules: never write the exercise's solution code, not even when asked
 directly; use only concepts from the held + taught skills; when the trainee
@@ -480,16 +489,35 @@ with a worked example on a *different* problem). The free question box asks at
 the current level (at least 1), so typing a question never skips ahead. The
 level is restored after a reload from the highest logged level.
 
-**Panel.** A collapsed `<details>` "Tutor um Hilfe fragen" after the item
-cards, only when the provider is not `off`, the exercise has a coding item and
+**Panel.** A collapsed `<details>` "Tutor um Hilfe fragen – erklärt Begriffe
+und gibt Hinweise in drei Stufen, aber nie die Lösung" directly below the
+instructions, above "Aufgaben", on **every** exercise type (quiz, open,
+review, coding), only when the provider is not `off` and
 `Store.ActiveRun()` is null (the layout gate closes the page during an exam
-anyway; the exam page never renders the panel). Every exchange of the exercise
-is listed with its level and the answer rendered by Markdig with
+anyway; the exam page never renders the panel). Until 2026-10-24 it sat
+collapsed below the items of coding exercises only, and the user could not
+find it. When the provider is set but `Tutor.ConfigProblem` reports a missing
+model, base URL or key (key required for `openai` and `anthropic`; a keyless
+`openai-compatible` server is valid), one hint line with "Zu den
+Einstellungen" replaces the panel. Every exchange of the exercise
+is listed with its level ("Feedback" for level 0) and the answer rendered by Markdig with
 `DisableHtml()` — model output is not trusted like course content, so raw HTML
 in it is shown as text. Below: tokens for this exercise and in total, the $
 estimate when any priced exchange exists, and "kostenlos (lokal)" for Ollama.
 
-**Failure.** `Tutor.AskAsync` never throws for network trouble: no model /
+**Feedback on free-text answers.** Under a submitted open answer (not in an
+exam, tutor ready) "Feedback vom Tutor" calls `Tutor.FeedbackAsync`: one user
+message with the prompt and the submitted answer (not the unsaved box), no
+history, no hint level, and the system prompt with `Tutor.FeedbackRule` as
+rule 4 — short formative feedback in the UI locale: what is right, what is
+missing or wrong, one guiding question; no grade, no score, no pass/fail, no
+model answer. It is logged as a `tutor_exchange` at level 0
+(`Tutor.FeedbackLevel`), so the review bundle has it, and shown with its
+tokens and $ estimate. It never writes an attempt: free text stays
+supervisor-graded (CLAUDE.md: no auto-grading of free text). The answer is
+not restored after a reload; the panel lists it.
+
+**Failure.** `Tutor.AskAsync` / `FeedbackAsync` never throw for network trouble: no model /
 base URL / key → a settings hint without a request; non-2xx → "HTTP n";
 refused connection, the 30 s timeout of `Tutor.Http`, malformed JSON → "nicht
 erreichbar, du kannst ohne ihn weiterarbeiten"; empty text → "keine Antwort".
@@ -507,10 +535,16 @@ block and usage, cost, the logged row and the bundle's `tutor/bruch.md`, the key
 absent from DB and zip; Chat Completions for Ollama (no auth header), OpenAI
 (Bearer, cost, history) and a compatible base URL (no price); failures (thrown
 exception, 500, non-JSON, empty answer, timeout, missing key/base URL without a
-request) give a message and log nothing; the cost table; and the hosted pages:
-panel hidden when `off`, shown on a coding exercise, absent on a quiz, gone
-while an exam run is open, plus `Tutor.Context` skipping `obj/` and carrying the
-failing run and the skill lists.
+request) give a message and log nothing; the cost table; feedback (the answer,
+the prompt and the no-grade/no-model-answer rule in the request, no history,
+level 0 in the DB and the bundle's `tutor/warum.md`, no attempt written); and
+the hosted pages: panel hidden when `off`, shown on a coding exercise and on a
+quiz + open exercise above "Aufgaben", "Feedback vom Tutor" under the
+submitted open answer, the settings hint instead of the panel when the
+Anthropic key is missing, both gone while an exam run is open, plus
+`Tutor.Context` skipping `obj/` and carrying the failing run and the skill
+lists, and the quiz request carrying options and the trainee's answers but
+neither the explanation nor the word "correct" in the items section.
 
 Verified 2026-10-24 on port 5194 (`AppHost.BuildAsync`, scratch course copy,
 temp DB with levels 0–3 passed) against an `HttpListener` stub on 5190 that

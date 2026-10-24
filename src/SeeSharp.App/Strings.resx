@@ -249,7 +249,7 @@
   <data name="OptionalOpen" xml:space="preserve"><value>Offene Zusatzaufgaben:</value></data>
   <data name="ColumnOptional" xml:space="preserve"><value>Zusatzaufgaben</value></data>
   <data name="TutorTitle" xml:space="preserve"><value>Tutor um Hilfe fragen</value></data>
-  <data name="TutorIntro" xml:space="preserve"><value>Der Tutor gibt Hinweise in drei Stufen, aber nie die Lösung. Er bekommt die Aufgabe, deinen aktuellen Code und das letzte fehlgeschlagene Testergebnis ({0}, Modell {1}).</value></data>
+  <data name="TutorIntro" xml:space="preserve"><value>Der Tutor gibt Hinweise in drei Stufen, aber nie die Lösung und nie die richtige Antwort. Er bekommt die Aufgabe, die Fragen mit deinen bisherigen Antworten, deinen aktuellen Code und das letzte fehlgeschlagene Testergebnis ({0}, Modell {1}).</value></data>
   <data name="TutorNextHint" xml:space="preserve"><value>Nächster Hinweis (Stufe {0} von 3)</value></data>
   <data name="TutorNextHintQuestion" xml:space="preserve"><value>Gib mir einen Hinweis.</value></data>
   <data name="TutorQuestionPlaceholder" xml:space="preserve"><value>Eigene Frage an den Tutor …</value></data>
@@ -265,6 +265,11 @@
   <data name="TutorNoModel" xml:space="preserve"><value>Kein Modell eingestellt (Einstellungen).</value></data>
   <data name="TutorNoBaseUrl" xml:space="preserve"><value>Keine Basis-URL eingestellt (Einstellungen).</value></data>
   <data name="TutorEmpty" xml:space="preserve"><value>Der Tutor hat keine Antwort geliefert. Versuch es noch einmal.</value></data>
+  <data name="TutorSummaryHint" xml:space="preserve"><value>erklärt Begriffe und gibt Hinweise in drei Stufen, aber nie die Lösung</value></data>
+  <data name="TutorFeedback" xml:space="preserve"><value>Feedback vom Tutor</value></data>
+  <data name="TutorFeedbackBadge" xml:space="preserve"><value>Feedback</value></data>
+  <data name="TutorFeedbackTokens" xml:space="preserve"><value>Tokens: {0:N0}</value></data>
+  <data name="TutorFeedbackCost" xml:space="preserve"><value>geschätzt ≈ {0:0.0000} $</value></data>
   <data name="TutorSettingsTitle" xml:space="preserve"><value>KI-Tutor</value></data>
   <data name="TutorProviderLabel" xml:space="preserve"><value>Anbieter</value></data>
   <data name="TutorProviderOff" xml:space="preserve"><value>aus</value></data>

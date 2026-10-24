@@ -1,44 +1,51 @@
 @inject CourseState State
 
-@* Task 9: only for coding exercises, only when a provider is set, never while an exam runs (the layout gate closes this page then too). *@
-@if (Tutor.Enabled(State.Settings) && Exercise.Manifest.Items.Any(i => i is CodingItem) && State.Store.ActiveRun() is null)
+@* Task 9: on every exercise type when a provider is set, never while an exam runs (the layout gate closes this page then too). *@
+@if (Tutor.Enabled(State.Settings) && State.Store.ActiveRun() is null)
 {
-    var all = State.Store.TutorExchanges();
-    var mine = all.Where(t => t.ExerciseId == Exercise.Manifest.Id).ToList();
-    var provider = Tutor.Provider(State.Settings);
-    <details class="card tutor">
-        <summary>@Strings.TutorTitle</summary>
-        <p class="hint">@string.Format(Strings.TutorIntro, Strings.ForTutorProvider(provider), Tutor.Model(State.Settings))</p>
-        @foreach (var exchange in mine)
-        {
-            <p class="tutor-question"><span class="badge">@string.Format(Strings.TutorLevel, exchange.Level)</span> @exchange.Question</p>
-            <article class="md">@Tutor.Render(exchange.Answer)</article>
-        }
-        <p><button @onclick="NextHint" disabled="@_asking">@string.Format(Strings.TutorNextHint, Math.Min(_level + 1, Tutor.MaxLevel))</button></p>
-        <p>
-            <textarea rows="2" placeholder="@Strings.TutorQuestionPlaceholder" @bind="_question" @bind:event="oninput"></textarea><br />
-            <button @onclick="AskQuestion" disabled="@(_asking || string.IsNullOrWhiteSpace(_question))">@Strings.TutorAsk</button>
-        </p>
-        @if (_asking)
-        {
-            <p class="hint">@Strings.TutorAsking</p>
-        }
-        @if (_error is not null)
-        {
-            <p class="bad">@_error</p>
-        }
-        <p class="hint">
-            @string.Format(Strings.TutorTokens, mine.Sum(t => t.InputTokens + t.OutputTokens), all.Sum(t => t.InputTokens + t.OutputTokens))
-            @if (all.Any(t => t.CostUsd > 0)) @* paid exchanges from earlier, whatever the provider is now *@
+    @if (Tutor.ConfigProblem(State.Settings) is { } problem)
+    {
+        <p class="hint tutor">@Strings.TutorTitle: @problem <a href="settings">@Strings.GoToSettings</a></p>
+    }
+    else
+    {
+        var all = State.Store.TutorExchanges();
+        var mine = all.Where(t => t.ExerciseId == Exercise.Manifest.Id).ToList();
+        var provider = Tutor.Provider(State.Settings);
+        <details class="card tutor">
+            <summary>@Strings.TutorTitle <span class="hint">– @Strings.TutorSummaryHint</span></summary>
+            <p class="hint">@string.Format(Strings.TutorIntro, Strings.ForTutorProvider(provider), Tutor.Model(State.Settings))</p>
+            @foreach (var exchange in mine)
             {
-                <text> · @string.Format(Strings.TutorCostEstimate, mine.Sum(t => t.CostUsd ?? 0), all.Sum(t => t.CostUsd ?? 0))</text>
+                <p class="tutor-question"><span class="badge">@(exchange.Level == Tutor.FeedbackLevel ? Strings.TutorFeedbackBadge : string.Format(Strings.TutorLevel, exchange.Level))</span> @exchange.Question</p>
+                <article class="md">@Tutor.Render(exchange.Answer)</article>
             }
-            @if (provider == Tutor.Ollama)
+            <p><button @onclick="NextHint" disabled="@_asking">@string.Format(Strings.TutorNextHint, Math.Min(_level + 1, Tutor.MaxLevel))</button></p>
+            <p>
+                <textarea rows="2" placeholder="@Strings.TutorQuestionPlaceholder" @bind="_question" @bind:event="oninput"></textarea><br />
+                <button @onclick="AskQuestion" disabled="@(_asking || string.IsNullOrWhiteSpace(_question))">@Strings.TutorAsk</button>
+            </p>
+            @if (_asking)
             {
-                <text> · @Strings.TutorCostFree</text>
+                <p class="hint">@Strings.TutorAsking</p>
             }
-        </p>
-    </details>
+            @if (_error is not null)
+            {
+                <p class="bad">@_error</p>
+            }
+            <p class="hint">
+                @string.Format(Strings.TutorTokens, mine.Sum(t => t.InputTokens + t.OutputTokens), all.Sum(t => t.InputTokens + t.OutputTokens))
+                @if (all.Any(t => t.CostUsd > 0)) @* paid exchanges from earlier, whatever the provider is now *@
+                {
+                    <text> · @string.Format(Strings.TutorCostEstimate, mine.Sum(t => t.CostUsd ?? 0), all.Sum(t => t.CostUsd ?? 0))</text>
+                }
+                @if (provider == Tutor.Ollama)
+                {
+                    <text> · @Strings.TutorCostFree</text>
+                }
+            </p>
+        </details>
+    }
 }
 
 @code {

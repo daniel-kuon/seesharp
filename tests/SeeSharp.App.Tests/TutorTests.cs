@@ -134,6 +134,46 @@ public sealed class TutorTests : IDisposable
     }
 
     [Fact]
+    public async Task Feedback_on_a_free_text_answer_sends_the_answer_and_the_no_grade_rule_and_is_logged_and_exported()
+    {
+        var stub = new Stub(_ => Json("""
+            {"content":[{"type":"text","text":"Richtig ist der Hinweis auf den Compiler. Was passiert zur Laufzeit?"}],
+             "stop_reason":"end_turn","usage":{"input_tokens":700,"output_tokens":60}}
+            """));
+        var settings = new Settings { TutorProvider = Tutor.Anthropic, TutorApiKey = Key };
+        var context = Context with { ExerciseId = "warum", Items = "### Open question o1\nWarum ist C# typsicher?\n\nTrainee's answer: Weil der Compiler Typen prüft." };
+
+        var (exchange, error) = await Tutor.FeedbackAsync(new HttpClient(stub), settings, _store, context, "Warum ist C# typsicher?", "Weil der Compiler Typen prüft.");
+
+        Assert.Null(error);
+        var body = JsonNode.Parse(stub.Requests.Single().Body)!;
+        var system = (string)body["system"]!;
+        Assert.Contains(Tutor.FeedbackRule, system);
+        Assert.Contains("no grade, no score, no pass/fail verdict and no model answer", system);
+        Assert.Contains("Never write a model answer", system);
+        Assert.Contains("Answer in German", system);
+        var message = (string)Assert.Single(body["messages"]!.AsArray())!["content"]!; // no hint level, no history
+        Assert.Contains("Weil der Compiler Typen prüft.", message);
+        Assert.Contains("Warum ist C# typsicher?", message);
+        Assert.DoesNotContain("Hint level", message);
+
+        Assert.Equal(Tutor.FeedbackLevel, exchange!.Level);
+        Assert.Equal((700 * 0.10m + 60 * 0.50m) / 1_000_000m, exchange.CostUsd);
+        var logged = Assert.Single(_store.TutorExchanges("warum"));
+        Assert.Equal((0, message), (logged.Level, logged.Question));
+        Assert.Empty(_store.Attempts()); // feedback never touches progress
+
+        var zip = Path.Combine(_dir, "review.zip");
+        ReviewExport.Write(_store, zip);
+        using var archive = ZipFile.OpenRead(zip);
+        using var reader = new StreamReader(archive.GetEntry("tutor/warum.md")!.Open());
+        var markdown = await reader.ReadToEndAsync();
+        Assert.Contains("level 0 · anthropic/claude-haiku-5-5", markdown);
+        Assert.Contains("Weil der Compiler Typen prüft.", markdown);
+        Assert.Contains("Was passiert zur Laufzeit?", markdown);
+    }
+
+    [Fact]
     public void Cost_estimates_use_the_price_table_and_ollama_is_free()
     {
         Assert.Equal(0.10m * 0.1m + 0.50m, Tutor.Cost(Tutor.Anthropic, "claude-haiku-5-5", 100_000, 1_000_000));
@@ -146,13 +186,15 @@ public sealed class TutorTests : IDisposable
     }
 
     [Fact]
-    public async Task Panel_shows_on_coding_exercises_only_when_a_provider_is_set_and_never_during_an_exam()
+    public async Task Panel_shows_on_every_exercise_type_when_a_provider_is_set_and_never_during_an_exam()
     {
         Locale.Apply("de");
         var app = await AppHost.BuildAsync(WriteCourse(), port: 0, admin: false, _store);
         var state = app.Services.GetRequiredService<CourseState>();
         var course = state.Course!;
+        _store.RecordAttempt(new Attempt("first", "q1", DateTimeOffset.UtcNow, TimeSpan.Zero, false, "1"), course.Modules[0].Exercises[0].Manifest);
         _store.RecordAttempt(new Attempt("first", "q1", DateTimeOffset.UtcNow, TimeSpan.Zero, true, "0"), course.Modules[0].Exercises[0].Manifest);
+        _store.RecordAttempt(new Attempt("first", "o1", DateTimeOffset.UtcNow, TimeSpan.Zero, true, "Weil der Compiler es prüft."), course.Modules[0].Exercises[0].Manifest);
         var grading = """{"outcome":"Failed","duration":"00:00:01","tests":[{"name":"Kuerzt","outcome":"Failed","duration":"00:00:00","message":"expected 1/2","stackTrace":null}],"buildErrors":[],"output":"","artifactsDirectory":null}""";
         _store.RecordAttempt(new Attempt("second", "code", DateTimeOffset.UtcNow, TimeSpan.Zero, false, GradingJson: grading));
         await app.StartAsync();
@@ -166,7 +208,34 @@ public sealed class TutorTests : IDisposable
 
             state.Settings = new Settings { TutorProvider = Tutor.Ollama };
             Assert.Contains(panel, await http.GetStringAsync("/exercise/second"));
-            Assert.DoesNotContain(panel, await http.GetStringAsync("/exercise/first")); // no coding item
+            var quiz = await http.GetStringAsync("/exercise/first"); // quiz + open question, no coding item
+            Assert.Contains(panel, quiz);
+            Assert.True(quiz.IndexOf(panel, StringComparison.Ordinal) < quiz.IndexOf("<h2>Aufgaben</h2>", StringComparison.Ordinal)); // above the items
+            Assert.Contains("Feedback vom Tutor", quiz); // under the submitted open answer
+
+            // Provider set, key missing: a hint with the settings link instead of a panel that can only fail.
+            state.Settings = new Settings { TutorProvider = Tutor.Anthropic };
+            var noKey = await http.GetStringAsync("/exercise/first");
+            Assert.Contains("Anbieter fehlt der API", noKey);
+            Assert.Contains("href=\"settings\"", noKey);
+            Assert.DoesNotContain("<details class=\"card tutor\"", noKey);
+            Assert.DoesNotContain("Feedback vom Tutor", noKey);
+
+            // Quiz context: prompts, options and the trainee's own answers; never the correct option or the explanation.
+            var quizContext = Tutor.Context(state, course.Modules[0].Exercises[0]);
+            var stub = new Stub(_ => Json("""{"choices":[{"message":{"content":"Was bedeutet static?"}}],"usage":{"prompt_tokens":10,"completion_tokens":5}}"""));
+            await Tutor.AskAsync(new HttpClient(stub), new Settings { TutorProvider = Tutor.Ollama }, _store, quizContext, 1, "Welche Option stimmt?");
+            var system = (string)JsonNode.Parse(stub.Requests.Single().Body)!["messages"]![0]!["content"]!;
+            Assert.Contains("Option 1: Alpha-Antwort", system);
+            Assert.Contains("Option 2: Beta-Antwort", system);
+            Assert.Contains("Trainee's answer: Option 1", system); // the latest submission
+            Assert.Contains("Trainee's answer: Weil der Compiler es prüft.", system);
+            Assert.Contains("Never say or hint which option is correct", system);
+            Assert.Contains("Never write a model answer", system);
+            Assert.DoesNotContain("Geheime-Erklärung", system);
+            Assert.DoesNotContain("correct", quizContext.Items!, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("richtig", system, StringComparison.OrdinalIgnoreCase);
+            state.Settings = new Settings { TutorProvider = Tutor.Ollama };
 
             var context = Tutor.Context(state, course.Modules[0].Exercises[1]);
             Assert.Equal(["X/X.cs"], context.Sources.Select(s => s.Path)); // bin/obj skipped
@@ -177,6 +246,8 @@ public sealed class TutorTests : IDisposable
 
             var run = Exams.Start(_store, course, course.Exams.Single(), seed: 1);
             Assert.DoesNotContain(panel, await http.GetStringAsync("/exercise/second"));
+            Assert.DoesNotContain(panel, await http.GetStringAsync("/exercise/first"));
+            Assert.DoesNotContain("Feedback vom Tutor", await http.GetStringAsync("/exercise/first"));
             Assert.DoesNotContain(panel, await http.GetStringAsync($"/exam/{run.Id}"));
         }
         finally
@@ -232,9 +303,12 @@ public sealed class TutorTests : IDisposable
               - type: multipleChoice
                 id: q1
                 prompt: { de: "Was?" }
-                options: [{ de: "A" }, { de: "B" }]
+                options: [{ de: "Alpha-Antwort" }, { de: "Beta-Antwort" }]
                 correct: [0]
-                explanation: { de: "Weil." }
+                explanation: { de: "Geheime-Erklärung" }
+              - type: open
+                id: o1
+                prompt: { de: "Warum ist das so?" }
             """);
         Write("modules/01-basics/01-first/instructions.de.md", "# Erste");
         Write("modules/01-basics/02-second/manifest.yaml", """

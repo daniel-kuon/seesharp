@@ -337,6 +337,11 @@ internal static class Strings
     public static string TutorNoModel => Resources.GetString(nameof(TutorNoModel))!;
     public static string TutorNoBaseUrl => Resources.GetString(nameof(TutorNoBaseUrl))!;
     public static string TutorEmpty => Resources.GetString(nameof(TutorEmpty))!;
+    public static string TutorSummaryHint => Resources.GetString(nameof(TutorSummaryHint))!;
+    public static string TutorFeedback => Resources.GetString(nameof(TutorFeedback))!;
+    public static string TutorFeedbackBadge => Resources.GetString(nameof(TutorFeedbackBadge))!;
+    public static string TutorFeedbackTokens => Resources.GetString(nameof(TutorFeedbackTokens))!;
+    public static string TutorFeedbackCost => Resources.GetString(nameof(TutorFeedbackCost))!;
     public static string TutorSettingsTitle => Resources.GetString(nameof(TutorSettingsTitle))!;
     public static string TutorProviderLabel => Resources.GetString(nameof(TutorProviderLabel))!;
     public static string TutorProviderOff => Resources.GetString(nameof(TutorProviderOff))!;

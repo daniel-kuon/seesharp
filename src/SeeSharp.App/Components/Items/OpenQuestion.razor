@@ -13,6 +13,36 @@
         <span class="bad">@Strings.AnswerEmpty</span>
     }
 </div>
+@* Formative feedback only: free text stays supervisor-graded, nothing here touches attempts or progress. Never in an exam. *@
+@if (_passed && Run is null && State.Store.ActiveRun() is null && Tutor.Enabled(State.Settings) && Tutor.ConfigProblem(State.Settings) is null)
+{
+    <div class="tutor-feedback">
+        <button @onclick="Feedback" disabled="@_asking">@Strings.TutorFeedback</button>
+        @if (_asking)
+        {
+            <span class="hint">@Strings.TutorAsking</span>
+        }
+        @if (_error is not null)
+        {
+            <p class="bad">@_error</p>
+        }
+        @if (_feedback is { } f)
+        {
+            <article class="md">@Tutor.Render(f.Answer)</article>
+            <p class="hint">
+                @string.Format(Strings.TutorFeedbackTokens, f.InputTokens + f.OutputTokens)
+                @if (f.CostUsd > 0)
+                {
+                    <text> · @string.Format(Strings.TutorFeedbackCost, f.CostUsd)</text>
+                }
+                @if (f.Provider == Tutor.Ollama)
+                {
+                    <text> · @Strings.TutorCostFree</text>
+                }
+            </p>
+        }
+    </div>
+}
 
 @code {
     [Parameter, EditorRequired] public Exercise Exercise { get; set; } = null!;
@@ -23,14 +53,16 @@
     [Parameter] public ExamRun? Run { get; set; }
 
     private readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
-    private string _text = "";
-    private bool _submitted, _passed;
+    private string _text = "", _answer = "";
+    private bool _submitted, _passed, _asking;
+    private string? _error;
+    private TutorExchange? _feedback;
 
     protected override void OnInitialized()
     {
         if (History.Count == 0)
             return;
-        _text = History[^1].Answer ?? "";
+        _text = _answer = History[^1].Answer ?? "";
         _passed = History.Any(a => a.Passed);
     }
 
@@ -40,7 +72,19 @@
         attempt = Run is null ? State.Store.RecordAttempt(attempt, Exercise.Manifest) : State.Store.RecordAttempt(attempt with { ExamRunId = Run.Id });
         _submitted = true;
         _passed = attempt.Passed;
+        _answer = _text;
+        _feedback = null;
         _clock.Restart();
         await OnChanged.InvokeAsync();
+    }
+
+    /// <summary>Feedback on the submitted answer, not on whatever is in the box now.</summary>
+    private async Task Feedback()
+    {
+        _asking = true;
+        _error = null;
+        StateHasChanged();
+        (_feedback, _error) = await Tutor.FeedbackAsync(Tutor.Http, State.Settings, State.Store, Tutor.Context(State, Exercise), CourseState.Text(Item.Prompt), _answer);
+        _asking = false;
     }
 }
