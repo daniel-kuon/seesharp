@@ -75,7 +75,7 @@ public static class PluginApi
             // The exam gate (MainLayout) covers plugins too: no instructions, no test output while a run is open.
             if (state.Store.ActiveRun() is not null)
                 return Error(StatusCodes.Status409Conflict, Strings.ExamActiveGate).ExecuteAsync(context);
-            if (state.Course is null)
+            if (state.Course is null && !context.Request.Path.Equals("/api/reload"))
                 return Error(StatusCodes.Status503ServiceUnavailable, Strings.NoCourse).ExecuteAsync(context);
             return next(context);
         });
@@ -83,6 +83,14 @@ public static class PluginApi
         // Time spent per attempt, like CodingTask's stopwatch: from opening the exercise (or the last grade) to the grade.
         var opened = new ConcurrentDictionary<string, DateTimeOffset>(StringComparer.Ordinal);
         var api = app.MapGroup("/api");
+
+        // Re-reads settings.json and the course, like saving the settings page; plugins call it after `seesharp init`
+        // so a server that started without a course (or with another one) picks the new path up.
+        api.MapPost("/reload", async () =>
+        {
+            await state.LoadAsync();
+            return Results.Json(new { loaded = state.Course is not null });
+        });
 
         api.MapGet("/course", () =>
         {

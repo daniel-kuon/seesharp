@@ -50,6 +50,21 @@ public sealed class PluginApiTests : IDisposable
     }
 
     [Fact]
+    public async Task Reload_picks_up_a_course_that_appeared_after_the_start()
+    {
+        var course = Path.Combine(_dir, "Kurs mit Ümlaut, Komma"); // WriteCourse's folder, not there yet
+        await using var host = await Host.StartAsync(course, _store);
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, (await host.Http.GetAsync("/api/course")).StatusCode);
+
+        WriteCourse();
+        var reload = await host.Http.PostAsync("/api/reload", null);
+
+        Assert.Equal(HttpStatusCode.OK, reload.StatusCode);
+        Assert.True((bool)JsonNode.Parse(await reload.Content.ReadAsStringAsync())!["loaded"]!);
+        Assert.Equal(HttpStatusCode.OK, (await host.Http.GetAsync("/api/course")).StatusCode);
+    }
+
+    [Fact]
     public async Task Review_mode_opens_every_exercise_regardless_of_progress()
     {
         var course = WriteCourse();
