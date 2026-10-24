@@ -1,6 +1,6 @@
 @inject CourseState State
 
-<p>@CourseState.Text(Item.Prompt)</p>
+<div class="md prompt">@CourseState.MarkdownText(CourseState.Text(Item.Prompt))</div>
 @if (Item.OpenFile is { } file)
 {
     <p class="path"><code>@Path.Combine(Exercise.StarterDirectory, file)</code></p>

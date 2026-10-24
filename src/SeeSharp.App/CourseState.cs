@@ -121,5 +121,13 @@ public sealed class CourseState(ProgressStore store, string? courseArgument, boo
 
     public static MarkupString MarkdownText(string markdown) => new(Markdig.Markdown.ToHtml(markdown, Markdown));
 
+    /// <summary>One-line Markdown (quiz options: `code`, **bold**) without the surrounding paragraph.</summary>
+    public static MarkupString MarkdownInline(string markdown)
+    {
+        var html = Markdig.Markdown.ToHtml(markdown, Markdown).Trim();
+        return new(html.StartsWith("<p>") && html.EndsWith("</p>") && html.IndexOf("<p>", 1, StringComparison.Ordinal) < 0
+            ? html[3..^4] : html);
+    }
+
     public void Dispose() => Store.Dispose();
 }

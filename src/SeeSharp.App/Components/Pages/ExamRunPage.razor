@@ -87,21 +87,21 @@ else
                         @switch (item)
                         {
                             case MultipleChoiceItem choice:
-                                <p>@CourseState.Text(choice.Prompt)</p>
+                                <div class="md prompt">@CourseState.MarkdownText(CourseState.Text(choice.Prompt))</div>
                                 <ul class="skills">
                                     @for (var i = 0; i < choice.Options.Count; i++)
                                     {
                                         var chosen = (last?.Answer ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries).Contains(i.ToString());
-                                        <li class="@(choice.Correct.Contains(i) ? "ok" : chosen ? "bad" : "")">@(chosen ? "☑" : "☐") @CourseState.Text(choice.Options[i])</li>
+                                        <li class="@(choice.Correct.Contains(i) ? "ok" : chosen ? "bad" : "")">@(chosen ? "☑" : "☐") @CourseState.MarkdownInline(CourseState.Text(choice.Options[i]))</li>
                                     }
                                 </ul>
                                 @if (choice.Explanation is not null)
                                 {
-                                    <p class="hint">@CourseState.Text(choice.Explanation)</p>
+                                    <div class="hint md">@CourseState.MarkdownText(CourseState.Text(choice.Explanation))</div>
                                 }
                                 break;
                             case OpenItem open:
-                                <p>@CourseState.Text(open.Prompt)</p>
+                                <div class="md prompt">@CourseState.MarkdownText(CourseState.Text(open.Prompt))</div>
                                 <pre class="answer">@(last?.Answer ?? "")</pre>
                                 break;
                             case CodingItem coding:

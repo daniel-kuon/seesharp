@@ -1,6 +1,6 @@
 @inject CourseState State
 
-<p>@CourseState.Text(Item.Prompt)</p>
+<div class="md prompt">@CourseState.MarkdownText(CourseState.Text(Item.Prompt))</div>
 @for (var i = 0; i < Item.Options.Count; i++)
 {
     var index = i;
@@ -15,11 +15,11 @@
         }
         @if (Locked && Run is null && Item.Correct.Contains(index))
         {
-            <strong>@CourseState.Text(Item.Options[index])</strong>
+            <strong>@CourseState.MarkdownInline(CourseState.Text(Item.Options[index]))</strong>
         }
         else
         {
-            @CourseState.Text(Item.Options[index])
+            @CourseState.MarkdownInline(CourseState.Text(Item.Options[index]))
         }
     </label>
 }
@@ -49,7 +49,7 @@ else if (_submitted)
 }
 @if (Run is null && Locked && Item.Explanation is not null)
 {
-    <p class="hint">@CourseState.Text(Item.Explanation)</p>
+    <div class="hint md">@CourseState.MarkdownText(CourseState.Text(Item.Explanation))</div>
 }
 
 @code {

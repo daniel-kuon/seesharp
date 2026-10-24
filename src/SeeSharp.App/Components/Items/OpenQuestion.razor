@@ -1,6 +1,6 @@
 @inject CourseState State
 
-<p>@CourseState.Text(Item.Prompt)</p>
+<div class="md prompt">@CourseState.MarkdownText(CourseState.Text(Item.Prompt))</div>
 <textarea rows="6" @bind="_text"></textarea>
 <div>
     <button @onclick="Submit">@Strings.Submit</button>
