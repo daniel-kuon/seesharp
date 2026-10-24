@@ -18,10 +18,18 @@ public static class AppHost
 
         await app.StartAsync();
         var url = app.Urls.First();
-        console.WriteLine(string.Format(Strings.Listening, url));
-        if (openBrowser)
-            OpenBrowser(url);
-        await app.WaitForShutdownAsync();
+        PluginApi.WriteServerFile(url, app.Services.GetRequiredService<CourseState>().ApiToken);
+        try
+        {
+            console.WriteLine(string.Format(Strings.Listening, url));
+            if (openBrowser)
+                OpenBrowser(url);
+            await app.WaitForShutdownAsync();
+        }
+        finally
+        {
+            PluginApi.DeleteServerFile();
+        }
         return 0;
     }
 
@@ -46,6 +54,7 @@ public static class AppHost
                 context.Response.StatusCode = StatusCodes.Status404NotFound;
                 return Task.CompletedTask;
             });
+        PluginApi.Map(app, state);
         app.UseAntiforgery();
         app.MapRazorComponents<Components.App>().AddInteractiveServerRenderMode();
         app.MapGet("/book.pdf", () => state.BookPdfPath is { } pdf

@@ -28,6 +28,8 @@ public sealed class CourseState(ProgressStore store, string? courseArgument, boo
     public string? BookPdfPath { get; private set; }
     /// <summary>The IDEs found on this machine with their executables; see <see cref="DetectIdes"/>.</summary>
     public IReadOnlyDictionary<IdeKind, string> Ides { get; private set; } = new Dictionary<IdeKind, string>();
+    /// <summary>Required as <c>X-SeeSharp-Token</c> on every <c>/api</c> request; published in <see cref="PluginApi.ServerFile"/>. New per start.</summary>
+    public string ApiToken { get; } = System.Security.Cryptography.RandomNumberGenerator.GetHexString(64, lowercase: true);
 
     private Dictionary<string, Skill> _skills = new();
     private Dictionary<string, Module> _taughtIn = new();
