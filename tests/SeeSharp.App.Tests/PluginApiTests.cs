@@ -161,6 +161,21 @@ public sealed class PluginApiTests : IDisposable
         Assert.True(File.Exists(path));
     }
 
+    [Fact]
+    public void Server_file_is_owner_only_on_unix_even_when_an_old_file_was_world_readable()
+    {
+        if (OperatingSystem.IsWindows())
+            return; // %LOCALAPPDATA% is user-private; CI on Linux covers this.
+        var path = Path.Combine(_dir, "private", "server.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, "{}");
+        File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead | UnixFileMode.OtherRead);
+
+        PluginApi.WriteServerFile("http://127.0.0.1:5555", "abc", path);
+
+        Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite, File.GetUnixFileMode(path));
+    }
+
     private void Unlock() =>
         _store.RecordAttempt(new Attempt("erste", "q1", DateTimeOffset.UtcNow, TimeSpan.Zero, true, "0"),
             new Content.ExerciseManifest { Id = "erste", Teaches = ["a.one"] });

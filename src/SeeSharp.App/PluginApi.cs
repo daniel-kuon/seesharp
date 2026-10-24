@@ -22,8 +22,27 @@ public static class PluginApi
     public static void WriteServerFile(string url, string token, string? path = null)
     {
         path ??= ServerFile;
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, JsonSerializer.Serialize(new { url, token, pid = Environment.ProcessId }));
+        var json = JsonSerializer.Serialize(new { url, token, pid = Environment.ProcessId });
+        var dir = Path.GetDirectoryName(path)!;
+        if (OperatingSystem.IsWindows())
+        {
+            // %LOCALAPPDATA% is already private to the user.
+            Directory.CreateDirectory(dir);
+            File.WriteAllText(path, json);
+            return;
+        }
+        // Unix: the token must not be readable by other local users. Create owner-only, never reuse an older,
+        // possibly permissive file (UnixCreateMode only applies to new files).
+        Directory.CreateDirectory(dir, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        File.Delete(path);
+        using var stream = new FileStream(path, new FileStreamOptions
+        {
+            Mode = FileMode.CreateNew,
+            Access = FileAccess.Write,
+            UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite,
+        });
+        using var writer = new StreamWriter(stream);
+        writer.Write(json);
     }
 
     /// <summary>Only our own file: a second server started meanwhile owns it now.</summary>
