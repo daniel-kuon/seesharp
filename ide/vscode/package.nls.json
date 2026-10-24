@@ -1,0 +1,10 @@
+{
+  "description": "C# course exercises from SeeSharp: instructions, workspace and grading inside VS Code.",
+  "view.exercises": "Exercises",
+  "welcome.offline": "SeeSharp is not running.",
+  "command.start": "Start SeeSharp",
+  "command.refresh": "Refresh",
+  "command.grade": "Check",
+  "command.openExercise": "Open exercise",
+  "config.cliPath": "Path to a SeeSharp checkout (or its `src/SeeSharp.Cli` project). When set, *Start SeeSharp* runs `dotnet run --project` on it instead of the installed `seesharp` tool."
+}

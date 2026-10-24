@@ -1,0 +1,56 @@
+{
+  "name": "seesharp",
+  "displayName": "SeeSharp",
+  "description": "%description%",
+  "version": "0.1.0",
+  "publisher": "seesharp",
+  "license": "CC-BY-NC-SA-4.0",
+  "repository": { "type": "git", "url": "https://github.com/daniel-kuon/seesharp.git", "directory": "ide/vscode" },
+  "engines": { "vscode": "^1.95.0" },
+  "categories": ["Education"],
+  "main": "./out/extension.js",
+  "l10n": "./l10n",
+  "activationEvents": ["workspaceContains:**/*.csproj"],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [{ "id": "seesharp", "title": "SeeSharp", "icon": "media/icon.svg" }]
+    },
+    "views": {
+      "seesharp": [{ "id": "seesharp.exercises", "name": "%view.exercises%" }]
+    },
+    "viewsWelcome": [
+      { "view": "seesharp.exercises", "contents": "%welcome.offline%\n[$(play) %command.start%](command:seesharp.start)\n[$(refresh) %command.refresh%](command:seesharp.refresh)" }
+    ],
+    "commands": [
+      { "command": "seesharp.refresh", "title": "%command.refresh%", "category": "SeeSharp", "icon": "$(refresh)" },
+      { "command": "seesharp.start", "title": "%command.start%", "category": "SeeSharp", "icon": "$(play)" },
+      { "command": "seesharp.grade", "title": "%command.grade%", "category": "SeeSharp", "icon": "$(beaker)", "enablement": "seesharp.hasExercise" },
+      { "command": "seesharp.openExercise", "title": "%command.openExercise%", "category": "SeeSharp" }
+    ],
+    "menus": {
+      "view/title": [{ "command": "seesharp.refresh", "when": "view == seesharp.exercises", "group": "navigation" }],
+      "editor/title": [{ "command": "seesharp.grade", "when": "seesharp.hasExercise", "group": "navigation" }],
+      "commandPalette": [{ "command": "seesharp.openExercise", "when": "false" }]
+    },
+    "configuration": {
+      "title": "SeeSharp",
+      "properties": {
+        "seesharp.cliPath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "%config.cliPath%"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "test": "tsc -p . && node --test out/test/api.test.js",
+    "vscode:prepublish": "tsc -p ."
+  },
+  "devDependencies": {
+    "@types/node": "~22.15.0",
+    "@types/vscode": "~1.95.0",
+    "typescript": "~5.9.3"
+  }
+}

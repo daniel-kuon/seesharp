@@ -1,0 +1,10 @@
+{
+  "description": "C#-Kursübungen aus SeeSharp: Aufgabe, Arbeitsbereich und Prüfung direkt in VS Code.",
+  "view.exercises": "Übungen",
+  "welcome.offline": "SeeSharp läuft nicht.",
+  "command.start": "SeeSharp starten",
+  "command.refresh": "Aktualisieren",
+  "command.grade": "Prüfen",
+  "command.openExercise": "Übung öffnen",
+  "config.cliPath": "Pfad zu einem SeeSharp-Checkout (oder seinem Projekt `src/SeeSharp.Cli`). Wenn gesetzt, startet *SeeSharp starten* mit `dotnet run --project` statt mit dem installierten Tool `seesharp`."
+}
