@@ -27,10 +27,13 @@ public sealed class GradingRunner
         "Directory.Packages.props", "nuget.config", "dotnet.config",
     };
 
-    /// <summary>Build output and IDE caches: never part of a submission. Rider's <c>_ReSharper.Caches</c> even holds a locked mutex file while the project is open.</summary>
+    /// <summary>
+    /// Build output, IDE caches and the editor/AI-assistant folders SeeSharp writes into the starter (SeeSharp.App/Workspace.cs):
+    /// never part of a submission. Rider's <c>_ReSharper.Caches</c> even holds a locked mutex file while the project is open.
+    /// </summary>
     private static readonly HashSet<string> ArtifactDirectories = new(StringComparer.OrdinalIgnoreCase)
     {
-        "bin", "obj", ".vs", ".idea", "_ReSharper.Caches", ".git",
+        "bin", "obj", ".vs", ".idea", "_ReSharper.Caches", ".git", ".vscode", ".github", ".junie", ".aiassistant",
     };
 
     /// <summary>True when any directory on the relative path is build output or an IDE cache.</summary>

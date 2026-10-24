@@ -185,6 +185,57 @@ second process. Nothing SeeSharp can do: close that instance. The launcher
 returns no error in that case because the second process stays alive showing
 the dialog.
 
+## Exercise workspace files (IDE plugins, option 1)
+
+`SeeSharp.App/Workspace.cs`. Whenever an exercise is opened in any IDE ("In … öffnen"),
+on "Arbeitsbereich vorbereiten" in the coding card, and on
+`POST /api/exercise/{id}/workspace` (docs/IDE-PLUGINS.md), SeeSharp writes these files into
+the **starter project folder** — the folder of the `.csproj` that holds `openFile`
+(`IdeLauncher.NearestProject`), which is what Rider and VS Code open. They are rewritten every
+time, so hand edits are lost by design.
+
+| File | Content |
+|---|---|
+| `.vscode/tasks.json` | `build` (`dotnet build ${workspaceFolder}`, `$msCompile`) and `SeeSharp: Prüfen` = `seesharp grade "<abs tests dir>" "<abs starter dir>"`. Both are `process` tasks, so no shell parses the paths (spaces, umlauts, commas). |
+| `.vscode/launch.json` | one `coreclr` config "<Assembly> starten": preLaunchTask `build`, `program` = `${workspaceFolder}/bin/Debug/<TFM>/<AssemblyName>.dll` (read from the `.csproj`), `console: integratedTerminal`. Only for `Exe` projects; a class-library starter gets none. No test config: the exercise's tests live outside the starter, the grade task replaces it. |
+| `.vscode/extensions.json` | recommends `ms-dotnettools.csdevkit`, `ms-dotnettools.csharp`, `seesharp.seesharp` |
+| `.vscode/settings.json` | `github.copilot.enable: {"*": false}`, `github.copilot.nextEditSuggestions.enabled: false`, `editor.inlineSuggest.enabled: false`, nothing else (chat stays usable) |
+| `AGENTS.md`, `.github/copilot-instructions.md`, `CLAUDE.md`, `.junie/guidelines.md`, `.aiassistant/rules/seesharp.md` | the same text: exercise title, id, level, a link to `instructions.<locale>.md`, the tutor's rules, the skills |
+
+The assistant text reuses `Tutor.Rules(locale, hintRule)`, which `Tutor.SystemPrompt` uses too
+(one source). Differences to the in-app tutor: the hint rule asks for escalation on its own
+(guiding question → conceptual pointer → worked example on a *different* problem), because an
+IDE chat has no level button; rule 6 forbids creating or editing code in the project (agent
+modes can write files); "held skills" are the exercise's `requires`, "teaches" its `teaches`,
+both with labels in the UI locale (German by default); "later levels" are the modules after
+this one with the skills they teach. Readers: `AGENTS.md` — Copilot agent mode, JetBrains
+Junie, Codex, Cursor and others; `.github/copilot-instructions.md` — Copilot chat;
+`CLAUDE.md` — Claude Code; `.junie/guidelines.md` — Junie; `.aiassistant/rules/*.md` —
+JetBrains AI Assistant project rules.
+
+The course repo ignores the files (`**/starter/**/.vscode/` etc. in `seesharp-course/.gitignore`;
+**Decision — prefixed with `**/starter/**/`**, because a pattern like `starter/**/AGENTS.md`
+is anchored at the repo root and would match nothing, and an unanchored `.github/` would
+also hide a future CI folder of the course repo). Grading never sees the folders:
+`GradingRunner.IsArtifact` skips `.vscode`, `.github`, `.junie`, `.aiassistant` like `bin`
+and `obj` (the two root Markdown files are copied along and harmless).
+
+**What cannot be enforced** — the files are guidance, not a lock:
+
+- Copilot completion is off per workspace only. The trainee can switch it back on (Copilot's
+  status bar menu, or by editing `.vscode/settings.json` until the next regeneration). Chat
+  stays on deliberately.
+- JetBrains has no per-project file for completion: Full Line code completion (local) and AI
+  Assistant's cloud completion are IDE settings — *Settings → Editor → General → Inline
+  Completion* (both, in current Rider versions) and *Settings → Tools → AI Assistant*. The
+  supervisor switches them off on the trainee's machine.
+- JetBrains AI Assistant applies a project rule according to its rule type (*Settings → Tools →
+  AI Assistant → Project Rules*); check once that `seesharp` is set to *Always*.
+- Any assistant may ignore instruction files, and a trainee can paste the exercise into any
+  chat. The rules make the default helpful-but-not-solving; the supervisor review is the check.
+- **Decision — no `.aiignore`.** It would hide the exercise files from JetBrains AI Assistant
+  entirely, which also stops it from explaining a compiler error or a failing test.
+
 ## Rendering
 
 Global `InteractiveServer` render mode with prerendering, one `MainLayout`
@@ -410,7 +461,8 @@ model not in the table shows tokens only.
 
 **What the model gets** (`Tutor.Context`): the instructions in the current
 locale, every `.cs` file of `starter/` (skipping `GradingRunner.IsArtifact`
-folders: bin, obj, `.vs`, `.idea`, `_ReSharper.Caches`, `.git`), the latest
+folders: bin, obj, `.vs`, `.idea`, `_ReSharper.Caches`, `.git`, and the
+workspace folders `.vscode`, `.github`, `.junie`, `.aiassistant`), the latest
 coding attempt's grading summary when it failed (outcome, build errors, failing
 tests with messages; raw output only when nothing was extracted), the held
 skills (`practiced` or better, `id (label)`), the skills the exercise teaches,

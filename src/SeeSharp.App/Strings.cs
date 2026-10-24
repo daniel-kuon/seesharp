@@ -351,4 +351,12 @@ internal static class Strings
     public static string TutorApiKeyLabel => Resources.GetString(nameof(TutorApiKeyLabel))!;
     public static string TutorApiKeyStored => Resources.GetString(nameof(TutorApiKeyStored))!;
     public static string TutorSaved => Resources.GetString(nameof(TutorSaved))!;
+    public static string WorkspaceGradeTask => Resources.GetString(nameof(WorkspaceGradeTask))!;
+    public static string WorkspaceRunConfig => Resources.GetString(nameof(WorkspaceRunConfig))!;
+    public static string PrepareWorkspace => Resources.GetString(nameof(PrepareWorkspace))!;
+    public static string WorkspaceWritten => Resources.GetString(nameof(WorkspaceWritten))!;
+    public static string WorkspaceError => Resources.GetString(nameof(WorkspaceError))!;
+    public static string ApiExerciseLocked => Resources.GetString(nameof(ApiExerciseLocked))!;
+    public static string ApiNoCodingItem => Resources.GetString(nameof(ApiNoCodingItem))!;
+    public static string ApiNotFound => Resources.GetString(nameof(ApiNotFound))!;
 }

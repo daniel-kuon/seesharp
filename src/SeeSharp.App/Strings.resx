@@ -279,4 +279,12 @@
   <data name="TutorApiKeyLabel" xml:space="preserve"><value>API-Schlüssel</value></data>
   <data name="TutorApiKeyStored" xml:space="preserve"><value>Ein Schlüssel ist gespeichert; leer lassen, um ihn zu behalten.</value></data>
   <data name="TutorSaved" xml:space="preserve"><value>Gespeichert.</value></data>
+  <data name="WorkspaceGradeTask" xml:space="preserve"><value>SeeSharp: Prüfen</value></data>
+  <data name="WorkspaceRunConfig" xml:space="preserve"><value>{0} starten</value></data>
+  <data name="PrepareWorkspace" xml:space="preserve"><value>Arbeitsbereich vorbereiten</value></data>
+  <data name="WorkspaceWritten" xml:space="preserve"><value>Arbeitsbereich vorbereitet in {0}: Einstellungen für VS Code und Regeln für KI-Assistenten.</value></data>
+  <data name="WorkspaceError" xml:space="preserve"><value>Arbeitsbereich konnte nicht geschrieben werden: {0}</value></data>
+  <data name="ApiExerciseLocked" xml:space="preserve"><value>Diese Übung ist noch gesperrt.</value></data>
+  <data name="ApiNoCodingItem" xml:space="preserve"><value>Diese Übung hat keine Programmieraufgabe.</value></data>
+  <data name="ApiNotFound" xml:space="preserve"><value>Übung nicht gefunden.</value></data>
 </root>

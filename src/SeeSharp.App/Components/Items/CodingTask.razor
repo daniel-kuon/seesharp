@@ -2,7 +2,7 @@
 @inject IJSRuntime JS
 
 @{
-    var file = Path.GetFullPath(Path.Combine(Exercise.StarterDirectory, Item.OpenFile)); // manifests use '/', Windows shows '\'
+    var file = Workspace.OpenFile(Exercise, Item); // manifests use '/', Windows shows '\'
 }
 <p>@Strings.OpenFileLabel</p>
 <p class="path">
@@ -18,6 +18,7 @@
     {
         <button @onclick="() => Open(ide, executable, file)">@Strings.OpenIn(ide)</button>
     }
+    <button @onclick="PrepareWorkspace">@Strings.PrepareWorkspace</button>
     @if (State.Ides.Count == 0)
     {
         <span class="hint">@Strings.IdeNoneFoundHint</span>
@@ -26,6 +27,10 @@
 @if (_launchError is not null)
 {
     <p class="bad">@_launchError</p>
+}
+else if (_workspace is not null)
+{
+    <p class="state">@string.Format(Strings.WorkspaceWritten, _workspace)</p>
 }
 <button @onclick="Grade" disabled="@_running">@(_running ? Strings.GradingRunning : Strings.Grade)</button>
 @if (_error is not null)
@@ -55,7 +60,7 @@ else if (_result is { } result)
 
     private readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
     private GradingResult? _result;
-    private string? _error, _launchError;
+    private string? _error, _launchError, _workspace;
     private bool _running, _passed, _copied;
 
     protected override void OnInitialized()
@@ -70,15 +75,30 @@ else if (_result is { } result)
 
     private async Task Copy()
     {
-        await JS.InvokeVoidAsync("navigator.clipboard.writeText", Path.GetFullPath(Path.Combine(Exercise.StarterDirectory, Item.OpenFile)));
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", Workspace.OpenFile(Exercise, Item));
         _copied = true;
     }
 
-    /// <summary>Fire-and-forget; the IDE process is never awaited.</summary>
-    private void Open(IdeKind ide, string executable, string file) =>
-        _launchError = IdeLauncher.Launch(ide, executable, file, Item.OpenLine) is { } error
-            ? string.Format(Strings.IdeLaunchError, Strings.ForIde(ide), error)
-            : null;
+    /// <summary>Writes the workspace files first (any IDE reads them on open), then launches even if that failed; the IDE process is never awaited.</summary>
+    private void Open(IdeKind ide, string executable, string file)
+    {
+        PrepareWorkspace();
+        if (IdeLauncher.Launch(ide, executable, file, Item.OpenLine) is { } error)
+            _launchError = string.Format(Strings.IdeLaunchError, Strings.ForIde(ide), error);
+    }
+
+    private void PrepareWorkspace()
+    {
+        try
+        {
+            _workspace = Workspace.Write(State, Exercise, Item).Directory;
+            _launchError = null;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or System.Xml.XmlException)
+        {
+            _launchError = string.Format(Strings.WorkspaceError, e.Message);
+        }
+    }
 
     /// <summary>Runs in the circuit's own async flow, so the UI stays responsive while <c>dotnet test</c> works.</summary>
     private async Task Grade()
