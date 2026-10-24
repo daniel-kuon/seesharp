@@ -34,7 +34,16 @@ export function toolArgs(update: boolean, extraSource?: string): string[] {
   return ['tool', update ? 'update' : 'install', '-g', PACKAGE_ID, ...(source ? ['--add-source', source] : [])];
 }
 
-export const initArgs = (courseDir: string) => ['init', '--dir', courseDir];
+/** Only the user's own (global) value of a setting; workspace and folder values are ignored. Empty = unset. */
+export function userValue(inspected: { globalValue?: string; workspaceValue?: string; workspaceFolderValue?: string } | undefined): string | undefined {
+  return inspected?.globalValue?.trim() || undefined;
+}
+
+/** For display (output channel, confirmation); the process itself gets the argument list. */
+export const commandText = (command: string, args: string[]) =>
+  [command, ...args].map(a => /\s/.test(a) ? `"${a}"` : a).join(' ');
+
+export const initArgs =(courseDir: string) => ['init', '--dir', courseDir];
 export const startArgs = () => ['start', '--no-browser'];
 export const defaultCourseDir = (home = os.homedir()) => path.join(home, 'seesharp-course');
 

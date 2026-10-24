@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { Api, ApiError, Course, Exercise, ExerciseDetail, Grade, Module, readServer } from './api';
-import { defaultCourseDir, findTool, hasSdk, initArgs, run, SDK_DOWNLOAD, startArgs, toolArgs } from './setup';
+import { commandText, defaultCourseDir, findTool, hasSdk, initArgs, run, SDK_DOWNLOAD, startArgs, toolArgs, userValue } from './setup';
 
 const t = vscode.l10n.t;
 /** Exercise to continue with after vscode.openFolder reloaded the window. */
@@ -116,7 +116,7 @@ function setCurrent(exercise: Exercise | undefined) {
 
 /** `seesharp start --no-browser`, or `dotnet run` on a checkout; no shell in between, so paths need no quoting. */
 async function start(tree: Tree) {
-  const cli = vscode.workspace.getConfiguration('seesharp').get<string>('cliPath')?.trim();
+  const cli = userSetting('cliPath');
   const project = cli && fs.existsSync(path.join(cli, 'src', 'SeeSharp.Cli')) ? path.join(cli, 'src', 'SeeSharp.Cli') : cli;
   const terminal = project
     ? vscode.window.createTerminal({ name: 'SeeSharp', shellPath: 'dotnet', shellArgs: ['run', '--project', project, '--', 'start', '--no-browser'] })
@@ -133,6 +133,13 @@ async function start(tree: Tree) {
 }
 
 /**
+ * A setting from the user's own settings only. cliPath and extraPackageSource are machine-scoped and restricted in
+ * untrusted workspaces (package.json); ignoring workspace values here as well means an opened repository can never
+ * choose what gets run or installed.
+ */
+const userSetting = (key: string) => userValue(vscode.workspace.getConfiguration('seesharp').inspect<string>(key));
+
+/**
  * "Set up SeeSharp": .NET 10 SDK check, `dotnet tool install|update -g SeeSharp.Cli`, `seesharp init --dir <folder>`,
  * then reload a running server or start one. Each step runs without a shell; its output goes to the "SeeSharp" channel.
  */
@@ -140,7 +147,7 @@ async function setup(tree: Tree) {
   const out = output ??= vscode.window.createOutputChannel('SeeSharp');
   out.show(true);
   const step = async (command: string, args: string[]) => {
-    out.appendLine(`> ${command} ${args.map(a => /\s/.test(a) ? `"${a}"` : a).join(' ')}`);
+    out.appendLine(`> ${commandText(command, args)}`);
     try {
       const code = await run(command, args, s => out.append(s));
       out.appendLine(`(exit ${code})`);
@@ -163,13 +170,18 @@ async function setup(tree: Tree) {
   }
 
   let tool = findTool();
-  let install = !tool;
+  const source = userSetting('extraPackageSource');
+  // The exact command and the package source are shown before anything is installed.
+  const detail = t('Command: {0}', commandText('dotnet', toolArgs(!!tool, source))) + '\n'
+    + t('Package source: {0}', source ? t('nuget.org and {0}', source) : 'nuget.org');
+  let install = true;
   if (tool) {
     const update = t('Update'), keep = t('Keep version');
-    const choice = await vscode.window.showInformationMessage(t('SeeSharp is already installed. Update it to the latest version?'), { modal: true }, update, keep);
+    const choice = await vscode.window.showInformationMessage(t('SeeSharp is already installed. Update it to the latest version?'), { modal: true, detail }, update, keep);
     if (!choice) return;
     install = choice === update;
-  }
+  } else if (await vscode.window.showInformationMessage(t('Install the seesharp tool?'), { modal: true, detail }, t('Install')) === undefined)
+    return;
   const folder = await vscode.window.showInputBox({
     title: t('Set up SeeSharp'), prompt: t('Course folder: the course is cloned there, or updated if it is already a clone.'),
     value: defaultCourseDir(), ignoreFocusOut: true,
@@ -179,7 +191,6 @@ async function setup(tree: Tree) {
   const ok = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: t('Setting up SeeSharp') }, async progress => {
     if (install) {
       progress.report({ message: tool ? t('Updating the seesharp tool …') : t('Installing the seesharp tool …') });
-      const source = vscode.workspace.getConfiguration('seesharp').get<string>('extraPackageSource');
       // An update fails while SeeSharp runs (the .exe is in use); the installed version then carries on.
       if (!await step('dotnet', toolArgs(!!tool, source)) && !tool) {
         void vscode.window.showErrorMessage(t('Installing SeeSharp failed. See the "SeeSharp" output.'));

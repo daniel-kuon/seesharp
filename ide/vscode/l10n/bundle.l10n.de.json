@@ -40,5 +40,10 @@
   "The seesharp tool was not found after installing it. See the \"SeeSharp\" output.": "Das Tool seesharp wurde nach der Installation nicht gefunden. Details in der Ausgabe „SeeSharp“.",
   "Cloning the course and downloading the book …": "Klone den Kurs und lade das Buch …",
   "\"seesharp init\" failed. See the \"SeeSharp\" output.": "„seesharp init“ ist fehlgeschlagen. Details in der Ausgabe „SeeSharp“.",
-  "SeeSharp is set up.": "SeeSharp ist eingerichtet."
+  "SeeSharp is set up.": "SeeSharp ist eingerichtet.",
+  "Command: {0}": "Befehl: {0}",
+  "Package source: {0}": "Paketquelle: {0}",
+  "nuget.org and {0}": "nuget.org und {0}",
+  "Install the seesharp tool?": "Das Tool seesharp installieren?",
+  "Install": "Installieren"
 }

@@ -11,6 +11,13 @@
   "main": "./out/extension.js",
   "l10n": "./l10n",
   "activationEvents": ["workspaceContains:**/*.csproj"],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "%untrusted%",
+      "restrictedConfigurations": ["seesharp.cliPath", "seesharp.extraPackageSource"]
+    }
+  },
   "contributes": {
     "viewsContainers": {
       "activitybar": [{ "id": "seesharp", "title": "SeeSharp", "icon": "media/icon.svg" }]
@@ -40,11 +47,13 @@
         "seesharp.cliPath": {
           "type": "string",
           "default": "",
+          "scope": "machine",
           "markdownDescription": "%config.cliPath%"
         },
         "seesharp.extraPackageSource": {
           "type": "string",
           "default": "",
+          "scope": "machine",
           "markdownDescription": "%config.extraPackageSource%"
         }
       }

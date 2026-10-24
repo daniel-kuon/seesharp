@@ -10,5 +10,6 @@
   "welcome.setup": "First time here? *Set up SeeSharp* installs the tool, clones the course and starts it.",
   "welcome.noCourse": "SeeSharp is running, but no course is set up yet.",
   "command.setup": "Set up SeeSharp",
-  "config.extraPackageSource": "Extra NuGet source (a folder with `SeeSharp.Cli.*.nupkg` or a feed URL) for *Set up SeeSharp*, passed to `dotnet tool install` as `--add-source`. Empty = nuget.org only."
+  "config.extraPackageSource": "Extra NuGet source (a folder with `SeeSharp.Cli.*.nupkg` or a feed URL) for *Set up SeeSharp*, passed to `dotnet tool install` as `--add-source`. Empty = nuget.org only.",
+  "untrusted": "SeeSharp's path and package-source settings are only read from your user settings."
 }

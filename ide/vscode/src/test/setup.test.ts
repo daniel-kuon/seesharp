@@ -1,7 +1,8 @@
 import * as assert from 'node:assert/strict';
+import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { test } from 'node:test';
-import { findTool, hasSdk, initArgs, run, sdkMajors, toolArgs } from '../setup';
+import { commandText, findTool, hasSdk, initArgs, run, sdkMajors, toolArgs, userValue } from '../setup';
 
 test('SDK detection reads the majors of dotnet --list-sdks', () => {
   const out = '8.0.404 [C:\\Program Files\\dotnet\\sdk]\r\n10.0.100 [C:\\Program Files\\dotnet\\sdk]\r\n';
@@ -26,6 +27,23 @@ test('argument lists keep paths with spaces, umlauts and commas as one argument'
     ['tool', 'update', '-g', 'SeeSharp.Cli', '--add-source', 'D:\\Rider Projects 2\\SeeSharp\\nupkg']);
   assert.deepEqual(toolArgs(false, '  '), ['tool', 'install', '-g', 'SeeSharp.Cli']);
   assert.deepEqual(initArgs('C:\\Kurs Ü, 1'), ['init', '--dir', 'C:\\Kurs Ü, 1']);
+});
+
+test('a workspace or folder value of a setting is ignored; only the user value counts', () => {
+  assert.equal(userValue({ workspaceValue: 'https://evil.example/feed', workspaceFolderValue: 'D:\\evil' }), undefined);
+  assert.equal(userValue({ globalValue: ' D:\\nupkg ', workspaceValue: 'https://evil.example/feed' }), 'D:\\nupkg');
+  assert.equal(userValue({ globalValue: '  ' }), undefined);
+  assert.equal(userValue(undefined), undefined);
+  assert.equal(commandText('dotnet', toolArgs(false, 'D:\\Rider Projects 2\\nupkg')),
+    'dotnet tool install -g SeeSharp.Cli --add-source "D:\\Rider Projects 2\\nupkg"');
+});
+
+test('package.json keeps the process-starting settings out of workspace settings', () => {
+  const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'package.json'), 'utf8'));
+  for (const key of ['seesharp.cliPath', 'seesharp.extraPackageSource']) {
+    assert.equal(pkg.contributes.configuration.properties[key].scope, 'machine', key);
+    assert.ok(pkg.capabilities.untrustedWorkspaces.restrictedConfigurations.includes(key), key);
+  }
 });
 
 test('run passes arguments without a shell and collects the output', async () => {
