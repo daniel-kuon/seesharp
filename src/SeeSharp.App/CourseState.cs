@@ -10,8 +10,11 @@ namespace SeeSharp.App;
 /// The one loaded course plus the progress store, shared by every circuit. Reloading swaps the
 /// course reference; pages read it fresh on every render.
 /// </summary>
-public sealed class CourseState(ProgressStore store, string? courseArgument, bool admin = false) : IDisposable
+public sealed class CourseState(ProgressStore store, string? courseArgument, bool admin = false, bool review = false) : IDisposable
 {
+    /// <summary><c>seesharp --review</c>: every module and exercise is open regardless of progress (for reviewing
+    /// content). Attempts are still recorded and credited as usual; only the lock is lifted.</summary>
+    public bool Review { get; } = review;
     private static readonly MarkdownPipeline Markdown = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
 
     public ProgressStore Store { get; } = store;
@@ -85,7 +88,20 @@ public sealed class CourseState(ProgressStore store, string? courseArgument, boo
         Ides = found;
     }
 
-    public CourseProgress Progress() => Store.Query(Course!);
+    public CourseProgress Progress()
+    {
+        var progress = Store.Query(Course!);
+        return Review ? Unlock(progress) : progress;
+    }
+
+    /// <summary>Review mode: no exercise misses a skill, so every exercise and module counts as unlocked.</summary>
+    public static CourseProgress Unlock(CourseProgress progress) => progress with
+    {
+        Modules = progress.Modules.Select(m => m with
+        {
+            Exercises = m.Exercises.Select(e => e with { MissingSkills = [] }).ToList(),
+        }).ToList(),
+    };
 
     public string SkillLabel(string id) =>
         _skills.TryGetValue(id, out var skill) && Localized.Text(skill.Label, Locale.Current) is { Length: > 0 } label ? label : id;

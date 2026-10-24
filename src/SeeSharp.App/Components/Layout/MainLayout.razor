@@ -8,6 +8,10 @@
     <NavLink href="modules">@Strings.NavModules</NavLink>
     <NavLink href="exams">@Strings.NavExams</NavLink>
     <NavLink href="settings">@Strings.NavSettings</NavLink>
+    @if (State.Review)
+    {
+        <span class="admin" title="@Strings.ReviewModeHint">@Strings.ReviewModeBadge</span>
+    }
     @if (State.Admin)
     {
         <span class="admin">@Strings.NavAdmin</span>

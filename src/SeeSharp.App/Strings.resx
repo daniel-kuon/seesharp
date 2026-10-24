@@ -102,6 +102,8 @@
   <data name="Save" xml:space="preserve"><value>Speichern</value></data>
   <data name="Reload" xml:space="preserve"><value>Kurs neu laden</value></data>
   <data name="NavAdmin" xml:space="preserve"><value>Admin:</value></data>
+  <data name="ReviewModeBadge" xml:space="preserve"><value>Review-Modus</value></data>
+  <data name="ReviewModeHint" xml:space="preserve"><value>Alle Module und Übungen sind offen, unabhängig vom Fortschritt (gestartet mit --review).</value></data>
   <data name="NavAdminCourse" xml:space="preserve"><value>Kurs</value></data>
   <data name="NavAdminSkills" xml:space="preserve"><value>Skills</value></data>
   <data name="NavAdminGit" xml:space="preserve"><value>Git</value></data>

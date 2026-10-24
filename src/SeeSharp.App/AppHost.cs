@@ -10,10 +10,10 @@ public static class AppHost
     /// Serves the UI on localhost (<paramref name="port"/> 0 = any free port), opens the browser and blocks until
     /// Ctrl+C. <paramref name="courseArgument"/> is <c>--course</c>; see <see cref="CoursePaths.Resolve"/> for the fallbacks.
     /// </summary>
-    public static async Task<int> RunAsync(string? courseArgument, int port, bool openBrowser, bool admin, TextWriter console)
+    public static async Task<int> RunAsync(string? courseArgument, int port, bool openBrowser, bool admin, TextWriter console, bool review = false)
     {
         Locale.Apply(Locale.Resolve(Environment.GetEnvironmentVariable(Locale.EnvironmentVariable), Settings.Load().Locale));
-        var app = await BuildAsync(courseArgument, port, admin, new ProgressStore());
+        var app = await BuildAsync(courseArgument, port, admin, new ProgressStore(), review);
         app.Services.GetRequiredService<CourseState>().DetectIdes();
 
         await app.StartAsync();
@@ -34,13 +34,13 @@ public static class AppHost
     }
 
     /// <summary>The configured app with the course loaded, not yet started; tests host it on a temp store. Without <paramref name="admin"/> every <c>/admin</c> URL is a 404.</summary>
-    public static async Task<WebApplication> BuildAsync(string? courseArgument, int port, bool admin, ProgressStore store)
+    public static async Task<WebApplication> BuildAsync(string? courseArgument, int port, bool admin, ProgressStore store, bool review = false)
     {
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls($"http://127.0.0.1:{port}");
         builder.Logging.SetMinimumLevel(LogLevel.Warning);
         builder.Services.AddRazorComponents().AddInteractiveServerComponents(o => o.DetailedErrors = true);
-        builder.Services.AddSingleton(new CourseState(store, courseArgument, admin));
+        builder.Services.AddSingleton(new CourseState(store, courseArgument, admin, review));
 
         var app = builder.Build();
         var state = app.Services.GetRequiredService<CourseState>();

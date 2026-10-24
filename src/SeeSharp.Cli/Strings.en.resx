@@ -4,12 +4,12 @@
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
-  <data name="Usage" xml:space="preserve"><value>Usage: seesharp [start] [--course &lt;course path&gt;] [--port &lt;port&gt;] [--no-browser] [--admin]
+  <data name="Usage" xml:space="preserve"><value>Usage: seesharp [start] [--course &lt;course path&gt;] [--port &lt;port&gt;] [--no-browser] [--admin] [--review]
        seesharp --version
        seesharp grade &lt;exercise path&gt; &lt;source path&gt; [--json] [--keep-artifacts] [--timeout &lt;seconds&gt;]
        seesharp validate &lt;course path&gt; [--skip-starter-check]
        seesharp export-review [--out &lt;zip file&gt;]</value></data>
-  <data name="StartUsage" xml:space="preserve"><value>Usage: seesharp start [--course &lt;course path&gt;] [--port &lt;port&gt;] [--no-browser] [--admin]</value></data>
+  <data name="StartUsage" xml:space="preserve"><value>Usage: seesharp start [--course &lt;course path&gt;] [--port &lt;port&gt;] [--no-browser] [--admin] [--review]</value></data>
   <data name="GradeUsage" xml:space="preserve"><value>Usage: seesharp grade &lt;exercise path&gt; &lt;source path&gt; [--json] [--keep-artifacts] [--timeout &lt;seconds&gt;]</value></data>
   <data name="ResultLine" xml:space="preserve"><value>Result: {0} ({1:0.0} s)</value></data>
   <data name="TestsLine" xml:space="preserve"><value>Tests: {0} passed, {1} failed</value></data>

@@ -543,3 +543,12 @@ untested against a live model.
 - No per-attempt history view; the last attempt is shown, the export has the rest.
 - Navigating away during a test run still records the attempt (the store is a
   singleton); only the result panel is lost until the page is reopened.
+
+## Review mode
+
+`seesharp --review` (or `seesharp start --review`) opens every module and
+exercise regardless of progress, so a supervisor can read and try the whole
+course. It only lifts the lock in `CourseState.Progress()` — every page and the
+plugin API read progress through it; attempts are still recorded and credited
+as usual. The nav shows a "Review-Modus" badge. Exams keep their own rule
+(all covered exercises passed).

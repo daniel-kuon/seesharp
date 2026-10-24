@@ -156,6 +156,8 @@ internal static class Strings
     public static string Save => Resources.GetString(nameof(Save))!;
     public static string Reload => Resources.GetString(nameof(Reload))!;
     public static string NavAdmin => Resources.GetString(nameof(NavAdmin))!;
+    public static string ReviewModeBadge => Resources.GetString(nameof(ReviewModeBadge))!;
+    public static string ReviewModeHint => Resources.GetString(nameof(ReviewModeHint))!;
     public static string NavAdminCourse => Resources.GetString(nameof(NavAdminCourse))!;
     public static string NavAdminSkills => Resources.GetString(nameof(NavAdminSkills))!;
     public static string NavAdminGit => Resources.GetString(nameof(NavAdminGit))!;

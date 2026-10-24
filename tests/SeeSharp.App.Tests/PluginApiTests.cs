@@ -50,6 +50,19 @@ public sealed class PluginApiTests : IDisposable
     }
 
     [Fact]
+    public async Task Review_mode_opens_every_exercise_regardless_of_progress()
+    {
+        var course = WriteCourse();
+        await using var normal = await AppHost.BuildAsync(course, port: 0, admin: false, _store);
+        Assert.Contains(normal.Services.GetRequiredService<CourseState>().Progress().Exercises, e => !e.Unlocked);
+
+        await using var review = await AppHost.BuildAsync(course, port: 0, admin: false, _store, review: true);
+        var progress = review.Services.GetRequiredService<CourseState>().Progress();
+        Assert.All(progress.Exercises, e => Assert.True(e.Unlocked, e.Exercise.Manifest.Id));
+        Assert.All(progress.Modules, m => Assert.True(m.Unlocked));
+    }
+
+    [Fact]
     public async Task Course_lists_modules_and_exercises_with_paths_and_state()
     {
         var course = WriteCourse();
