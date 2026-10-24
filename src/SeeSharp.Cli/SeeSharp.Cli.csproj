@@ -10,7 +10,8 @@
     <PackageOutputPath>$(MSBuildThisFileDirectory)../../nupkg</PackageOutputPath>
     <Authors>Daniel Kuon</Authors>
     <Description>SeeSharp: interaktiver C#-Kurs im Browser mit Übungen, die per Unit-Tests geprüft werden. Interactive C# training with exercises graded by unit tests.</Description>
-    <PackageLicenseExpression>CC-BY-NC-SA-4.0</PackageLicenseExpression>
+    <!-- nuget.org only accepts OSI/FSF-approved SPDX expressions; CC BY-NC-SA is shipped as the licence file instead. -->
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/wollume-studios/seesharp</PackageProjectUrl>
     <RepositoryUrl>https://github.com/wollume-studios/seesharp</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -19,6 +20,7 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="/" />
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="/" Visible="false" />
     <InternalsVisibleTo Include="SeeSharp.Cli.Tests" />
   </ItemGroup>
   <ItemGroup>
