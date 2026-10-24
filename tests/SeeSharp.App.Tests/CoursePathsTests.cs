@@ -38,8 +38,10 @@ public class CoursePathsTests
     public void Book_defaults_next_to_the_course()
     {
         var course = Path.Combine(Cwd, "seesharp-course");
-        Assert.Equal(Path.Combine(Cwd, "csharp14.pdf"), CoursePaths.BookPdf(null, course));
-        Assert.Equal(Path.GetFullPath("book.pdf", Cwd), CoursePaths.BookPdf(Path.Combine(Cwd, "book.pdf"), course));
+        var inCourse = Path.Combine(course, "book", "csharp14.pdf");
+        Assert.Equal(inCourse, CoursePaths.BookPdf(null, course, p => p == inCourse));
+        Assert.Equal(Path.Combine(Cwd, "csharp14.pdf"), CoursePaths.BookPdf(null, course, _ => false));
+        Assert.Equal(Path.GetFullPath("book.pdf", Cwd), CoursePaths.BookPdf(Path.Combine(Cwd, "book.pdf"), course, _ => true));
     }
 
     [Fact]

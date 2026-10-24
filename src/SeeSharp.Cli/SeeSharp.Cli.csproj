@@ -1,15 +1,26 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <!-- Release builds pass -p:Version=<tag without v> (.github/workflows/release.yml). -->
     <Version>0.1.0</Version>
     <IsPackable>true</IsPackable>
     <PackAsTool>true</PackAsTool>
+    <PackageId>SeeSharp.Cli</PackageId>
     <ToolCommandName>seesharp</ToolCommandName>
     <PackageOutputPath>$(MSBuildThisFileDirectory)../../nupkg</PackageOutputPath>
     <Authors>Daniel Kuon</Authors>
-    <Description>Interactive C# training tool.</Description>
+    <Description>SeeSharp: interaktiver C#-Kurs im Browser mit Übungen, die per Unit-Tests geprüft werden. Interactive C# training with exercises graded by unit tests.</Description>
     <PackageLicenseExpression>CC-BY-NC-SA-4.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/wollume-studios/seesharp</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/wollume-studios/seesharp</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>csharp;training;course;education;learning;dotnet-tool</PackageTags>
   </PropertyGroup>
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
+    <InternalsVisibleTo Include="SeeSharp.Cli.Tests" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../SeeSharp.App/SeeSharp.App.csproj" />
     <ProjectReference Include="../SeeSharp.Content/SeeSharp.Content.csproj" />

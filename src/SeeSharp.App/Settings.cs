@@ -4,16 +4,22 @@ using SeeSharp.Content;
 
 namespace SeeSharp.App;
 
-/// <summary><c>%LOCALAPPDATA%\SeeSharp\settings.json</c>. Missing or unreadable file = defaults.</summary>
+/// <summary><c>%LOCALAPPDATA%\SeeSharp\settings.json</c> (or <c>SEESHARP_SETTINGS</c>). Missing or unreadable file = defaults.</summary>
 public sealed class Settings
 {
+    public const string EnvironmentVariable = "SEESHARP_SETTINGS";
+
     public static string DefaultPath =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SeeSharp", "settings.json");
+
+    /// <summary>The settings file Load/Save use: <c>SEESHARP_SETTINGS</c> when set (tests, scratch runs), else <see cref="DefaultPath"/>.</summary>
+    public static string FilePath =>
+        Environment.GetEnvironmentVariable(EnvironmentVariable) is { Length: > 0 } path ? Path.GetFullPath(path) : DefaultPath;
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { WriteIndented = true };
 
     public string? CoursePath { get; set; }
-    /// <summary>The bundled book; null means <c>../csharp14.pdf</c> next to the course folder.</summary>
+    /// <summary>The book; null means <c>book/csharp14.pdf</c> in the course folder (what <c>seesharp init</c> downloads), else <c>../csharp14.pdf</c> next to it.</summary>
     public string? BookPdfPath { get; set; }
     /// <summary>Resolved IDE executables, cached by <see cref="CourseState.DetectIdes"/>; null = not found.</summary>
     public string? RiderPath { get; set; }
@@ -35,7 +41,7 @@ public sealed class Settings
 
     public static Settings Load(string? path = null)
     {
-        path ??= DefaultPath;
+        path ??= FilePath;
         try
         {
             return File.Exists(path) ? JsonSerializer.Deserialize<Settings>(File.ReadAllText(path), Json) ?? new() : new();
@@ -48,7 +54,7 @@ public sealed class Settings
 
     public void Save(string? path = null)
     {
-        path ??= DefaultPath;
+        path ??= FilePath;
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, JsonSerializer.Serialize(this, Json));
     }
@@ -80,7 +86,9 @@ public static class CoursePaths
 {
     public const string EnvironmentVariable = "SEESHARP_COURSE";
     public const string SiblingFolder = "../seesharp-course";
-    public const string DefaultBookFile = "../csharp14.pdf";
+    public const string BookFolder = "book";
+    public const string BookFile = "csharp14.pdf";
+    public const string LegacyBookFile = "../csharp14.pdf";
 
     /// <summary>
     /// First of: <c>--course</c>, <c>SEESHARP_COURSE</c>, the setting, <c>../seesharp-course</c> relative to <paramref name="cwd"/> if it exists.
@@ -95,8 +103,14 @@ public static class CoursePaths
         return directoryExists(sibling) ? sibling : null;
     }
 
-    public static string BookPdf(string? setting, string coursePath) =>
-        string.IsNullOrWhiteSpace(setting) ? Path.GetFullPath(DefaultBookFile, coursePath) : Path.GetFullPath(setting);
+    /// <summary>The setting; else <c>&lt;course&gt;/book/csharp14.pdf</c> when it exists; else <c>../csharp14.pdf</c>.</summary>
+    public static string BookPdf(string? setting, string coursePath, Func<string, bool> fileExists)
+    {
+        if (!string.IsNullOrWhiteSpace(setting))
+            return Path.GetFullPath(setting);
+        var inCourse = Path.GetFullPath(Path.Combine(BookFolder, BookFile), coursePath);
+        return fileExists(inCourse) ? inCourse : Path.GetFullPath(LegacyBookFile, coursePath);
+    }
 
     /// <summary>
     /// A translated book sits next to the original as <c>&lt;name&gt;.&lt;locale&gt;.pdf</c> (e.g. <c>csharp14.en.pdf</c>,

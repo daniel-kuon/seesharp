@@ -60,7 +60,7 @@ public sealed class CourseState(ProgressStore store, string? courseArgument, boo
                 taughtIn.TryAdd(skill, module);
         _skills = skills;
         _taughtIn = taughtIn;
-        var book = CoursePaths.BookPdf(Settings.BookPdfPath, CoursePath);
+        var book = CoursePaths.BookPdf(Settings.BookPdfPath, CoursePath, File.Exists);
         BookPdfPath = File.Exists(book) ? book : null;
         Findings = report.Findings;
         Summary = report.Summary;

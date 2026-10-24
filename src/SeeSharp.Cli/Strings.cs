@@ -33,4 +33,17 @@ internal static class Strings
     public static string TestPassed => Resources.GetString(nameof(TestPassed))!;
     public static string TestFailed => Resources.GetString(nameof(TestFailed))!;
     public static string TestSkipped => Resources.GetString(nameof(TestSkipped))!;
+    public static string InitUsage => Resources.GetString(nameof(InitUsage))!;
+    public static string InitCloning => Resources.GetString(nameof(InitCloning))!;
+    public static string InitUpdating => Resources.GetString(nameof(InitUpdating))!;
+    public static string InitUpToDate => Resources.GetString(nameof(InitUpToDate))!;
+    public static string InitUpdated => Resources.GetString(nameof(InitUpdated))!;
+    public static string InitUpdateFailed => Resources.GetString(nameof(InitUpdateFailed))!;
+    public static string InitForeignFolder => Resources.GetString(nameof(InitForeignFolder))!;
+    public static string InitBookPresent => Resources.GetString(nameof(InitBookPresent))!;
+    public static string InitBookDownloading => Resources.GetString(nameof(InitBookDownloading))!;
+    public static string InitBookFailed => Resources.GetString(nameof(InitBookFailed))!;
+    public static string InitSettingsWritten => Resources.GetString(nameof(InitSettingsWritten))!;
+    public static string InitSummary => Resources.GetString(nameof(InitSummary))!;
+    public static string InitDone => Resources.GetString(nameof(InitDone))!;
 }

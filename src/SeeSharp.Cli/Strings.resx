@@ -6,6 +6,7 @@
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <data name="Usage" xml:space="preserve"><value>Verwendung: seesharp [start] [--course &lt;Kurspfad&gt;] [--port &lt;Port&gt;] [--no-browser] [--admin] [--review]
             seesharp --version
+            seesharp init [--dir &lt;Ordner&gt;] [--repo &lt;URL&gt;] [--no-book]
             seesharp grade &lt;Übungspfad&gt; &lt;Quellpfad&gt; [--json] [--keep-artifacts] [--timeout &lt;Sekunden&gt;]
             seesharp validate &lt;Kurspfad&gt; [--skip-starter-check]
             seesharp export-review [--out &lt;Zip-Datei&gt;]</value></data>
@@ -35,4 +36,18 @@
   <data name="SummaryExamLine" xml:space="preserve"><value>  {0} ({1}): Level {2}, {3} Skills aus {4} Übungen mit {5} Aufgaben, {6} Minuten</value></data>
   <data name="ExportReviewUsage" xml:space="preserve"><value>Verwendung: seesharp export-review [--out &lt;Zip-Datei&gt;]</value></data>
   <data name="ExportReviewWritten" xml:space="preserve"><value>Review-Paket geschrieben: {0} ({1} Abgaben)</value></data>
+  <data name="InitUsage" xml:space="preserve"><value>Verwendung: seesharp init [--dir &lt;Ordner&gt;] [--repo &lt;URL&gt;] [--no-book]</value></data>
+  <data name="InitCloning" xml:space="preserve"><value>Klone {0} nach {1} …</value></data>
+  <data name="InitUpdating" xml:space="preserve"><value>Aktualisiere den Kurs in {0} …</value></data>
+  <data name="InitUpToDate" xml:space="preserve"><value>Der Kurs ist aktuell.</value></data>
+  <data name="InitUpdated" xml:space="preserve"><value>Der Kurs wurde aktualisiert.</value></data>
+  <data name="InitUpdateFailed" xml:space="preserve"><value>Der Kurs konnte nicht aktualisiert werden: {0}
+Deine Änderungen bleiben unangetastet. Kläre das in {1} (z. B. mit deinem Betreuer) und rufe seesharp init erneut auf.</value></data>
+  <data name="InitForeignFolder" xml:space="preserve"><value>{0} ist weder leer noch ein Klon von {1}. Wähle mit --dir einen anderen Ordner.</value></data>
+  <data name="InitBookPresent" xml:space="preserve"><value>Buch {0} ist schon da.</value></data>
+  <data name="InitBookDownloading" xml:space="preserve"><value>Lade {0} ({1:0.0} MB):</value></data>
+  <data name="InitBookFailed" xml:space="preserve"><value>Buch {0} konnte nicht geladen werden: {1}</value></data>
+  <data name="InitSettingsWritten" xml:space="preserve"><value>Einstellungen gespeichert: {0}</value></data>
+  <data name="InitSummary" xml:space="preserve"><value>Kurs: {0} Module, {1} Übungen</value></data>
+  <data name="InitDone" xml:space="preserve"><value>Fertig. Starte SeeSharp mit: seesharp</value></data>
 </root>

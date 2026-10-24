@@ -6,6 +6,7 @@
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <data name="Usage" xml:space="preserve"><value>Usage: seesharp [start] [--course &lt;course path&gt;] [--port &lt;port&gt;] [--no-browser] [--admin] [--review]
        seesharp --version
+       seesharp init [--dir &lt;folder&gt;] [--repo &lt;url&gt;] [--no-book]
        seesharp grade &lt;exercise path&gt; &lt;source path&gt; [--json] [--keep-artifacts] [--timeout &lt;seconds&gt;]
        seesharp validate &lt;course path&gt; [--skip-starter-check]
        seesharp export-review [--out &lt;zip file&gt;]</value></data>
@@ -35,4 +36,18 @@
   <data name="SummaryExamLine" xml:space="preserve"><value>  {0} ({1}): levels {2}, {3} skills from {4} exercises with {5} items, {6} minutes</value></data>
   <data name="ExportReviewUsage" xml:space="preserve"><value>Usage: seesharp export-review [--out &lt;zip file&gt;]</value></data>
   <data name="ExportReviewWritten" xml:space="preserve"><value>Review bundle written: {0} ({1} submissions)</value></data>
+  <data name="InitUsage" xml:space="preserve"><value>Usage: seesharp init [--dir &lt;folder&gt;] [--repo &lt;url&gt;] [--no-book]</value></data>
+  <data name="InitCloning" xml:space="preserve"><value>Cloning {0} into {1} …</value></data>
+  <data name="InitUpdating" xml:space="preserve"><value>Updating the course in {0} …</value></data>
+  <data name="InitUpToDate" xml:space="preserve"><value>The course is up to date.</value></data>
+  <data name="InitUpdated" xml:space="preserve"><value>The course was updated.</value></data>
+  <data name="InitUpdateFailed" xml:space="preserve"><value>The course could not be updated: {0}
+Your changes were left untouched. Sort this out in {1} (e.g. with your supervisor) and run seesharp init again.</value></data>
+  <data name="InitForeignFolder" xml:space="preserve"><value>{0} is neither empty nor a clone of {1}. Choose another folder with --dir.</value></data>
+  <data name="InitBookPresent" xml:space="preserve"><value>Book {0} is already there.</value></data>
+  <data name="InitBookDownloading" xml:space="preserve"><value>Downloading {0} ({1:0.0} MB):</value></data>
+  <data name="InitBookFailed" xml:space="preserve"><value>Book {0} could not be downloaded: {1}</value></data>
+  <data name="InitSettingsWritten" xml:space="preserve"><value>Settings saved: {0}</value></data>
+  <data name="InitSummary" xml:space="preserve"><value>Course: {0} modules, {1} exercises</value></data>
+  <data name="InitDone" xml:space="preserve"><value>Done. Start SeeSharp with: seesharp</value></data>
 </root>
