@@ -78,16 +78,17 @@ jobs:
       - name: Push to nuget.org
         run: dotnet nuget push nupkg/*.nupkg --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
 
-  # IDE plugins: built from the tagged commit with the tag's version and attached to the release.
+  # IDE plugins: built from the tagged commit with the tag's version. This job runs Gradle and npm
+  # code, so it only gets a read-only token (not persisted); attaching happens in plugins-release.
   plugins:
-    needs: github-release
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           ref: ${{ env.TAG }}
+          persist-credentials: false
       - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
         with:
           distribution: temurin
@@ -107,17 +108,37 @@ jobs:
         run: |
           npm ci
           npm version "$VERSION" --no-git-tag-version --allow-same-version
-          npx --yes @vscode/vsce package -o "seesharp-$VERSION.vsix"
+          npx --no-install vsce package -o "seesharp-$VERSION.vsix"   # vsce pinned in package-lock.json
+      - name: Collect
+        run: |
+          mkdir dist
+          cp "ide/rider/build/distributions/SeeSharp-$VERSION.zip" "ide/vscode/seesharp-$VERSION.vsix" dist/
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: plugins
+          path: dist/*
+
+  # Attaches the plugin files to the release; runs no third-party code, so it may write.
+  plugins-release:
+    needs: [github-release, plugins]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: plugins
+          path: plugins
       - name: Attach to the release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: gh release upload "$TAG" "ide/rider/build/distributions/SeeSharp-$VERSION.zip" "ide/vscode/seesharp-$VERSION.vsix" --clobber
+        run: gh release upload "$TAG" plugins/* --clobber
 
   # Rider custom plugin repository on GitHub Pages: https://<owner>.github.io/<repo>/updatePlugins.xml,
   # pointing at the zip attached to this release. Deploys via OIDC, so this job alone gets pages + id-token.
   feed:
-    needs: plugins
+    needs: plugins-release
     runs-on: ubuntu-latest
     permissions:
       pages: write
