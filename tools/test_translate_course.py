@@ -129,5 +129,29 @@ class YamlInsertion(unittest.TestCase):
         self.assertEqual(tc.yaml_quote('a "b" \\ c\nd\te\x01'), '"a \\"b\\" \\\\ c\\nd\\te\\x01"')
 
 
+class DroppingClient:
+    """Fake DeepL that 'translates' by identity but drops the tail of any text with more than 4 code spans,
+    the way the real one sometimes does with long, code-heavy units."""
+    dry_run = False
+
+    def __init__(self):
+        self.cache = {}
+
+    def translate(self, htmls):
+        for h in htmls:
+            self.cache[h] = h[: h.index("</code>", h.index("</code>") + 1) + 7] if h.count("<code") > 4 else h
+        return 0
+
+
+class Fallback(unittest.TestCase):
+    def test_dropped_text_is_retried_in_smaller_pieces_instead_of_aborting(self):
+        line = "Tests: `Eins`, `Zwei`, `Drei`, `Vier`, `Fuenf`, `Sechs`."
+        result, _ = tc.translate_texts([line], DroppingClient())
+        self.assertEqual(result[line], line)  # identity "translation", every code span back in place
+
+    def test_sentences_never_split_inside_code(self):
+        self.assertEqual(tc.split_sentences("A `x. Y` b. C."), ["A `x. Y` b.", "C."])
+
+
 if __name__ == "__main__":
     unittest.main()

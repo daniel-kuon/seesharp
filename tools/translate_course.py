@@ -516,10 +516,14 @@ class DeepL:
 _GLUED = re.compile(r"[^\W\d_]`[^`]+`[^\W\d_]")  # code inside a word: DeepL misplaced a code span
 
 
-def split_sentences(text):
-    """Sentences of a Markdown unit, never cutting inside a code span (an odd number of backticks means 'open')."""
+_SENTENCE = r"(?<=[.!?;])\s+(?=\S)"
+_CLAUSE = r"(?<=[,;:)])\s+(?=\S)"
+
+
+def split_sentences(text, pattern=_SENTENCE):
+    """Pieces of a Markdown unit, never cutting inside a code span (an odd number of backticks means 'open')."""
     pieces, cur = [], ""
-    for part in re.split(r"(?<=[.!?;])\s+(?=\S)", text):
+    for part in re.split(pattern, text):
         cur = f"{cur} {part}" if cur else part
         if cur.count("`") % 2 == 0:
             pieces.append(cur)
@@ -529,19 +533,26 @@ def split_sentences(text):
     return pieces
 
 
-def translate_by_sentence(text, client):
-    """Fallback when DeepL dropped part of a long unit: translate sentence by sentence; returns (English, billed)."""
+def translate_by_sentence(text, client, warn=lambda msg: None, pattern=_SENTENCE):
+    """Fallback when DeepL dropped part of a long unit: translate sentence by sentence, then clause by clause;
+    a clause DeepL still mangles stays German (with a warning) rather than aborting the run. Returns (text, billed)."""
     out, billed = [], 0
-    for sentence in split_sentences(text):
-        p = prepare(sentence)
+    for piece in split_sentences(text, pattern):
+        p = prepare(piece)
         if p is None:
-            out.append(sentence)
+            out.append(piece)
             continue
         billed += client.translate([p[0]])
         try:
             out.append(restore(client.cache[p[0]], p[1]))
-        except RestoreError as e:
-            raise SystemExit(f"could not restore protected items in DeepL output:\n  sent: {p[0]}\n  got:  {e}")
+        except RestoreError:
+            if pattern == _SENTENCE and len(split_sentences(piece, _CLAUSE)) > 1:
+                english, extra = translate_by_sentence(piece, client, warn, _CLAUSE)
+                out.append(english)
+                billed += extra
+            else:
+                warn(f"left untranslated (DeepL kept dropping text): {piece[:80]!r}")
+                out.append(piece)
     return " ".join(out), billed
 
 
@@ -557,10 +568,9 @@ def translate_texts(texts, client, warn=lambda msg: None):
         try:
             result[t] = restore(client.cache[p[0]], p[1])
         except RestoreError:
-            if len(split_sentences(t)) < 2:
-                raise SystemExit(f"could not restore protected items in DeepL output:\n  sent: {p[0]}")
-            warn(f"DeepL dropped text in a long unit; retried sentence by sentence: {t[:60]!r}…")
-            result[t], extra = translate_by_sentence(t, client)
+            warn(f"DeepL dropped text; retrying in smaller pieces: {t[:60]!r}…")
+            single = len(split_sentences(t)) < 2
+            result[t], extra = translate_by_sentence(t, client, warn, _CLAUSE if single else _SENTENCE)
             sent += extra
         if len(_GLUED.findall(result[t])) > len(_GLUED.findall(t)):
             warn(f"check code placement: {_GLUED.search(result[t]).group(0)!r} in {result[t][:80]!r}…")
