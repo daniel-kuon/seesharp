@@ -25,7 +25,8 @@ Last updated 2026-10-24 (second autonomous run).
 
 ## Course content
 
-`D:\Rider Projects 2\seesharp-course` (no remote; commits are local):
+`D:\Rider Projects 2\seesharp-course`, public at https://github.com/daniel-kuon/seesharp-course
+(branch `main`; the books are assets of its release `book-1`, `book/` is git-ignored):
 
 - **Levels 0–23**, i.e. every chapter of the book: 0–15 core, 16–23 electives
   (Attribute/Reflexion, Multithreading, ADO.NET with SQLite, EF Core with SQLite,
@@ -54,13 +55,29 @@ Last updated 2026-10-24 (second autonomous run).
 4. **Content schema and skill vocabulary** were never gate-reviewed. Skill ids
    are permanent once trainees have progress rows. 288 of the 494 skills are
    new and many are fine-grained; merging some before real use is cheap now.
-5. **Course repo hosting.** `seesharp-course` has no remote yet.
+5. **Course repo hosting.** Done: public on GitHub (see above); `seesharp init` clones it.
 6. **Book PDF in English.** I couldn't drive Google Translate (no Chrome
    connected; the built-in browser can't upload files). The 11 chunks are in
    `translation\de\` (each < 9.5 MB, ≤ 300 pages). Translate them, put the
    results in `translation\en\` (same order), then
    `python tools\book_pdf.py merge translation\en csharp14.en.pdf` (needs
    `pip install pypdf`).
+
+## How a new trainee gets started
+
+1. Install the .NET 10 SDK (https://dotnet.microsoft.com/download/dotnet/10.0) and Rider or VS Code.
+2. Install the plugin: Rider → *Settings → Plugins → Marketplace* "SeeSharp" from the local feed
+   (restart Rider); VS Code → `code --install-extension seesharp-0.2.0.vsix`.
+3. Open the SeeSharp tool window / view and click **SeeSharp einrichten** (*Set up SeeSharp*). It
+   checks the SDK, installs the `seesharp` tool (`dotnet tool install -g SeeSharp.Cli`), asks for the
+   course folder (default `%USERPROFILE%\seesharp-course`), runs `seesharp init` there (clone, books,
+   settings) and starts SeeSharp. Running it again updates tool and course without touching the
+   trainee's own changes.
+
+Until `SeeSharp.Cli` is on nuget.org (docs/RELEASING.md: one-time trusted-publishing setup, then
+`git tag v0.1.0 && git push origin v0.1.0`), set the plugin's *extra package source* to a folder
+with the packed tool (`dotnet pack src/SeeSharp.Cli -c Release -o nupkg`). Without a plugin:
+`dotnet tool install -g SeeSharp.Cli`, `seesharp init`, `seesharp`.
 
 ## How to run
 
@@ -74,7 +91,7 @@ editor. `seesharp validate <course>`, `seesharp grade <exercise>/tests <source>`
 and `seesharp export-review` work from the CLI.
 
 IDE plugins: install the VS Code extension with
-`code --install-extension "ide\vscode\seesharp-0.1.0.vsix"`; in Rider,
+`code --install-extension "ide\vscode\seesharp-0.2.0.vsix"`; in Rider,
 Settings → Plugins → Marketplace shows "SeeSharp" from your local feed
 (restart Rider after installing). Neither plugin's UI was clicked through by me.
 

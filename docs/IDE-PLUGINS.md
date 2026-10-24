@@ -28,7 +28,8 @@ which send no `Origin`. The Blazor UI itself needs no token.
 
 **Gates.** While an exam run is open every `/api` call answers **409**
 `{ "error": "Eine Prüfung läuft …" }` (the same gate as `MainLayout`: no instructions, no
-test output). Without a loaded course: **503** `{ "error": "Kein Kurs geladen." }`. Errors are
+test output). Without a loaded course: **503** `{ "error": "Kein Kurs geladen." }` (except
+`POST /api/reload`). Errors are
 always `{ "error": "<message in the UI locale>" }`.
 
 | Request | Response |
@@ -37,6 +38,7 @@ always `{ "error": "<message in the UI locale>" }`.
 | `GET /api/exercise/{id}` | `{ exercise: Exercise, instructionsHtml, instructionsFellBack }`; `instructionsHtml` is `null` while locked (like the page); 404 for an unknown id |
 | `POST /api/exercise/{id}/grade` | `{ passed, result: GradingResult }`; 404 unknown / no coding item, 409 locked |
 | `POST /api/exercise/{id}/workspace` | `{ directory, files: ["relative/path", …] }`; same errors |
+| `POST /api/reload` | `{ loaded }`: re-reads `settings.json` and the course (like saving the settings page); answers without a loaded course too, so *Set up SeeSharp* can point a running server at the course `seesharp init` just wrote |
 
 ```
 Module   = { id, level, title, unlocked, passed, exercises: [Exercise] }
@@ -65,6 +67,53 @@ exercise gives no instructions and 409 on grade; grade records a passing attempt
 the skill (the grading fixture `Übung #1, Rechner`, real `dotnet test`); workspace writes all
 nine files with the no-solution rule, the absolute grade paths and the launch config;
 `server.json` is only deleted by its own process.
+
+## Setting up from the plugin ("SeeSharp einrichten" / "Set up SeeSharp")
+
+Both plugins can take a trainee from nothing to a running SeeSharp. The action is offered in the
+empty view when SeeSharp is not running ("Zum ersten Mal hier?") or runs without a course (503),
+and as a command (VS Code) / toolbar button (Rider). Steps:
+
+1. `dotnet --list-sdks` must list a 10.x SDK; otherwise an error with a link to
+   https://dotnet.microsoft.com/download/dotnet/10.0 and nothing else happens.
+2. The `seesharp` tool is looked up on `PATH`, then in `~/.dotnet/tools` (the IDE's `PATH` may
+   predate the install). Missing: a modal shows the exact command
+   `dotnet tool install -g SeeSharp.Cli --add-source https://api.nuget.org/v3/index.json
+   [--add-source <extra source>]` and the package source (nuget.org, plus the extra one) and asks to
+   install. Present: the same modal offers
+   `dotnet tool update -g SeeSharp.Cli` or keeping the version. An update fails while SeeSharp runs
+   (the `.exe` is in use); setup then carries on with the installed version.
+3. Course folder, default `%USERPROFILE%\seesharp-course` (`~/seesharp-course`), then
+   `seesharp init --dir <folder>`: clone or fast-forward the course
+   (https://github.com/daniel-kuon/seesharp-course), download both books into `<folder>/book`,
+   write `coursePath`/`bookPdfPath` into `settings.json`, validate. Never discards the trainee's
+   changes; a conflicting update stops with a message.
+4. A running server gets `POST /api/reload`; otherwise `seesharp start --no-browser` as before.
+   Then the tree refreshes.
+
+Every process runs without a shell (argument list; paths with spaces, umlauts and commas need no
+quoting) and in the user's home folder, never the workspace/project: a `NuGet.config` or `global.json`
+there (or in a parent folder) could otherwise redirect the tool install to another feed or SDK. The
+sources are named explicitly with `--add-source`. Output: VS Code's output channel "SeeSharp" plus a progress notification; Rider's *Run*
+console "SeeSharp einrichten" plus a background task. `seesharp` writes UTF-8 when its output is
+piped, so umlauts survive.
+
+**Extra package source** (VS Code `seesharp.extraPackageSource`, Rider *Settings → Tools →
+SeeSharp → Zusätzliche Paketquelle*): a folder with `SeeSharp.Cli.*.nupkg` (e.g.
+`D:\Rider Projects 2\SeeSharp\nupkg` after `dotnet pack src/SeeSharp.Cli -c Release -o nupkg`) or
+a feed URL, passed as `--add-source`; makes setup work before the nuget.org release (docs/RELEASING.md).
+
+**Settings that start processes come only from the user.** A repository's `.vscode/settings.json`
+could otherwise run `dotnet run --project <its project>` (`seesharp.cliPath`) or install from its
+own feed (`seesharp.extraPackageSource`). Both are `"scope": "machine"`, listed under
+`capabilities.untrustedWorkspaces.restrictedConfigurations`, and read via `inspect().globalValue`
+only (unit-tested: a workspace value is ignored). Rider's settings are application-level
+(`PropertiesComponent.getInstance()`), never per project.
+
+Unit tests (no IDE): SDK parsing, tool lookup (PATH first, then `~/.dotnet/tools`, Windows and
+Unix names), argument lists with spaces/umlauts/commas, `run` passing arguments without a shell
+(VS Code), the user-only setting and the manifest's scope/restrictions (VS Code), the home folder as
+working directory (both).
 
 ## VS Code extension (`ide/vscode`)
 
@@ -107,7 +156,7 @@ TypeScript, no UI framework, no runtime dependencies. `src/api.ts` is the client
 ```
 cd ide/vscode
 npm install
-npx @vscode/vsce package          # → seesharp-0.1.0.vsix (runs tsc via vscode:prepublish)
+npx @vscode/vsce package          # → seesharp-0.2.0.vsix (runs tsc via vscode:prepublish)
 npm test                          # tsc + node:test; the API part runs only with SEESHARP_SERVER_JSON set
 ```
 
@@ -118,7 +167,7 @@ whose `server.json` path is in `SEESHARP_SERVER_JSON` — use a host on a *copy*
 ### Install and use
 
 ```
-code --install-extension "D:\Rider Projects 2\SeeSharp\ide\vscode\seesharp-0.1.0.vsix"
+code --install-extension "D:\Rider Projects 2\SeeSharp\ide\vscode\seesharp-0.2.0.vsix"
 ```
 
 (or *Extensions → … → Install from VSIX…*). Needs VS Code ≥ 1.95 and the C# Dev Kit. Then
@@ -138,6 +187,16 @@ generated `build` task command built the starter and produced exactly the `progr
 `launch.json`. "Arbeitsbereich vorbereiten" in the browser wrote the files and showed the
 folder. **Not verified:** the extension inside VS Code (tree, webview, folder switch,
 terminal start) — no VS Code UI automation here; it was not installed into the user's VS Code.
+
+### Verified: setup (2026-10-24)
+
+`npm test` (setup unit tests), `.vsix` 0.2.0 packaged. The flow's commands themselves ran end to end
+outside the IDE: `dotnet --list-sdks` parsed on this machine (10.x found), the packed tool installed
+with `dotnet tool install --tool-path <scratch> --add-source nupkg SeeSharp.Cli`, and
+`seesharp init --dir "<scratch>\Kurs Ü, 1"` cloned the GitHub course, downloaded both books and wrote
+the settings file named by `SEESHARP_SETTINGS`; a second run fast-forwarded (up to date) and skipped
+both books. `POST /api/reload` has an API test. **Not verified:** the dialogs, output channel and
+progress inside VS Code (no UI automation here).
 
 ### Not done, on purpose
 
@@ -188,10 +247,10 @@ logged.
 
 ```
 cd ide/rider
-./gradlew buildPlugin                       # build/distributions/SeeSharp-0.1.0.zip
+./gradlew buildPlugin                       # build/distributions/SeeSharp-0.2.0.zip
 ./gradlew unitTest [-PserverJson=<path>]    # JUnit 5 without the platform; the API test needs a running host
 ./gradlew runIde [-PserverJson=<path>]      # sandbox Rider; -PserverJson talks to that host instead
-./gradlew publishLocal                      # stamps 0.1.yyMMdd.HHmm and publishes to the local feed
+./gradlew publishLocal                      # stamps 0.2.yyMMdd.HHmm and publishes to the local feed
 ```
 
 Gradle 9.1.0 wrapper, IntelliJ Platform Gradle plugin 2.19.0, Kotlin 2.4.21, Rider 2026.2.3 to
@@ -227,6 +286,12 @@ Rider loaded the plugin ("Loaded custom plugins: SeeSharp") with the module depe
 and opened a starter `.csproj` through `ProjectUtil` / `RiderProjectOpenProcessor`. Published as
 `0.1.261024.0254`. **Not verified:** the tool window itself (tree, dialogs, JCEF view, *Prüfen*,
 *SeeSharp starten*) — no UI automation on the desktop here.
+
+### Verified: setup (2026-10-24)
+
+`unitTest` (incl. `SetupTest`), `buildPlugin` against Rider 2026.2.3, published as `0.2.261024.2132`
+(only the `dev.seesharp.rider` entry of the shared feed changed). **Not verified:** the setup dialogs,
+console and background task inside Rider (no UI automation on the desktop).
 
 ### Limits
 
