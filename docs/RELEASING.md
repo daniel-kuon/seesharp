@@ -40,6 +40,18 @@ finds it.
 
 A tag on a commit of `dev` publishes that commit; usually tag `main` after merging.
 
+The same run also builds the IDE plugins with the tag's version and attaches them to the
+release (`SeeSharp-0.1.0.zip` for Rider, `seesharp-0.1.0.vsix` for VS Code), then deploys a
+Rider plugin repository to GitHub Pages:
+
+- Feed: `https://wollume-studios.github.io/seesharp/updatePlugins.xml` (points at the zip of the
+  latest release); install notes at `https://wollume-studios.github.io/seesharp/`.
+- Pages is set to *GitHub Actions* as its source, and the `github-pages` environment allows
+  deployments from `main` and from `v*` tags (set up once via the API on 2026-10-24).
+- Only the `feed` job holds `pages: write` / `id-token: write`; `plugins` only `contents: write`.
+- `since-build` in the feed is written as 262 and must follow `SinceBuild` in
+  `ide/rider/gradle.properties`.
+
 ## Local package
 
 ```

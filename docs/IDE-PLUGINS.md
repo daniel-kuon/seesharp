@@ -266,7 +266,11 @@ entries and zips in that shared feed stay as they are.
 
 ### Install and use
 
-The feed `file:///C:/Users/<you>/.lamarider/plugin-repo/updatePlugins.xml` is already a custom
+For trainees: add `https://wollume-studios.github.io/seesharp/updatePlugins.xml` once under
+*Settings → Plugins → ⚙ → Manage Plugin Repositories…*; every `v*` release updates that feed
+(docs/RELEASING.md). The VS Code `.vsix` is attached to the same GitHub release.
+
+For local development, the feed `file:///C:/Users/<you>/.lamarider/plugin-repo/updatePlugins.xml` is already a custom
 plugin repository in Rider here (else: *Settings → Plugins → ⚙ → Manage Plugin Repositories…*).
 *Settings → Plugins → Marketplace* then lists **SeeSharp**; install it and restart Rider. Updates
 appear there too after a `publishLocal`; restart Rider after each update. Then open the SeeSharp

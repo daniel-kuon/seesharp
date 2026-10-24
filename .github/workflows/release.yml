@@ -77,3 +77,86 @@ jobs:
           user: ${{ secrets.NUGET_USER }}
       - name: Push to nuget.org
         run: dotnet nuget push nupkg/*.nupkg --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+  # IDE plugins: built from the tagged commit with the tag's version and attached to the release.
+  plugins:
+    needs: github-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - name: Version from tag
+        run: echo "VERSION=${TAG#v}" >> "$GITHUB_ENV"
+      - name: Rider plugin
+        working-directory: ide/rider
+        run: |
+          chmod +x gradlew
+          ./gradlew buildPlugin -PPluginVersion="$VERSION" --console=plain
+      - name: VS Code extension
+        working-directory: ide/vscode
+        run: |
+          npm ci
+          npm version "$VERSION" --no-git-tag-version --allow-same-version
+          npx --yes @vscode/vsce package -o "seesharp-$VERSION.vsix"
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release upload "$TAG" "ide/rider/build/distributions/SeeSharp-$VERSION.zip" "ide/vscode/seesharp-$VERSION.vsix" --clobber
+
+  # Rider custom plugin repository on GitHub Pages: https://<owner>.github.io/<repo>/updatePlugins.xml,
+  # pointing at the zip attached to this release. Deploys via OIDC, so this job alone gets pages + id-token.
+  feed:
+    needs: plugins
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Write updatePlugins.xml and index.html
+        env:
+          REPO: ${{ github.repository }}
+        run: |
+          VERSION="${TAG#v}"
+          ZIP="https://github.com/$REPO/releases/download/$TAG/SeeSharp-$VERSION.zip"
+          VSIX="https://github.com/$REPO/releases/download/$TAG/seesharp-$VERSION.vsix"
+          mkdir site
+          # since-build must match SinceBuild in ide/rider/gradle.properties.
+          cat > site/updatePlugins.xml <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <plugins>
+            <plugin id="dev.seesharp.rider" url="$ZIP" version="$VERSION">
+              <idea-version since-build="262"/>
+              <name>SeeSharp</name>
+              <vendor>SeeSharp</vendor>
+              <description>SeeSharp C# training: exercises, instructions and grading in Rider.</description>
+            </plugin>
+          </plugins>
+          EOF
+          cat > site/index.html <<EOF
+          <!doctype html><meta charset="utf-8"><title>SeeSharp plugins</title>
+          <h1>SeeSharp $VERSION</h1>
+          <p><b>Rider:</b> Settings → Plugins → ⚙ → Manage Plugin Repositories → add
+          <code>https://${REPO%%/*}.github.io/${REPO#*/}/updatePlugins.xml</code>, then install "SeeSharp" from the Marketplace tab.</p>
+          <p><b>VS Code:</b> download <a href="$VSIX">seesharp-$VERSION.vsix</a> and run
+          <code>code --install-extension seesharp-$VERSION.vsix</code>.</p>
+          <p><b>Tool:</b> <code>dotnet tool install -g SeeSharp.Cli</code></p>
+          EOF
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
