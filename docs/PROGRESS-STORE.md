@@ -29,8 +29,9 @@ attempt          id, exercise_id, item_id, timestamp (ISO 8601 UTC), time_spent_
                  passed, answer, source (zip BLOB), grading_json, trx, exam_run_id (migration 2)
 skill_transition id, skill_id, state (1 introduced, 2 practiced, 3 applied), timestamp, cause
 exam_run         id, exam_id, real, started, deadline, seed, items ("exercise/item" per line), submitted
-tutor_exchange   id, exercise_id, timestamp, level (1–3), question, answer, provider, model,
+tutor_exchange   id, exercise_id, timestamp, level (0 judgement, 1–3 hints), question, answer, provider, model,
                  input_tokens, output_tokens, cost_usd (null = price unknown)            (migration 3)
+                 item_id, verdict ("pass"/"revise" for a judgement, else null)           (migration 4)
 ```
 
 Attempts are never updated or deleted. There is no `exercise passed` column,
@@ -42,7 +43,10 @@ no `item passed` column, no `skill` table: all of that is derived.
 
 - **multipleChoice**: `Answer` = chosen indices, `"0,2"`. Passed when the chosen set
   equals `correct`.
-- **open**: `Answer` = the text. Passed when non-blank (gates on *answered*).
+- **open**: `Answer` = the text. Passed when non-blank and the AI tutor's verdict
+  is not `revise`; without a verdict (no tutor, tutor failed, exam) non-blank
+  passes as before. Two failed attempts close the item like a quiz question
+  (`ProgressDerivation.PassedItems`), see UI.md "AI tutor".
 - **review**: `Answer` = optional note. Passed when the trainee marks it done.
 - **coding**: `Source` = zip of the trainee's source directory without
   `bin`/`obj`; `GradingJson` = the `GradingResult` serialised like
@@ -173,7 +177,7 @@ reload shows the same exam even after the course changed.
 Default name `seesharp-review-<yyyyMMdd-HHmm>.zip` in the current directory.
 
 ```
-attempts.csv                                    id, exercise, item, timestamp, timeSpentSeconds, passed, answer
+attempts.csv                                    id, exercise, item, timestamp, timeSpentSeconds, passed, answer, tutorVerdict
 skills.csv                                      skill, state, lastExercised, exercise
 <exercise>/<item>/<id>_<yyyyMMdd-HHmmss>/answer.txt
 <exercise>/<item>/<id>_<yyyyMMdd-HHmmss>/source/...   the submitted source tree
@@ -182,9 +186,14 @@ skills.csv                                      skill, state, lastExercised, exe
 exams/<run id>/run.csv                          id, exam, kind, started, deadline, submitted, seed, items
 exams/<run id>/attempts.csv                     the run's attempts, same columns as the top-level file
 exams/<run id>/<exercise>/<item>/<id>_<ts>/...  same layout as above
-tutor/<exercise>.md                             every tutor exchange: timestamp, level, provider/model,
-                                                tokens, cost estimate, question, answer (Markdown)
+tutor/<exercise>.md                             every tutor exchange: timestamp, level, judged item and verdict,
+                                                provider/model, tokens, cost estimate, question, answer (Markdown)
 ```
+
+`tutorVerdict` is `pass`/`revise` when the tutor judged that open answer, empty
+otherwise; `ReviewExport.Judgement` pairs an attempt with the judgement logged
+after the item's previous attempt and before it (the judgement is logged right
+before its attempt). `ReviewBundle` reads bundles without the column as before.
 
 **Decision — tutor logs are Markdown, not CSV**: the answers are Markdown and
 multi-line, and the supervisor reads them, so one file per exercise opens

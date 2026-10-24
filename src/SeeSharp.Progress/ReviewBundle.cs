@@ -12,7 +12,8 @@ public sealed record ReviewBundle(IReadOnlyList<ReviewAttempt> Attempts, IReadOn
     {
         using var archive = new ZipArchive(zip, ZipArchiveMode.Read, leaveOpen: true);
         var attempts = Rows(archive, "attempts.csv").Select(r => new ReviewAttempt(
-            int.Parse(r[0], CultureInfo.InvariantCulture), r[1], r[2], r[3], int.Parse(r[4], CultureInfo.InvariantCulture), r[5] == "true", r[6])).ToList();
+            int.Parse(r[0], CultureInfo.InvariantCulture), r[1], r[2], r[3], int.Parse(r[4], CultureInfo.InvariantCulture), r[5] == "true", r[6],
+            r.Length > 7 && r[7] != "" ? r[7] : null)).ToList(); // bundles before 2026-10-25 have no tutorVerdict column
         var skills = Rows(archive, "skills.csv").Select(r => new ReviewSkill(r[0], r[1], r[2], r[3])).ToList();
         return new ReviewBundle(attempts, skills);
     }
@@ -55,6 +56,7 @@ public sealed record ReviewBundle(IReadOnlyList<ReviewAttempt> Attempts, IReadOn
     }
 }
 
-public sealed record ReviewAttempt(int Id, string Exercise, string Item, string Timestamp, int TimeSpentSeconds, bool Passed, string Answer);
+/// <param name="TutorVerdict"><c>pass</c> or <c>revise</c> when the tutor judged this open answer; null otherwise.</param>
+public sealed record ReviewAttempt(int Id, string Exercise, string Item, string Timestamp, int TimeSpentSeconds, bool Passed, string Answer, string? TutorVerdict = null);
 
 public sealed record ReviewSkill(string Skill, string State, string LastExercised, string Exercise);

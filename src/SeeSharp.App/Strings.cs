@@ -338,7 +338,15 @@ internal static class Strings
     public static string TutorNoBaseUrl => Resources.GetString(nameof(TutorNoBaseUrl))!;
     public static string TutorEmpty => Resources.GetString(nameof(TutorEmpty))!;
     public static string TutorSummaryHint => Resources.GetString(nameof(TutorSummaryHint))!;
-    public static string TutorFeedback => Resources.GetString(nameof(TutorFeedback))!;
+    public static string TutorJudgeOff => Resources.GetString(nameof(TutorJudgeOff))!;
+    public static string TutorJudgeFailed => Resources.GetString(nameof(TutorJudgeFailed))!;
+    public static string TutorJudgeUnreadable => Resources.GetString(nameof(TutorJudgeUnreadable))!;
+    public static string TutorJudging => Resources.GetString(nameof(TutorJudging))!;
+    public static string TutorJudgePass => Resources.GetString(nameof(TutorJudgePass))!;
+    public static string TutorJudgeRevise => Resources.GetString(nameof(TutorJudgeRevise))!;
+    public static string TutorJudgeClosed => Resources.GetString(nameof(TutorJudgeClosed))!;
+    public static string TutorVerdictPass => Resources.GetString(nameof(TutorVerdictPass))!;
+    public static string TutorVerdictRevise => Resources.GetString(nameof(TutorVerdictRevise))!;
     public static string TutorFeedbackBadge => Resources.GetString(nameof(TutorFeedbackBadge))!;
     public static string TutorFeedbackTokens => Resources.GetString(nameof(TutorFeedbackTokens))!;
     public static string TutorFeedbackCost => Resources.GetString(nameof(TutorFeedbackCost))!;

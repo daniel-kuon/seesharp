@@ -23,9 +23,11 @@ public sealed record ModuleProgress(Module Module, IReadOnlyList<ExerciseProgres
 }
 
 /// <summary>One question to the AI tutor and its answer (task 9). <paramref name="CostUsd"/> is the estimate at the time; null when no price is known.</summary>
+/// <param name="ItemId">The open item a judgement is about; null for hints and questions.</param>
+/// <param name="Verdict"><c>pass</c> or <c>revise</c> for a judgement of a free-text answer (then <paramref name="Answer"/> is the feedback); null otherwise.</param>
 public sealed record TutorExchange(
     string ExerciseId, DateTimeOffset Timestamp, int Level, string Question, string Answer,
-    string Provider, string Model, int InputTokens, int OutputTokens, decimal? CostUsd)
+    string Provider, string Model, int InputTokens, int OutputTokens, decimal? CostUsd, string? ItemId = null, string? Verdict = null)
 {
     public long Id { get; init; }
 }
@@ -94,6 +96,11 @@ public sealed class ProgressStore : IDisposable
             input_tokens  INTEGER NOT NULL,
             output_tokens INTEGER NOT NULL,
             cost_usd      REAL);
+        """,
+        // 2026-10-25: open answers are judged by the tutor on submit; a judgement names its item and verdict (pass/revise).
+        """
+        ALTER TABLE tutor_exchange ADD COLUMN item_id TEXT;
+        ALTER TABLE tutor_exchange ADD COLUMN verdict TEXT;
         """,
     ];
 
@@ -273,13 +280,14 @@ public sealed class ProgressStore : IDisposable
         lock (_lock)
         {
             var id = (long)Execute("""
-                INSERT INTO tutor_exchange (exercise_id, timestamp, level, question, answer, provider, model, input_tokens, output_tokens, cost_usd)
-                VALUES ($exercise, $timestamp, $level, $question, $answer, $provider, $model, $in, $out, $cost);
+                INSERT INTO tutor_exchange (exercise_id, timestamp, level, question, answer, provider, model, input_tokens, output_tokens, cost_usd, item_id, verdict)
+                VALUES ($exercise, $timestamp, $level, $question, $answer, $provider, $model, $in, $out, $cost, $item, $verdict);
                 SELECT last_insert_rowid();
                 """,
                 ("$exercise", exchange.ExerciseId), ("$timestamp", Iso(exchange.Timestamp)), ("$level", exchange.Level),
                 ("$question", exchange.Question), ("$answer", exchange.Answer), ("$provider", exchange.Provider), ("$model", exchange.Model),
-                ("$in", exchange.InputTokens), ("$out", exchange.OutputTokens), ("$cost", exchange.CostUsd is { } c ? (double)c : null)).ExecuteScalar()!;
+                ("$in", exchange.InputTokens), ("$out", exchange.OutputTokens), ("$cost", exchange.CostUsd is { } c ? (double)c : null),
+                ("$item", exchange.ItemId), ("$verdict", exchange.Verdict)).ExecuteScalar()!;
             return exchange with { Id = id };
         }
     }
@@ -290,13 +298,14 @@ public sealed class ProgressStore : IDisposable
         lock (_lock)
         {
             using var reader = Execute("""
-                SELECT id, exercise_id, timestamp, level, question, answer, provider, model, input_tokens, output_tokens, cost_usd
+                SELECT id, exercise_id, timestamp, level, question, answer, provider, model, input_tokens, output_tokens, cost_usd, item_id, verdict
                 FROM tutor_exchange WHERE $exercise IS NULL OR exercise_id = $exercise ORDER BY id
                 """, ("$exercise", exerciseId)).ExecuteReader();
             var exchanges = new List<TutorExchange>();
             while (reader.Read())
                 exchanges.Add(new TutorExchange(reader.GetString(1), ParseIso(reader.GetString(2)), reader.GetInt32(3), reader.GetString(4), reader.GetString(5),
-                    reader.GetString(6), reader.GetString(7), reader.GetInt32(8), reader.GetInt32(9), reader.IsDBNull(10) ? null : (decimal)reader.GetDouble(10))
+                    reader.GetString(6), reader.GetString(7), reader.GetInt32(8), reader.GetInt32(9), reader.IsDBNull(10) ? null : (decimal)reader.GetDouble(10),
+                    reader.IsDBNull(11) ? null : reader.GetString(11), reader.IsDBNull(12) ? null : reader.GetString(12))
                     { Id = reader.GetInt64(0) });
             return exchanges;
         }

@@ -37,7 +37,7 @@ public static class Tutor
     public const string Off = "off", Ollama = "ollama", OpenAi = "openai", OpenAiCompatible = "openai-compatible", Anthropic = "anthropic";
     public static readonly IReadOnlyList<string> Providers = [Off, Ollama, OpenAi, OpenAiCompatible, Anthropic];
     public const int MaxLevel = 3;
-    /// <summary>The level a free-text feedback exchange is logged at; hints are 1..<see cref="MaxLevel"/>.</summary>
+    /// <summary>The level a judgement of a free-text answer is logged at; hints are 1..<see cref="MaxLevel"/>.</summary>
     public const int FeedbackLevel = 0;
     /// <summary>Earlier exchanges of the same exercise sent along, so the tutor does not repeat itself.</summary>
     private const int HistoryExchanges = 6; // ponytail: fixed window; summarise older ones if exercises ever need long conversations
@@ -145,11 +145,32 @@ public static class Tutor
 
         """;
 
-    /// <summary>The hint rule of a feedback request on a free-text answer. Feedback only: free text stays supervisor-graded.</summary>
-    public const string FeedbackRule =
-        "This is a request for feedback on the trainee's free-text answer, not for a hint. Give short formative feedback in three parts: " +
-        "what is right, what is missing or wrong, and ONE guiding question. Give no grade, no score, no pass/fail verdict and no model answer; " +
-        "the supervisor grades free-text answers. Keep it short.";
+    /// <summary>Verdicts of <see cref="JudgeAsync"/>, stored in <see cref="TutorExchange.Verdict"/>.</summary>
+    public const string Pass = "pass", Revise = "revise";
+
+    /// <summary>
+    /// The hint rule of a judgement on a free-text answer (user decision 2026-10-25: open answers are tutor-judged on submit).
+    /// JSON only, so both wire formats work without structured-output parameters; <see cref="ParseJudgement"/> reads it.
+    /// </summary>
+    public const string JudgeRule =
+        "This is a request to judge the trainee's free-text answer to one open question, not a request for a hint. " +
+        "Reply with a single JSON object and nothing else (no code fence, no text before or after): " +
+        "{\"verdict\":\"pass\" or \"revise\",\"feedback\":\"<Markdown>\"}. " +
+        "\"pass\" means the answer covers the essential points correctly; minor wording issues or small gaps that do not change the meaning are fine. " +
+        "\"revise\" means something essential is missing or wrong. " +
+        "The feedback is short and follows rule 5 for its language: for \"pass\" say briefly what is right; for \"revise\" say what to improve " +
+        "and ask ONE guiding question, without giving the answer. Never write a model answer, and never quote or reveal the grading reference.";
+
+    /// <summary>The supervisor-only rubric as a grading reference: the model may use it, never show it.</summary>
+    public static string RubricSection(string? rubric) => $"""
+
+        ## Grading reference (supervisor-only, secret)
+
+        Use this only to decide the verdict. Never quote it, never paraphrase it point by point, never reveal a model answer or any point of it the trainee has not written themselves. The feedback may only name in general terms what is missing.
+
+        {(string.IsNullOrWhiteSpace(rubric) ? "(none: judge from the exercise instructions and the question)" : rubric.Trim())}
+
+        """;
 
     public static string SystemPrompt(TutorContext c, string? hintRule = null)
     {
@@ -236,23 +257,78 @@ public static class Tutor
     }
 
     /// <summary>
-    /// Formative feedback on a submitted free-text answer, logged at <see cref="FeedbackLevel"/>. Same failure handling as <see cref="AskAsync"/>;
-    /// it never touches attempts or progress.
+    /// Judges a free-text answer: pass or revise plus feedback, logged at <see cref="FeedbackLevel"/> with the item and the
+    /// <see cref="TutorExchange.Verdict"/>. Same failure handling as <see cref="AskAsync"/>; an unreadable verdict is an error too
+    /// and logs nothing. Never touches attempts: the caller records the verdict.
     /// </summary>
-    public static Task<(TutorExchange? Exchange, string? Error)> FeedbackAsync(
-        HttpClient http, Settings settings, ProgressStore store, TutorContext context, string prompt, string answer, CancellationToken cancellationToken = default)
+    public static async Task<(TutorExchange? Exchange, string? Error)> JudgeAsync(HttpClient http, Settings settings, ProgressStore store,
+        TutorContext context, string itemId, string prompt, string answer, string? rubric, CancellationToken cancellationToken = default)
     {
-        var question = $"Please give me feedback on my answer.\n\nQuestion:\n{prompt.Trim()}\n\nMy answer:\n{answer.Trim()}";
-        return SendAsync(http, settings, store, context.ExerciseId, SystemPrompt(context, FeedbackRule), [("user", question)], FeedbackLevel, question, cancellationToken);
+        var question = $"Please judge my answer.\n\nQuestion:\n{prompt.Trim()}\n\nMy answer:\n{answer.Trim()}";
+        var (reply, error) = await CallAsync(http, settings, SystemPrompt(context, JudgeRule) + RubricSection(rubric), [("user", question)], cancellationToken);
+        if (reply is null)
+            return (null, error);
+        if (ParseJudgement(reply.Text) is not { } judgement)
+            return (null, Strings.TutorJudgeUnreadable);
+        return (Record(store, settings, context.ExerciseId, FeedbackLevel, question, reply with { Text = judgement.Feedback }, itemId, judgement.Verdict), null);
+    }
+
+    /// <summary>
+    /// Submit of an open answer outside an exam: judged when the tutor is ready and no exam runs, recorded either way. Without a usable
+    /// verdict (tutor off, failure) the answer passes as before and <c>Hint</c> says why; the trainee is never blocked.
+    /// </summary>
+    public static async Task<(Attempt Attempt, TutorExchange? Judgement, string? Hint)> SubmitOpenAsync(HttpClient http, CourseState state,
+        Exercise exercise, OpenItem item, string answer, TimeSpan timeSpent, CancellationToken cancellationToken = default)
+    {
+        TutorExchange? judgement = null;
+        string? hint;
+        if (!Enabled(state.Settings) || ConfigProblem(state.Settings) is not null || state.Store.ActiveRun() is not null)
+            hint = Strings.TutorJudgeOff;
+        else
+        {
+            var rubric = File.Exists(exercise.RubricPath) ? await File.ReadAllTextAsync(exercise.RubricPath, cancellationToken) : null;
+            string? error;
+            (judgement, error) = await JudgeAsync(http, state.Settings, state.Store, Context(state, exercise), item.Id, CourseState.Text(item.Prompt), answer, rubric, cancellationToken);
+            hint = judgement is null ? string.Format(Strings.TutorJudgeFailed, error) : null;
+        }
+        var attempt = state.Store.RecordAttempt(Attempts.Open(exercise.Manifest.Id, item, answer, timeSpent, judgement is null ? null : judgement.Verdict == Pass), exercise.Manifest);
+        return (attempt, judgement, hint);
+    }
+
+    /// <summary>The first JSON object in <paramref name="text"/> (code fences and chatter around it are skipped) with a known verdict and non-blank feedback; null otherwise.</summary>
+    public static (string Verdict, string Feedback)? ParseJudgement(string text)
+    {
+        var start = text.IndexOf('{');
+        if (start < 0)
+            return null;
+        try
+        {
+            var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(text[start..]));
+            if (JsonNode.Parse(ref reader) is not JsonObject json)
+                return null;
+            var verdict = ((string?)json["verdict"])?.Trim().ToLowerInvariant();
+            var feedback = ((string?)json["feedback"])?.Trim();
+            return verdict is Pass or Revise && !string.IsNullOrEmpty(feedback) ? (verdict, feedback) : null;
+        }
+        catch (Exception e) when (e is JsonException or InvalidOperationException or FormatException) // malformed, or a field that is not a string
+        {
+            return null;
+        }
     }
 
     private static async Task<(TutorExchange? Exchange, string? Error)> SendAsync(HttpClient http, Settings settings, ProgressStore store, string exerciseId,
         string system, IReadOnlyList<(string Role, string Text)> messages, int level, string question, CancellationToken cancellationToken)
     {
+        var (reply, error) = await CallAsync(http, settings, system, messages, cancellationToken);
+        return reply is null ? (null, error) : (Record(store, settings, exerciseId, level, question, reply), null);
+    }
+
+    /// <summary>One request; the reply, or a short message for the trainee when there is none (config, network, HTTP, parse, empty).</summary>
+    private static async Task<(TutorReply? Reply, string? Error)> CallAsync(HttpClient http, Settings settings, string system,
+        IReadOnlyList<(string Role, string Text)> messages, CancellationToken cancellationToken)
+    {
         if (ConfigProblem(settings) is { } problem)
             return (null, problem);
-        var provider = Provider(settings);
-        var model = Model(settings)!;
         TutorReply reply;
         try
         {
@@ -260,16 +336,21 @@ public static class Tutor
             using var response = await http.SendAsync(request, cancellationToken);
             if (!response.IsSuccessStatusCode)
                 return (null, string.Format(Strings.TutorHttpError, (int)response.StatusCode));
-            reply = Parse(provider, await response.Content.ReadAsStringAsync(cancellationToken));
+            reply = Parse(Provider(settings), await response.Content.ReadAsStringAsync(cancellationToken));
         }
         catch (Exception) // offline, timeout, refused connection, malformed JSON: all mean "no tutor right now"
         {
             return (null, Strings.TutorUnreachable);
         }
-        if (string.IsNullOrWhiteSpace(reply.Text))
-            return (null, Strings.TutorEmpty);
-        return (store.RecordTutorExchange(new TutorExchange(exerciseId, DateTimeOffset.UtcNow, level, question, reply.Text, provider, model,
-            reply.InputTokens, reply.OutputTokens, Cost(provider, model, reply.InputTokens, reply.OutputTokens))), null);
+        return string.IsNullOrWhiteSpace(reply.Text) ? (null, Strings.TutorEmpty) : (reply, null);
+    }
+
+    private static TutorExchange Record(ProgressStore store, Settings settings, string exerciseId, int level, string question, TutorReply reply,
+        string? itemId = null, string? verdict = null)
+    {
+        var (provider, model) = (Provider(settings), Model(settings)!);
+        return store.RecordTutorExchange(new TutorExchange(exerciseId, DateTimeOffset.UtcNow, level, question, reply.Text, provider, model,
+            reply.InputTokens, reply.OutputTokens, Cost(provider, model, reply.InputTokens, reply.OutputTokens), itemId, verdict));
     }
 
     /// <summary>Everything the tutor gets: instructions, current source (no bin/obj/IDE caches), the latest failing run, skills, and the non-coding items with the trainee's answers.</summary>

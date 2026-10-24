@@ -36,7 +36,12 @@
                         <p><strong>@item.Id</strong> – @CourseState.Text(item is OpenItem o ? o.Prompt : ((ReviewItem)item).Prompt)</p>
                         @foreach (var a in answers.Where(a => a.Item == item.Id))
                         {
-                            <p class="hint">@a.Timestamp</p>
+                            <p class="hint">@a.Timestamp
+                                @if (a.TutorVerdict is { } v)
+                                {
+                                    <span class="badge @(v == Tutor.Pass ? "ok" : "")">@(v == Tutor.Pass ? Strings.TutorVerdictPass : Strings.TutorVerdictRevise)</span>
+                                }
+                            </p>
                             <pre class="answer">@a.Answer</pre>
                         }
                     }

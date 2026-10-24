@@ -1,46 +1,60 @@
 @inject CourseState State
 
 <div class="md prompt">@CourseState.MarkdownText(CourseState.Text(Item.Prompt))</div>
-<textarea rows="6" @bind="_text"></textarea>
+<textarea rows="6" @bind="_text" disabled="@(Locked || _judging)"></textarea>
 <div>
-    <button @onclick="Submit">@Strings.Submit</button>
-    @if (_passed)
+    @if (!Locked)
     {
-        <span class="ok">@(Run is null ? Strings.Answered : Strings.ExamItemSubmitted)</span>
+        <button @onclick="Submit" disabled="@_judging">@Strings.Submit</button>
     }
-    else if (_submitted)
+    @if (_judging)
+    {
+        <span class="hint">@Strings.TutorJudging</span>
+    }
+    else if (_empty)
     {
         <span class="bad">@Strings.AnswerEmpty</span>
     }
+    else if (Run is not null)
+    {
+        @if (_passed)
+        {
+            <span class="ok">@Strings.ExamItemSubmitted</span>
+        }
+    }
+    else if (_passed)
+    {
+        <span class="ok">@(_judgement?.Verdict == Tutor.Pass ? Strings.TutorJudgePass : Strings.Answered)</span>
+    }
+    else if (Locked)
+    {
+        <span class="hint">@Strings.TutorJudgeClosed</span>
+    }
+    else if (_failed > 0)
+    {
+        <span class="bad">@Strings.TutorJudgeRevise</span>
+    }
 </div>
-@* Formative feedback only: free text stays supervisor-graded, nothing here touches attempts or progress. Never in an exam. *@
-@if (_passed && Run is null && State.Store.ActiveRun() is null && Tutor.Enabled(State.Settings) && Tutor.ConfigProblem(State.Settings) is null)
+@if (_hint is not null)
+{
+    <p class="hint">@_hint</p>
+}
+@* User decision 2026-10-25: the tutor judges open answers on submit; its feedback stays under the answer. Never in an exam. *@
+@if (Run is null && _judgement is { } j)
 {
     <div class="tutor-feedback">
-        <button @onclick="Feedback" disabled="@_asking">@Strings.TutorFeedback</button>
-        @if (_asking)
-        {
-            <span class="hint">@Strings.TutorAsking</span>
-        }
-        @if (_error is not null)
-        {
-            <p class="bad">@_error</p>
-        }
-        @if (_feedback is { } f)
-        {
-            <article class="md">@Tutor.Render(f.Answer)</article>
-            <p class="hint">
-                @string.Format(Strings.TutorFeedbackTokens, f.InputTokens + f.OutputTokens)
-                @if (f.CostUsd > 0)
-                {
-                    <text> · @string.Format(Strings.TutorFeedbackCost, f.CostUsd)</text>
-                }
-                @if (f.Provider == Tutor.Ollama)
-                {
-                    <text> · @Strings.TutorCostFree</text>
-                }
-            </p>
-        }
+        <article class="md">@Tutor.Render(j.Answer)</article>
+        <p class="hint">
+            @string.Format(Strings.TutorFeedbackTokens, j.InputTokens + j.OutputTokens)
+            @if (j.CostUsd > 0)
+            {
+                <text> · @string.Format(Strings.TutorFeedbackCost, j.CostUsd)</text>
+            }
+            @if (j.Provider == Tutor.Ollama)
+            {
+                <text> · @Strings.TutorCostFree</text>
+            }
+        </p>
     </div>
 }
 
@@ -49,42 +63,51 @@
     [Parameter, EditorRequired] public OpenItem Item { get; set; } = null!;
     [Parameter] public IReadOnlyList<Attempt> History { get; set; } = [];
     [Parameter] public EventCallback OnChanged { get; set; }
-    /// <summary>Set inside an exam run: the attempt is linked to the run and credits no skill.</summary>
+    /// <summary>Set inside an exam run: the attempt is linked to the run, credits no skill, and is never judged.</summary>
     [Parameter] public ExamRun? Run { get; set; }
 
     private readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
-    private string _text = "", _answer = "";
-    private bool _submitted, _passed, _asking;
-    private string? _error;
-    private TutorExchange? _feedback;
+    private string _text = "";
+    private bool _empty, _passed, _judging;
+    private int _failed;
+    private string? _hint;
+    private TutorExchange? _judgement;
+
+    /// <summary>Accepted, or out of tries (one correction round, the quiz rule in <see cref="ProgressDerivation.PassedItems"/>). Exams keep the old open box.</summary>
+    private bool Locked => Run is null && (_passed || _failed >= ProgressDerivation.QuizAttempts);
 
     protected override void OnInitialized()
     {
         if (History.Count == 0)
             return;
-        _text = _answer = History[^1].Answer ?? "";
+        _text = History[^1].Answer ?? "";
         _passed = History.Any(a => a.Passed);
+        _failed = History.Count(a => !a.Passed);
+        if (Run is null) // the feedback of the latest attempt survives a reload
+            _judgement = ReviewExport.Judgement(History[^1], History, State.Store.TutorExchanges(Exercise.Manifest.Id));
     }
 
     private async Task Submit()
     {
-        var attempt = Attempts.Open(Exercise.Manifest.Id, Item, _text, _clock.Elapsed);
-        attempt = Run is null ? State.Store.RecordAttempt(attempt, Exercise.Manifest) : State.Store.RecordAttempt(attempt with { ExamRunId = Run.Id });
-        _submitted = true;
+        _empty = string.IsNullOrWhiteSpace(_text);
+        _hint = null;
+        Attempt attempt;
+        if (Run is not null)
+            attempt = State.Store.RecordAttempt(Attempts.Open(Exercise.Manifest.Id, Item, _text, _clock.Elapsed) with { ExamRunId = Run.Id });
+        else if (_empty)
+            return; // a blank box is no attempt: it would use up the correction round
+        else
+        {
+            _judging = true;
+            _judgement = null;
+            StateHasChanged();
+            (attempt, _judgement, _hint) = await Tutor.SubmitOpenAsync(Tutor.Http, State, Exercise, Item, _text, _clock.Elapsed);
+            _judging = false;
+        }
         _passed = attempt.Passed;
-        _answer = _text;
-        _feedback = null;
+        if (!attempt.Passed && !_empty)
+            _failed++;
         _clock.Restart();
         await OnChanged.InvokeAsync();
-    }
-
-    /// <summary>Feedback on the submitted answer, not on whatever is in the box now.</summary>
-    private async Task Feedback()
-    {
-        _asking = true;
-        _error = null;
-        StateHasChanged();
-        (_feedback, _error) = await Tutor.FeedbackAsync(Tutor.Http, State.Settings, State.Store, Tutor.Context(State, Exercise), CourseState.Text(Item.Prompt), _answer);
-        _asking = false;
     }
 }

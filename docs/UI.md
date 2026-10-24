@@ -91,7 +91,9 @@ there is no override flag. Delete the file to start over.
   "Abgeben" records `Attempts.MultipleChoice`; feedback is right/wrong plus the
   explanation after any submission. **Decision — a wrong answer does not reveal
   the correct options**; the trainee can retry.
-- Open: textarea, "Abgeben" records `Attempts.Open` (blank = not answered).
+- Open: textarea, "Abgeben" records `Attempts.Open` (blank = no attempt, just
+  the "Bitte eine Antwort eingeben" note). Outside an exam the AI tutor judges
+  the answer first (see *AI tutor*, "Judged open answers").
 - Review: optional note, "Als erledigt markieren" records `Attempts.Review`.
 - Coding: absolute path of `starter/<openFile>` (normalised to backslashes)
   with line number and a copy button (`navigator.clipboard.writeText` through
@@ -359,7 +361,8 @@ Screens (German default, every string in both resx files):
   (`ReviewBundle.Read` in `SeeSharp.Progress` parses `attempts.csv` and
   `skills.csv`, round-trip tested with quotes, commas and newlines). For every
   exercise in published order with answers to `open` or `review` items the
-  answers (timestamp + text) are shown in a two-column grid next to the
+  answers (timestamp + text, plus a "KI-Tutor: angenommen/überarbeiten" badge
+  from the bundle's `tutorVerdict`) are shown in a two-column grid next to the
   rendered `rubric.md`; the skill matrix follows as a table. Attempts for
   exercises missing from the course are only counted.
 
@@ -433,7 +436,7 @@ showed no result, and its card offered no second start.
 `AGENT_TASKS.md` task 9 as amended by `SKILL-MODEL.md` §5. Code in
 `SeeSharp.App/Tutor.cs` (static, plain `HttpClient` + `System.Text.Json.Nodes`,
 no SDK), UI in `Components/Items/TutorPanel.razor` (one line in
-`ExercisePage`), the feedback button in `OpenQuestion.razor`, and
+`ExercisePage`), the judgement of open answers in `OpenQuestion.razor`, and
 `TutorSettings.razor` (one line in `SettingsPage`).
 
 **Providers** (`settings.json`: `tutorProvider`, `tutorModel`, `tutorBaseUrl`,
@@ -505,19 +508,45 @@ is listed with its level ("Feedback" for level 0) and the answer rendered by Mar
 in it is shown as text. Below: tokens for this exercise and in total, the $
 estimate when any priced exchange exists, and "kostenlos (lokal)" for Ollama.
 
-**Feedback on free-text answers.** Under a submitted open answer (not in an
-exam, tutor ready) "Feedback vom Tutor" calls `Tutor.FeedbackAsync`: one user
-message with the prompt and the submitted answer (not the unsaved box), no
-history, no hint level, and the system prompt with `Tutor.FeedbackRule` as
-rule 4 — short formative feedback in the UI locale: what is right, what is
-missing or wrong, one guiding question; no grade, no score, no pass/fail, no
-model answer. It is logged as a `tutor_exchange` at level 0
-(`Tutor.FeedbackLevel`), so the review bundle has it, and shown with its
-tokens and $ estimate. It never writes an attempt: free text stays
-supervisor-graded (CLAUDE.md: no auto-grading of free text). The answer is
-not restored after a reload; the panel lists it.
+**Judged open answers** (user decision 2026-10-25; until then an optional
+"Feedback vom Tutor" button gave ungraded feedback). "Abgeben" on an open
+question calls `Tutor.SubmitOpenAsync`. When the tutor is ready (provider set,
+`Tutor.ConfigProblem` null) and no exam run is open, `Tutor.JudgeAsync` sends
+one user message ("Please judge my answer" + the prompt + the answer; no
+history, no hint level) and the usual system prompt with `Tutor.JudgeRule` as
+rule 4, followed by `Tutor.RubricSection`: the exercise's `rubric.md` as a
+"Grading reference (supervisor-only, secret)" that the model may use but must
+never quote, paraphrase point by point or turn into a model answer. The rule
+asks for JSON only, `{"verdict":"pass"|"revise","feedback":"<Markdown>"}`:
+`pass` = the essential points are covered correctly (wording slips are fine),
+`revise` = something essential is missing or wrong; the feedback (UI locale,
+"du" in German) says what is right, or what to improve plus ONE guiding
+question, never the answer. `Tutor.ParseJudgement` takes the first JSON object
+in the reply (code fences and chatter around it are skipped), lower-cases the
+verdict and needs non-blank feedback; anything else is an error.
 
-**Failure.** `Tutor.AskAsync` / `FeedbackAsync` never throw for network trouble: no model /
+| Case | Attempt | UI |
+|---|---|---|
+| `pass` | passed | "Der Tutor hat deine Antwort angenommen.", feedback below, box locked |
+| `revise` (first) | failed | "… überarbeiten – du hast noch einen Versuch.", feedback below, box open |
+| `revise` (second) | failed; the quiz rule (`QuizAttempts = 2`) closes the item | "Die Frage ist abgeschlossen; die Betreuung sieht sich deine Antwort an.", feedback, box locked |
+| provider off / config incomplete | passed (as before) | "Kein KI-Tutor verfügbar – deine Antwort ist gespeichert und gilt als bestanden; die Betreuung sieht sie sich an." |
+| offline, timeout, HTTP error, empty or unreadable reply | passed (as before) | "Der KI-Tutor konnte deine Antwort nicht bewerten: <reason> Deine Antwort ist gespeichert …" |
+| exam run | recorded as before, never judged | unchanged |
+
+A blank box records nothing (it would use up the correction round). The
+trainee is never blocked: every failure falls back to "passed". Each judgement
+is a `tutor_exchange` at level 0 (`Tutor.FeedbackLevel`) with `item_id` and
+`verdict` (migration 4), tokens and cost, shown under the answer with its
+tokens and $ estimate; after a reload `ReviewExport.Judgement` finds the
+judgement of the latest attempt again. A failed or unreadable request logs
+nothing. The review bundle carries the verdict in `attempts.csv`
+(`tutorVerdict`) and in the `tutor/<exercise>.md` heading ("judgement of o1:
+**revise**"); `/admin/review` shows it as a badge next to the answer. The
+supervisor still reads every open answer: the verdict decides progress, not
+the review.
+
+**Failure.** `Tutor.AskAsync` / `JudgeAsync` never throw for network trouble: no model /
 base URL / key → a settings hint without a request; non-2xx → "HTTP n";
 refused connection, the 30 s timeout of `Tutor.Http`, malformed JSON → "nicht
 erreichbar, du kannst ohne ihn weiterarbeiten"; empty text → "keine Antwort".
@@ -537,11 +566,18 @@ absent from DB and zip; Chat Completions for Ollama (no auth header), OpenAI
 exception, 500, non-JSON, empty answer, timeout, missing key/base URL without a
 request) give a message and log nothing; the cost table; feedback (the answer,
 the prompt and the no-grade/no-model-answer rule in the request, no history,
-level 0 in the DB and the bundle's `tutor/warum.md`, no attempt written); and
+judgements (the answer, the prompt, the rubric and the no-quote rule in the
+request, the reply parsed through chatter and a code fence, verdict and item
+logged at level 0, unreadable replies and HTTP 500 as errors that log
+nothing; `ParseJudgement` cases); the submit flow on a hosted course (revise →
+failed attempt and feedback restored on the page, second revise → item
+closed, box locked, supervisor note, pass → passed and locked, the export's
+`tutorVerdict` column, bundle read-back and `tutor/first.md` heading, provider
+off or key missing → passed + hint without a request, HTTP 500 and an
+unreadable reply → passed + failure hint, open exam run → no request); and
 the hosted pages: panel hidden when `off`, shown on a coding exercise and on a
-quiz + open exercise above "Aufgaben", "Feedback vom Tutor" under the
-submitted open answer, the settings hint instead of the panel when the
-Anthropic key is missing, both gone while an exam run is open, plus
+quiz + open exercise above "Aufgaben", the settings hint instead of the panel
+when the Anthropic key is missing, gone while an exam run is open, plus
 `Tutor.Context` skipping `obj/` and carrying the failing run and the skill
 lists, and the quiz request carrying options and the trainee's answers but
 neither the explanation nor the word "correct" in the items section.

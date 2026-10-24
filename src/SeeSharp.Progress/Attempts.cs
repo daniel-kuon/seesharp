@@ -25,9 +25,12 @@ public static class Attempts
             chosen.SequenceEqual(item.Correct.Distinct().Order()), Answer: string.Join(",", chosen));
     }
 
-    /// <summary>Passed when answered at all (AGENT_TASKS.md task 3: gates on answered, not correctness).</summary>
-    public static Attempt Open(string exerciseId, OpenItem item, string answer, TimeSpan timeSpent) =>
-        new(exerciseId, item.Id, DateTimeOffset.UtcNow, timeSpent, !string.IsNullOrWhiteSpace(answer), Answer: answer);
+    /// <summary>
+    /// Passed when answered and the tutor's verdict is not <c>revise</c>. Without a verdict (no tutor, tutor failed, exam) an answer
+    /// passes as in AGENT_TASKS.md task 3; the user's 2026-10-25 decision adds the tutor judgement on top.
+    /// </summary>
+    public static Attempt Open(string exerciseId, OpenItem item, string answer, TimeSpan timeSpent, bool? verdictPassed = null) =>
+        new(exerciseId, item.Id, DateTimeOffset.UtcNow, timeSpent, !string.IsNullOrWhiteSpace(answer) && verdictPassed != false, Answer: answer);
 
     /// <summary>The trainee marked the review item done; <paramref name="note"/> is optional.</summary>
     public static Attempt Review(string exerciseId, ReviewItem item, string? note, TimeSpan timeSpent) =>

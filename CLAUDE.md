@@ -41,7 +41,10 @@ never used for grading.
 **Out of scope.** Cloud anything. Docker. Telemetry. Auto-grading of free-text
 answers. (IDE plugins were out of scope until the user asked for them on 2026-10-24:
 VS Code and Rider plugins are in scope as thin clients of the local `/api` —
-docs/IDE-PLUGINS.md; all logic stays in the tool.)
+docs/IDE-PLUGINS.md; all logic stays in the tool. Free-text grading: on 2026-10-25
+the user asked for open answers to be judged by the AI tutor on submit — pass/revise,
+one correction round, the supervisor still reviews; with no tutor available the
+answer passes as before — docs/UI.md "AI tutor".)
 
 **Repo facts (from task 0).**
 - `samples/` is a cleaned extract of `csharp14.zip` (the zip stays untouched as the
