@@ -11,8 +11,10 @@ namespace SeeSharp.Cli;
 /// </summary>
 internal static class InitCommand
 {
-    public const string DefaultRepository = "https://github.com/daniel-kuon/seesharp-course.git";
-    public const string BookRelease = "https://github.com/daniel-kuon/seesharp-course/releases/download/book-1/";
+    public const string DefaultRepository = "https://github.com/wollume-studios/seesharp-course.git";
+    public const string BookRelease = "https://github.com/wollume-studios/seesharp-course/releases/download/book-1/";
+    // The course moved to wollume-studios on 2026-10-27; clones made before still point here.
+    public const string FormerRepository = "https://github.com/daniel-kuon/seesharp-course.git";
     public static readonly string[] BookFiles = [CoursePaths.BookFile, "csharp14.en.pdf"];
 
     public static string DefaultDirectory =>
@@ -108,7 +110,7 @@ internal static class InitCommand
             return false;
         }
         using var repo = new Repository(directory);
-        if (!repo.Network.Remotes.Any(r => SameUrl(r.Url, repository)))
+        if (!PointRemoteAt(repo, repository))
         {
             output.WriteLine(Strings.InitForeignFolder, directory, repository);
             return false;
@@ -131,6 +133,18 @@ internal static class InitCommand
             output.WriteLine(Strings.InitUpdateFailed, e.Message, directory);
             return false;
         }
+    }
+
+    /// <summary>True when a remote fetches from <paramref name="repository"/>; a remote still on <see cref="FormerRepository"/> is moved to the default first.</summary>
+    internal static bool PointRemoteAt(Repository repo, string repository)
+    {
+        if (repo.Network.Remotes.Any(r => SameUrl(r.Url, repository)))
+            return true;
+        var former = SameUrl(repository, DefaultRepository) ? repo.Network.Remotes.FirstOrDefault(r => SameUrl(r.Url, FormerRepository)) : null;
+        if (former is null)
+            return false;
+        repo.Network.Remotes.Update(former.Name, r => r.Url = repository);
+        return true;
     }
 
     internal static bool SameUrl(string a, string b) => Normalize(a) == Normalize(b);

@@ -25,7 +25,7 @@ Last updated 2026-10-24 (second autonomous run).
 
 ## Course content
 
-`D:\Rider Projects 2\seesharp-course`, public at https://github.com/daniel-kuon/seesharp-course
+`D:\Rider Projects 2\seesharp-course`, public at https://github.com/wollume-studios/seesharp-course
 (branch `main`; the books are assets of its release `book-1`, `book/` is git-ignored):
 
 - **Levels 0–23**, i.e. every chapter of the book: 0–15 core, 16–23 electives

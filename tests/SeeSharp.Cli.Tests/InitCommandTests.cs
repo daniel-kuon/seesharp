@@ -49,6 +49,18 @@ public sealed class InitCommandTests : IDisposable
     }
 
     [Fact]
+    public void Moves_a_clone_of_the_former_course_url_to_the_default()
+    {
+        Assert.True(InitCommand.CloneOrUpdate(_target, _bare, _output));
+        using var repo = new Repository(_target);
+        repo.Network.Remotes.Update("origin", r => r.Url = InitCommand.FormerRepository);
+
+        Assert.True(InitCommand.PointRemoteAt(repo, InitCommand.DefaultRepository));
+        Assert.Equal(InitCommand.DefaultRepository, repo.Network.Remotes["origin"].Url);
+        Assert.False(InitCommand.PointRemoteAt(repo, "https://example.invalid/other.git"));
+    }
+
+    [Fact]
     public void Pulls_an_existing_clone_and_keeps_local_changes()
     {
         Assert.True(InitCommand.CloneOrUpdate(_target, _bare, _output));
@@ -74,7 +86,7 @@ public sealed class InitCommandTests : IDisposable
     }
 
     [Theory]
-    [InlineData("https://github.com/daniel-kuon/seesharp-course.git", "https://github.com/daniel-kuon/seesharp-course/")]
+    [InlineData("https://github.com/wollume-studios/seesharp-course.git", "https://github.com/wollume-studios/seesharp-course/")]
     [InlineData(@"C:\x\Kurs.git", "C:/x/kurs")]
     public void Remote_urls_compare_loosely(string a, string b) => Assert.True(InitCommand.SameUrl(a, b));
 

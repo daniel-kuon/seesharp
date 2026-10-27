@@ -21,5 +21,5 @@ den Kurs, ohne eigene Änderungen anzutasten. / picks another course folder; run
 the course without touching your own changes. Rider- und VS-Code-Plugins: *SeeSharp einrichten* /
 *Set up SeeSharp* erledigt alles davon.
 
-Source: https://github.com/wollume-studios/seesharp · Course: https://github.com/daniel-kuon/seesharp-course ·
+Source: https://github.com/wollume-studios/seesharp · Course: https://github.com/wollume-studios/seesharp-course ·
 Licence CC BY-NC-SA 4.0.

@@ -85,7 +85,7 @@ and as a command (VS Code) / toolbar button (Rider). Steps:
    (the `.exe` is in use); setup then carries on with the installed version.
 3. Course folder, default `%USERPROFILE%\seesharp-course` (`~/seesharp-course`), then
    `seesharp init --dir <folder>`: clone or fast-forward the course
-   (https://github.com/daniel-kuon/seesharp-course), download both books into `<folder>/book`,
+   (https://github.com/wollume-studios/seesharp-course), download both books into `<folder>/book`,
    write `coursePath`/`bookPdfPath` into `settings.json`, validate. Never discards the trainee's
    changes; a conflicting update stops with a message.
 4. A running server gets `POST /api/reload`; otherwise `seesharp start --no-browser` as before.

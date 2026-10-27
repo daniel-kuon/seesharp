@@ -7,7 +7,7 @@ tests. Trainees write code in JetBrains Rider, VS Code or Visual Studio; SeeShar
 opens the right file at the right line.
 
 Course content lives in a separate repository
-([daniel-kuon/seesharp-course](https://github.com/daniel-kuon/seesharp-course))
+([wollume-studios/seesharp-course](https://github.com/wollume-studios/seesharp-course))
 and is never compiled into this tool.
 
 ## Install
