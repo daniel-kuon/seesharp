@@ -35,7 +35,7 @@ public sealed class PluginApiTests : IDisposable
         using var bare = new HttpClient { BaseAddress = host.Http.BaseAddress };
 
         Assert.Equal(HttpStatusCode.Forbidden, (await bare.GetAsync("/api/course")).StatusCode);
-        bare.DefaultRequestHeaders.Add(PluginApi.TokenHeader, "0" + host.Token[1..]);
+        bare.DefaultRequestHeaders.Add(PluginApi.TokenHeader, (host.Token[0] == '0' ? "1" : "0") + host.Token[1..]); // always wrong, even when the token starts with 0
         Assert.Equal(HttpStatusCode.Forbidden, (await bare.GetAsync("/api/course")).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await bare.PostAsync("/api/exercise/rechner/grade", null)).StatusCode);
 
