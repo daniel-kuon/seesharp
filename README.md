@@ -6,8 +6,35 @@ from a separate repository on disk, and grades coding exercises by running unit
 tests. Trainees write code in JetBrains Rider, VS Code or Visual Studio; SeeSharp
 opens the right file at the right line.
 
-Course content lives in a separate repository and is never compiled into this
-tool.
+Course content lives in a separate repository
+([daniel-kuon/seesharp-course](https://github.com/daniel-kuon/seesharp-course))
+and is never compiled into this tool.
+
+## Install
+
+Needs the [.NET 10 SDK](https://dotnet.microsoft.com/download). Git is not needed.
+
+```
+dotnet tool install -g SeeSharp.Cli
+seesharp init
+seesharp
+```
+
+`seesharp init` clones the course to `%USERPROFILE%\seesharp-course` (change it with
+`--dir <folder>`), downloads the book PDFs and writes the settings. `seesharp`
+starts the app and opens it in the browser. Update later with
+`dotnet tool update -g SeeSharp.Cli`.
+
+### IDE plugins (optional)
+
+- **Rider:** Settings → Plugins → ⚙ → Manage Plugin Repositories → add
+  `https://wollume-studios.github.io/seesharp/updatePlugins.xml`, then install
+  "SeeSharp" from the Marketplace tab.
+- **VS Code:** download `seesharp-*.vsix` from the
+  [latest release](https://github.com/wollume-studios/seesharp/releases/latest) and
+  run `code --install-extension <file>.vsix`.
+
+Both plugins can also run the setup above for you (*Set up SeeSharp*).
 
 ## Licence
 
