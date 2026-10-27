@@ -155,6 +155,27 @@ exam and is never picked for one. The UI lists it under "Zusatzaufgaben
   any other. The "taught by more than three exercises" warning counts
   mandatory teachers only.
 
+### Deep Dive (topics the book does not cover)
+
+User decision 2026-10-27: material the book does not discuss stays in the
+course but is optional and presented as a pointer for further study. Every
+mandatory exercise and quiz must be passable with book material plus what
+earlier levels taught.
+
+- **Summary:** a final `## Deep Dive (optional)` section opening with
+  `> Nicht im Buch. Diese Themen sind optional – Beispiele dafür, was du dir als
+  Nächstes ansehen kannst.` (English: `> Not in the book. These topics are
+  optional – examples of what to look into next.`).
+- **Instructions:** a beyond-book part sits in a `> **Deep Dive (optional):** …`
+  block (the UI styles blockquotes as a box). Its tests stay out of the gate via
+  `requiredTests`, or the part moves to an optional exercise.
+- **Optional exercises** that are mainly beyond the book get the title prefix
+  `Deep Dive: `.
+- **Quizzes and rubrics:** no required point needs beyond-book knowledge; such
+  points are marked "Bonus (Deep Dive)".
+- A one-off API call the instructions hand over completely is not a topic; it
+  is marked "(nicht im Buch, hier vorgegeben)".
+
 ## Validator rules
 
 `seesharp validate <course-path> [--skip-starter-check]`. Exit 0 with no
