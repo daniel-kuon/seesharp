@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <!-- Release builds pass -p:Version=<tag without v> (.github/workflows/release.yml). -->
-    <Version>0.1.0</Version>
+    <!-- Release builds pass -p:Version=<tag without v> (.github/workflows/release.yml); a prerelease version keeps dev runs from asking nuget.org for updates. -->
+    <Version>0.0.0-dev</Version>
     <IsPackable>true</IsPackable>
     <PackAsTool>true</PackAsTool>
     <PackageId>SeeSharp.Cli</PackageId>

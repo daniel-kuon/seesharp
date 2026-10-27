@@ -35,6 +35,10 @@
     </span>
 </nav>
 <main>
+    @if (_newer is not null)
+    {
+        <p class="card update">@string.Format(Strings.UpdateAvailable, _newer, UpdateCheck.Current) <code>dotnet tool update -g SeeSharp.Cli</code></p>
+    }
     @* Without a course only the settings page makes sense; the other pages assume State.Course is set. *@
     @if (State.Course is null && !Nav.ToBaseRelativePath(Nav.Uri).StartsWith("settings", StringComparison.Ordinal))
     {
@@ -52,6 +56,15 @@
 </main>
 
 @code {
+    private string? _newer;
+
+    /// <summary>After the first interactive render: nuget.org must never hold up a page.</summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && (_newer = await UpdateCheck.NewerAsync()) is not null)
+            StateHasChanged();
+    }
+
     // The culture is process-wide; a full reload starts a fresh circuit that prerenders and renders in the new language.
     private void Switch(string locale)
     {

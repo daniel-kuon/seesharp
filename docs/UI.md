@@ -37,6 +37,14 @@ comment; the UI only calls `Reading.PhysicalPage`. Note that with the course at
 `D:\Rider Projects 2\csharp14.pdf`, which does not exist — the repo's copy is
 one folder deeper, so set `bookPdfPath` on the settings page to use it.
 
+## Update notice
+
+On start the layout asks nuget.org once (`UpdateCheck`, `GET v3-flatcontainer/seesharp.cli/index.json`, after
+the first render) for the newest stable `SeeSharp.Cli`. When it is newer than the running tool's version, a
+banner above every page names both versions and `dotnet tool update -g SeeSharp.Cli` (user decision
+2026-10-27). Only a version lookup: nothing about the trainee is sent. Offline, an odd reply or a dev build
+(csproj version `0.0.0-dev`; releases stamp the tag's version) show nothing.
+
 ## Loading and state
 
 `CourseState` (singleton) holds settings, the resolved paths, the loaded
