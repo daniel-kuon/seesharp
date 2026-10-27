@@ -33,17 +33,47 @@
 {
     <span class="ok">@Strings.TutorSaved</span>
 }
+@* Checked with the stored settings on open and after every save, so a wrong key shows here and not on the first answer. *@
+@if (_checking)
+{
+    <p class="hint">@Strings.TutorChecking</p>
+}
+else if (_check is { } check)
+{
+    <p class="@(check.Problem is null ? "ok" : "bad")">@(check.Problem ?? string.Format(Strings.TutorCheckOk, check.Model))</p>
+}
 
 @code {
     private string _provider = Tutor.Off;
     private string _model = "", _baseUrl = "", _key = "";
-    private bool _saved;
+    private bool _saved, _checking;
+    private (string? Model, string? Problem)? _check;
 
     protected override void OnInitialized()
     {
         _provider = Tutor.Provider(State.Settings);
         _model = State.Settings.TutorModel ?? "";
         _baseUrl = State.Settings.TutorBaseUrl ?? "";
+    }
+
+    /// <summary>After the first interactive render, not while prerendering: a dead endpoint must not hold up the page.</summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        await Check();
+        StateHasChanged();
+    }
+
+    private async Task Check()
+    {
+        _check = null;
+        if (!Tutor.Enabled(State.Settings))
+            return;
+        _checking = true;
+        StateHasChanged();
+        _check = (Tutor.Model(State.Settings), await Tutor.CheckAsync(Tutor.Http, State.Settings));
+        _checking = false;
     }
 
     /// <summary>A blank key field keeps the stored key, so it never has to be shown again.</summary>
@@ -59,5 +89,6 @@
         _key = "";
         await State.LoadAsync();
         _saved = true;
+        await Check();
     }
 }

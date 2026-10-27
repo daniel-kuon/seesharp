@@ -340,6 +340,13 @@ internal static class Strings
     public static string TutorSummaryHint => Resources.GetString(nameof(TutorSummaryHint))!;
     public static string TutorJudgeOff => Resources.GetString(nameof(TutorJudgeOff))!;
     public static string TutorJudgeFailed => Resources.GetString(nameof(TutorJudgeFailed))!;
+    public static string TutorJudgeSkipped => Resources.GetString(nameof(TutorJudgeSkipped))!;
+    public static string TutorJudgeUnchecked => Resources.GetString(nameof(TutorJudgeUnchecked))!;
+    public static string TutorSaveWithoutTutor => Resources.GetString(nameof(TutorSaveWithoutTutor))!;
+    public static string TutorKeyRejected => Resources.GetString(nameof(TutorKeyRejected))!;
+    public static string TutorModelNotFound => Resources.GetString(nameof(TutorModelNotFound))!;
+    public static string TutorCheckOk => Resources.GetString(nameof(TutorCheckOk))!;
+    public static string TutorChecking => Resources.GetString(nameof(TutorChecking))!;
     public static string TutorJudgeUnreadable => Resources.GetString(nameof(TutorJudgeUnreadable))!;
     public static string TutorJudging => Resources.GetString(nameof(TutorJudging))!;
     public static string TutorJudgePass => Resources.GetString(nameof(TutorJudgePass))!;

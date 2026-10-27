@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -213,9 +214,7 @@ public static class Tutor
                     ["messages"] = new JsonArray(turns.ToArray()),
                 }),
             };
-            request.Headers.Add("x-api-key", settings.TutorApiKey ?? "");
-            request.Headers.Add("anthropic-version", AnthropicVersion);
-            return request;
+            return Authorize(request, settings);
         }
         request = new HttpRequestMessage(HttpMethod.Post, BaseUrl(settings) + "/chat/completions")
         {
@@ -225,11 +224,47 @@ public static class Tutor
                 ["messages"] = new JsonArray(turns.Prepend(new JsonObject { ["role"] = "system", ["content"] = system }).ToArray()),
             }),
         };
-        if (Blank(settings.TutorApiKey) is { } key)
-            request.Headers.Authorization = new("Bearer", key);
-        return request;
+        return Authorize(request, settings);
 
         static StringContent Json(JsonObject body) => new(body.ToJsonString(), Encoding.UTF8, "application/json");
+    }
+
+    private static HttpRequestMessage Authorize(HttpRequestMessage request, Settings settings)
+    {
+        if (Provider(settings) == Anthropic)
+        {
+            request.Headers.Add("x-api-key", Blank(settings.TutorApiKey) ?? "");
+            request.Headers.Add("anthropic-version", AnthropicVersion);
+        }
+        else if (Blank(settings.TutorApiKey) is { } key)
+            request.Headers.Authorization = new("Bearer", key);
+        return request;
+    }
+
+    /// <summary>A failed status as a message for the trainee; a rejected key says so instead of a bare status code.</summary>
+    private static string HttpProblem(HttpStatusCode status) => status is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden
+        ? string.Format(Strings.TutorKeyRejected, (int)status) : string.Format(Strings.TutorHttpError, (int)status);
+
+    /// <summary>
+    /// For the settings page: looks the model up (<c>GET /models/{model}</c>, which Anthropic, OpenAI and Ollama all serve) with the
+    /// stored key. Costs no tokens. Null when the provider accepts the key and knows the model, else a short message.
+    /// </summary>
+    public static async Task<string?> CheckAsync(HttpClient http, Settings settings, CancellationToken cancellationToken = default)
+    {
+        if (ConfigProblem(settings) is { } problem)
+            return problem;
+        try
+        {
+            using var request = Authorize(new HttpRequestMessage(HttpMethod.Get, BaseUrl(settings) + "/models/" + Uri.EscapeDataString(Model(settings)!)), settings);
+            using var response = await http.SendAsync(request, cancellationToken);
+            return response.IsSuccessStatusCode ? null
+                : response.StatusCode == HttpStatusCode.NotFound ? string.Format(Strings.TutorModelNotFound, Model(settings))
+                : HttpProblem(response.StatusCode);
+        }
+        catch (Exception) // offline, timeout, refused connection
+        {
+            return Strings.TutorUnreachable;
+        }
     }
 
     /// <summary>Text and usage from either wire format; thinking and other non-text blocks are skipped.</summary>
@@ -273,23 +308,28 @@ public static class Tutor
         return (Record(store, settings, context.ExerciseId, FeedbackLevel, question, reply with { Text = judgement.Feedback }, itemId, judgement.Verdict), null);
     }
 
+    /// <summary>True when an open answer submitted now would be judged: a provider is set up and no exam runs.</summary>
+    public static bool Judges(CourseState state) => Enabled(state.Settings) && ConfigProblem(state.Settings) is null && state.Store.ActiveRun() is null;
+
     /// <summary>
-    /// Submit of an open answer outside an exam: judged when the tutor is ready and no exam runs, recorded either way. Without a usable
-    /// verdict (tutor off, failure) the answer passes as before and <c>Hint</c> says why; the trainee is never blocked.
+    /// Submit of an open answer outside an exam: judged when <see cref="Judges"/>, recorded with the verdict. Without a tutor (off, or
+    /// <paramref name="withoutTutor"/>) the answer passes as before and <c>Hint</c> says why; the trainee is never blocked. When the tutor
+    /// fails, nothing is recorded (Attempt is null) and <c>Hint</c> says why, so the trainee can retry or save without the tutor.
     /// </summary>
-    public static async Task<(Attempt Attempt, TutorExchange? Judgement, string? Hint)> SubmitOpenAsync(HttpClient http, CourseState state,
-        Exercise exercise, OpenItem item, string answer, TimeSpan timeSpent, CancellationToken cancellationToken = default)
+    public static async Task<(Attempt? Attempt, TutorExchange? Judgement, string? Hint)> SubmitOpenAsync(HttpClient http, CourseState state,
+        Exercise exercise, OpenItem item, string answer, TimeSpan timeSpent, bool withoutTutor = false, CancellationToken cancellationToken = default)
     {
         TutorExchange? judgement = null;
-        string? hint;
-        if (!Enabled(state.Settings) || ConfigProblem(state.Settings) is not null || state.Store.ActiveRun() is not null)
-            hint = Strings.TutorJudgeOff;
+        string? hint = null;
+        if (withoutTutor || !Judges(state))
+            hint = withoutTutor ? Strings.TutorJudgeSkipped : Strings.TutorJudgeOff;
         else
         {
             var rubric = File.Exists(exercise.RubricPath) ? await File.ReadAllTextAsync(exercise.RubricPath, cancellationToken) : null;
             string? error;
             (judgement, error) = await JudgeAsync(http, state.Settings, state.Store, Context(state, exercise), item.Id, CourseState.Text(item.Prompt), answer, rubric, cancellationToken);
-            hint = judgement is null ? string.Format(Strings.TutorJudgeFailed, error) : null;
+            if (judgement is null)
+                return (null, null, string.Format(Strings.TutorJudgeFailed, error));
         }
         var attempt = state.Store.RecordAttempt(Attempts.Open(exercise.Manifest.Id, item, answer, timeSpent, judgement is null ? null : judgement.Verdict == Pass), exercise.Manifest);
         return (attempt, judgement, hint);
@@ -335,7 +375,7 @@ public static class Tutor
             using var request = Request(settings, system, messages);
             using var response = await http.SendAsync(request, cancellationToken);
             if (!response.IsSuccessStatusCode)
-                return (null, string.Format(Strings.TutorHttpError, (int)response.StatusCode));
+                return (null, HttpProblem(response.StatusCode));
             reply = Parse(Provider(settings), await response.Content.ReadAsStringAsync(cancellationToken));
         }
         catch (Exception) // offline, timeout, refused connection, malformed JSON: all mean "no tutor right now"

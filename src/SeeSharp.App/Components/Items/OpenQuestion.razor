@@ -5,7 +5,11 @@
 <div>
     @if (!Locked)
     {
-        <button @onclick="Submit" disabled="@_judging">@Strings.Submit</button>
+        <button @onclick="() => Submit()" disabled="@_judging">@Strings.Submit</button>
+        @if (_tutorFailed)
+        {
+            <button @onclick="() => Submit(withoutTutor: true)" disabled="@_judging">@Strings.TutorSaveWithoutTutor</button>
+        }
     }
     @if (_judging)
     {
@@ -21,6 +25,10 @@
         {
             <span class="ok">@Strings.ExamItemSubmitted</span>
         }
+    }
+    else if (Unchecked)
+    {
+        <span class="hint">@Strings.TutorJudgeUnchecked</span>
     }
     else if (_passed)
     {
@@ -68,13 +76,16 @@
 
     private readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
     private string _text = "";
-    private bool _empty, _passed, _judging;
+    private bool _empty, _passed, _judging, _tutorFailed;
     private int _failed;
     private string? _hint;
     private TutorExchange? _judgement;
 
     /// <summary>Accepted, or out of tries (one correction round, the quiz rule in <see cref="ProgressDerivation.PassedItems"/>). Exams keep the old open box.</summary>
-    private bool Locked => Run is null && (_passed || _failed >= ProgressDerivation.QuizAttempts);
+    private bool Locked => Run is null && !Unchecked && (_passed || _failed >= ProgressDerivation.QuizAttempts);
+
+    /// <summary>Passed without a verdict (saved while the tutor was off or failing) and the tutor works now: it may still judge the answer.</summary>
+    private bool Unchecked => Run is null && _passed && _judgement is null && !_judging && Tutor.Judges(State);
 
     protected override void OnInitialized()
     {
@@ -87,11 +98,11 @@
             _judgement = ReviewExport.Judgement(History[^1], History, State.Store.TutorExchanges(Exercise.Manifest.Id));
     }
 
-    private async Task Submit()
+    private async Task Submit(bool withoutTutor = false)
     {
         _empty = string.IsNullOrWhiteSpace(_text);
         _hint = null;
-        Attempt attempt;
+        Attempt? attempt;
         if (Run is not null)
             attempt = State.Store.RecordAttempt(Attempts.Open(Exercise.Manifest.Id, Item, _text, _clock.Elapsed) with { ExamRunId = Run.Id });
         else if (_empty)
@@ -101,8 +112,11 @@
             _judging = true;
             _judgement = null;
             StateHasChanged();
-            (attempt, _judgement, _hint) = await Tutor.SubmitOpenAsync(Tutor.Http, State, Exercise, Item, _text, _clock.Elapsed);
+            (attempt, _judgement, _hint) = await Tutor.SubmitOpenAsync(Tutor.Http, State, Exercise, Item, _text, _clock.Elapsed, withoutTutor);
             _judging = false;
+            _tutorFailed = attempt is null;
+            if (attempt is null)
+                return; // nothing recorded: the box stays open for another try
         }
         _passed = attempt.Passed;
         if (!attempt.Passed && !_empty)

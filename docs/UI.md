@@ -531,11 +531,13 @@ verdict and needs non-blank feedback; anything else is an error.
 | `revise` (first) | failed | "… überarbeiten – du hast noch einen Versuch.", feedback below, box open |
 | `revise` (second) | failed; the quiz rule (`QuizAttempts = 2`) closes the item | "Die Frage ist abgeschlossen; die Betreuung sieht sich deine Antwort an.", feedback, box locked |
 | provider off / config incomplete | passed (as before) | "Kein KI-Tutor verfügbar – deine Antwort ist gespeichert und gilt als bestanden; die Betreuung sieht sie sich an." |
-| offline, timeout, HTTP error, empty or unreadable reply | passed (as before) | "Der KI-Tutor konnte deine Antwort nicht bewerten: <reason> Deine Antwort ist gespeichert …" |
+| offline, timeout, HTTP error, empty or unreadable reply | nothing recorded (user decision 2026-10-27) | "Der KI-Tutor konnte deine Antwort nicht bewerten: <reason> Deine Antwort ist noch nicht gespeichert …", box open, extra button "Ohne Tutor speichern" |
+| "Ohne Tutor speichern" | passed, no request | "Ohne KI-Tutor gespeichert – … gilt als bestanden …" |
+| reload: latest attempt passed without a verdict, tutor works now | unchanged | "Diese Antwort hat der KI-Tutor noch nicht geprüft …", box open so the tutor can still judge it |
 | exam run | recorded as before, never judged | unchanged |
 
 A blank box records nothing (it would use up the correction round). The
-trainee is never blocked: every failure falls back to "passed". Each judgement
+trainee is never blocked: after a failure they retry or save without the tutor. Each judgement
 is a `tutor_exchange` at level 0 (`Tutor.FeedbackLevel`) with `item_id` and
 `verdict` (migration 4), tokens and cost, shown under the answer with its
 tokens and $ estimate; after a reload `ReviewExport.Judgement` finds the
@@ -547,10 +549,15 @@ supervisor still reads every open answer: the verdict decides progress, not
 the review.
 
 **Failure.** `Tutor.AskAsync` / `JudgeAsync` never throw for network trouble: no model /
-base URL / key → a settings hint without a request; non-2xx → "HTTP n";
+base URL / key → a settings hint without a request; 401/403 → "lehnt den API-Schlüssel ab";
+other non-2xx → "HTTP n";
 refused connection, the 30 s timeout of `Tutor.Http`, malformed JSON → "nicht
 erreichbar, du kannst ohne ihn weiterarbeiten"; empty text → "keine Antwort".
 Nothing is logged then. Grading is never touched.
+
+**Settings check.** The tutor settings check the stored settings after the first render and after each
+save: `Tutor.CheckAsync` sends `GET {baseUrl}/models/{model}` with the key (no tokens) and shows
+"Verbunden …", a rejected key, an unknown model (404) or "nicht erreichbar".
 
 **Logging.** Each successful exchange is a `tutor_exchange` row (migration 3,
 PROGRESS-STORE.md) and appears in the review bundle as `tutor/<exercise>.md`.

@@ -220,7 +220,7 @@ public sealed class TutorTests : IDisposable
             // revise: a failed attempt, the feedback under the answer, the box stays open.
             verdicts.Enqueue("{\"verdict\":\"revise\",\"feedback\":\"Was prüft der **Compiler**?\"}");
             var (attempt, judgement, hint) = await Tutor.SubmitOpenAsync(http, state, first, Item(first, "o1"), "Weil es so ist.", TimeSpan.FromSeconds(5));
-            Assert.False(attempt.Passed);
+            Assert.False(attempt!.Passed);
             Assert.Equal((Tutor.Revise, null), (judgement!.Verdict, hint));
             Assert.Contains("GEHEIM-RUBRIK", JsonNode.Parse(stub.Requests[0].Body)!["system"]!.ToString());
             Assert.DoesNotContain("o1", _store.PassedItems("first"));
@@ -232,7 +232,7 @@ public sealed class TutorTests : IDisposable
             // Second revise: the quiz rule closes the item, the box locks, the supervisor takes over.
             verdicts.Enqueue("{\"verdict\":\"revise\",\"feedback\":\"Denk an die Übersetzungszeit.\"}");
             (attempt, judgement, _) = await Tutor.SubmitOpenAsync(http, state, first, Item(first, "o1"), "Weil der Compiler prüft.", TimeSpan.FromSeconds(5));
-            Assert.False(attempt.Passed);
+            Assert.False(attempt!.Passed);
             Assert.Contains("o1", _store.PassedItems("first"));
             page = await web.GetStringAsync("/exercise/first");
             Assert.Contains("Die Frage ist abgeschlossen; die Betreuung sieht sich deine Antwort an.", page);
@@ -242,7 +242,7 @@ public sealed class TutorTests : IDisposable
             // pass: a passed attempt, locked with the feedback.
             verdicts.Enqueue("{\"verdict\":\"pass\",\"feedback\":\"Genau, zur Übersetzungszeit.\"}");
             (attempt, judgement, hint) = await Tutor.SubmitOpenAsync(http, state, first, Item(first, "o2"), "Zur Übersetzungszeit.", TimeSpan.FromSeconds(5));
-            Assert.True(attempt.Passed);
+            Assert.True(attempt!.Passed);
             Assert.Equal((Tutor.Pass, null), (judgement!.Verdict, hint));
             page = await web.GetStringAsync("/exercise/first");
             Assert.Contains("Der Tutor hat deine Antwort angenommen.", page);
@@ -272,38 +272,85 @@ public sealed class TutorTests : IDisposable
             var exchanges = _store.TutorExchanges().Count;
             state.Settings = new Settings();
             (attempt, judgement, hint) = await Tutor.SubmitOpenAsync(http, state, third, Item(third, "o1"), "Darum.", TimeSpan.Zero);
-            Assert.Equal((true, null, OffHint), (attempt.Passed, judgement, hint));
+            Assert.Equal((true, null, OffHint), (attempt!.Passed, judgement, hint));
             Assert.StartsWith("Kein KI-Tutor verfügbar", hint);
             state.Settings = new Settings { TutorProvider = Tutor.Anthropic }; // key missing
             (attempt, _, hint) = await Tutor.SubmitOpenAsync(http, state, third, Item(third, "o1"), "Darum.", TimeSpan.Zero);
-            Assert.Equal((true, OffHint), (attempt.Passed, hint));
+            Assert.Equal((true, OffHint), (attempt!.Passed, hint));
             Assert.Equal(3, stub.Requests.Count);
 
-            // Tutor failed (HTTP 500, unreadable reply): passed, with a hint that says it failed.
+            // Tutor failed (HTTP 500, rejected key, unreadable reply): nothing recorded, so the trainee can retry; the hint says why.
             state.Settings = new Settings { TutorProvider = Tutor.Anthropic, TutorApiKey = Key };
+            var attempts = _store.Attempts("third").Count;
             var broken = new HttpClient(new Stub(_ => Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError))));
-            (attempt, judgement, hint) = await Tutor.SubmitOpenAsync(broken, state, third, Item(third, "o1"), "Darum.", TimeSpan.Zero);
-            Assert.Equal((true, null), (attempt.Passed, judgement));
+            (var failed, judgement, hint) = await Tutor.SubmitOpenAsync(broken, state, third, Item(third, "o1"), "Darum.", TimeSpan.Zero);
+            Assert.Equal((null, null), (failed, judgement));
             Assert.Contains("konnte deine Antwort nicht bewerten", hint);
             Assert.Contains("HTTP 500", hint);
-            Assert.Contains("gilt als bestanden", hint);
+            Assert.Contains("noch nicht gespeichert", hint);
+            var rejected = new HttpClient(new Stub(_ => Task.FromResult(new HttpResponseMessage(HttpStatusCode.Unauthorized))));
+            (failed, _, hint) = await Tutor.SubmitOpenAsync(rejected, state, third, Item(third, "o1"), "Darum.", TimeSpan.Zero);
+            Assert.Null(failed);
+            Assert.Contains("lehnt den API-Schlüssel ab (HTTP 401)", hint);
             verdicts.Enqueue("Die Antwort ist prima!");
-            (attempt, _, hint) = await Tutor.SubmitOpenAsync(http, state, third, Item(third, "o1"), "Darum.", TimeSpan.Zero);
-            Assert.True(attempt.Passed);
-            Assert.Equal("Der KI-Tutor konnte deine Antwort nicht bewerten: Seine Antwort enthielt keine lesbare Bewertung. Deine Antwort ist gespeichert und gilt als bestanden; die Betreuung sieht sie sich an.", hint);
+            (failed, _, hint) = await Tutor.SubmitOpenAsync(http, state, third, Item(third, "o1"), "Darum.", TimeSpan.Zero);
+            Assert.Null(failed);
+            Assert.Equal("Der KI-Tutor konnte deine Antwort nicht bewerten: Seine Antwort enthielt keine lesbare Bewertung. Deine Antwort ist noch nicht gespeichert – sende sie erneut oder speichere sie ohne Tutor.", hint);
+            Assert.Equal(attempts, _store.Attempts("third").Count);
             Assert.Equal(exchanges, _store.TutorExchanges().Count); // failures log nothing
+            // ...unless the trainee saves without the tutor: passed as without one, no request.
+            var sent = stub.Requests.Count;
+            (attempt, judgement, hint) = await Tutor.SubmitOpenAsync(http, state, third, Item(third, "o1"), "Darum.", TimeSpan.Zero, withoutTutor: true);
+            Assert.Equal((true, null, sent), (attempt!.Passed, judgement, stub.Requests.Count));
+            Assert.StartsWith("Ohne KI-Tutor gespeichert", hint);
+            // Passed without a verdict while the tutor works now: the box opens again so the tutor can still judge it.
+            await Tutor.SubmitOpenAsync(http, state, first, Item(first, "o2"), "Zur Übersetzungszeit.", TimeSpan.Zero, withoutTutor: true);
+            page = await web.GetStringAsync("/exercise/first");
+            Assert.Contains("Diese Antwort hat der KI-Tutor noch nicht gepr", page); // the umlaut is HTML-encoded
+            Assert.Equal(1, page.Split("<textarea").Skip(1).Count(t => t[..t.IndexOf('>')].Contains("disabled"))); // o1 stays closed, o2 open again
 
             // An exam run is open: no request, recorded as before.
             Exams.Start(_store, state.Course, state.Course.Exams.Single(), seed: 1);
             var requests = stub.Requests.Count;
             (attempt, judgement, _) = await Tutor.SubmitOpenAsync(http, state, third, Item(third, "o1"), "Darum.", TimeSpan.Zero);
-            Assert.Equal((true, null, requests), (attempt.Passed, judgement, stub.Requests.Count));
+            Assert.Equal((true, null, requests), (attempt!.Passed, judgement, stub.Requests.Count));
         }
         finally
         {
             await app.StopAsync();
             await app.DisposeAsync();
         }
+    }
+
+    [Fact]
+    public async Task CheckAsync_looks_up_the_model_with_the_key_and_names_what_is_wrong()
+    {
+        Locale.Apply("de");
+        var status = HttpStatusCode.OK;
+        var stub = new Stub(_ => Task.FromResult(new HttpResponseMessage(status)));
+        var http = new HttpClient(stub);
+        var settings = new Settings { TutorProvider = Tutor.Anthropic, TutorApiKey = " " + Key + " " };
+
+        Assert.Null(await Tutor.CheckAsync(http, settings));
+        var request = stub.Requests.Single();
+        Assert.Equal("https://api.anthropic.com/v1/models/claude-haiku-5-5", request.Uri);
+        Assert.Equal(Key, request.Headers["x-api-key"]); // trimmed
+        Assert.Equal(Tutor.AnthropicVersion, request.Headers["anthropic-version"]);
+
+        status = HttpStatusCode.Unauthorized;
+        Assert.Contains("lehnt den API-Schlüssel ab (HTTP 401)", await Tutor.CheckAsync(http, settings));
+        status = HttpStatusCode.NotFound;
+        Assert.Contains("Modell „claude-haiku-5-5“ nicht", await Tutor.CheckAsync(http, settings));
+        status = HttpStatusCode.InternalServerError;
+        Assert.Contains("HTTP 500", await Tutor.CheckAsync(http, settings));
+        Assert.StartsWith("Der Tutor ist gerade nicht erreichbar", await Tutor.CheckAsync(new HttpClient(new Stub(_ => throw new HttpRequestException())), settings));
+        Assert.StartsWith("Für diesen Anbieter fehlt der API-Schlüssel", await Tutor.CheckAsync(http, new Settings { TutorProvider = Tutor.Anthropic }));
+        Assert.Equal(4, stub.Requests.Count); // no request without a key
+
+        status = HttpStatusCode.OK;
+        Assert.Null(await Tutor.CheckAsync(http, new Settings { TutorProvider = Tutor.OpenAi, TutorApiKey = Key, TutorModel = "gpt-5-mini" }));
+        Assert.Equal("https://api.openai.com/v1/models/gpt-5-mini", stub.Requests[^1].Uri);
+        Assert.Equal("Bearer " + Key, stub.Requests[^1].Headers["Authorization"]);
     }
 
     [Fact]
