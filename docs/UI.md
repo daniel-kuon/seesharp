@@ -64,17 +64,26 @@ there is no override flag. Delete the file to start over.
 
 ## Screens
 
+Every page except an open exam has a **side menu** (`Layout/SideMenu.razor`, user
+request 2026-10-28): on `/module/{id}` and `/exercise/{id}` it lists that module's
+exercises (current one bold, passed ✓, locked ones greyed and not links, optional
+ones marked) under a link back to all modules; everywhere else it lists every
+module. Below 64rem it is hidden behind a "☰ Menü" button in the top bar and closes
+again on navigation. It refreshes on navigation only, so a ✓ earned on the current
+page shows after the next click.
+
 - `/` dashboard: modules passed, mandatory exercises passed, skills practiced/applied,
-  the next exercise (first unlocked, unpassed **mandatory** one in published
-  order), a hint line "Offene Zusatzaufgaben:" linking the unlocked, unpassed
-  optional exercises of unlocked modules, and the passed list (optional ones
-  with an "optional" badge).
+  "Als Nächstes" (the next exercise — first unlocked, unpassed **mandatory** one in
+  published order — with the other open mandatory exercises of its module), the
+  unlocked, unpassed optional exercises of unlocked modules, and the passed list.
+  Every list is grouped under its module: the module title links the module page,
+  the exercises below link the exercises.
 - `/modules`: every module with lock badge, passed/total mandatory exercises,
   "n von m Zusatzaufgaben bestanden" when the module has optional ones, and — when
   locked — the union of its exercises' missing skills, each with "vermittelt
   in Level NN" linking to the module that first teaches it (or a note that
   nothing teaches it yet).
-- `/module/{id}`: reading link, rendered `summary.de.md`, the skills the level
+- `/module/{id}`: reading link (book links render as a "📖" pill, `.book`), rendered `summary.de.md`, the skills the level
   teaches as a disabled checklist (checked = practiced or better, state text
   next to it), the "Gelesen" button (`MarkSummaryRead`; shown as done once
   every taught skill has a ledger row), the exercise list with lock state,

@@ -10,6 +10,8 @@
     var next = exercises.FirstOrDefault(e => e.Unlocked && !e.Passed);
     var done = progress.Exercises.Where(e => e.Passed).ToList();
     var openOptional = progress.Modules.Where(m => m.Unlocked).SelectMany(m => m.Optional).Where(e => e.Unlocked && !e.Passed).ToList();
+    // The next exercise with the rest of its module that is open now.
+    var nextUp = next is null ? [] : progress.Modules.First(m => m.Mandatory.Contains(next)).Mandatory.Where(e => e.Unlocked && !e.Passed).ToList();
 }
 <ul>
     <li>@string.Format(Strings.ModulesDone, progress.Modules.Count(m => m.Passed), progress.Modules.Count)</li>
@@ -26,9 +28,7 @@
 }
 else
 {
-    <p class="card">
-        <a href="exercise/@next.Exercise.Manifest.Id">@ExerciseTitle(next.Exercise)</a>
-    </p>
+    @ByModule(nextUp, open: true)
 }
 @if (openOptional.Count > 0)
 {
@@ -47,13 +47,13 @@ else
 }
 
 @code {
-    /// <summary>One collapsible block per module, in course order; the summary shows the module and how many entries it holds.</summary>
+    /// <summary>One collapsible block per module, in course order; the summary links the module and shows how many entries it holds.</summary>
     private RenderFragment ByModule(IReadOnlyList<ExerciseProgress> exercises, bool open) => __builder =>
     {
         foreach (var group in exercises.GroupBy(e => State.ModuleOf(e.Exercise)).OrderBy(g => g.Key.Order))
         {
             <details class="card" open="@open">
-                <summary>@string.Format(Strings.LevelTitle, group.Key.Order, CourseState.Text(group.Key.Manifest.Title)) (@group.Count())</summary>
+                <summary><a href="module/@group.Key.Manifest.Id">@string.Format(Strings.LevelTitle, group.Key.Order, CourseState.Text(group.Key.Manifest.Title))</a> (@group.Count())</summary>
                 <ul>
                     @foreach (var e in group)
                     {
@@ -69,10 +69,4 @@ else
             </details>
         }
     };
-
-    private string ExerciseTitle(Exercise exercise)
-    {
-        var module = State.ModuleOf(exercise);
-        return string.Format(Strings.LevelTitle, module.Order, CourseState.Text(module.Manifest.Title)) + " › " + CourseState.Text(exercise.Manifest.Title);
-    }
 }

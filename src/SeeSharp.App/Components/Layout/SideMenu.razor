@@ -1,0 +1,65 @@
+@* The side menu: on a module or exercise page the exercises of that module, everywhere else every module. *@
+@inject CourseState State
+
+@{
+    var progress = State.Progress();
+}
+@if (CurrentModule() is not { } module)
+{
+    <p class="side-head"><NavLink href="modules" Match="NavLinkMatch.All">@Strings.ModulesTitle</NavLink></p>
+    <ul>
+        @foreach (var m in progress.Modules)
+        {
+            <li class="@(m.Unlocked ? "" : "locked")">
+                <NavLink href="@($"module/{m.Module.Manifest.Id}")" Match="NavLinkMatch.All">@Title(m.Module)</NavLink>
+                @if (m.Passed)
+                {
+                    <span class="ok" title="@Strings.Passed">✓</span>
+                }
+            </li>
+        }
+    </ul>
+}
+else
+{
+    <p class="side-head"><a href="modules">‹ @Strings.ModulesTitle</a></p>
+    <p class="side-head"><NavLink href="@($"module/{module.Manifest.Id}")" Match="NavLinkMatch.All">@Title(module)</NavLink></p>
+    <ul>
+        @foreach (var e in progress.Modules.First(m => m.Module == module).Exercises)
+        {
+            var title = CourseState.Text(e.Exercise.Manifest.Title);
+            <li class="@(e.Unlocked ? "" : "locked")">
+                @if (e.Unlocked)
+                {
+                    <NavLink href="@($"exercise/{e.Exercise.Manifest.Id}")" Match="NavLinkMatch.All">@title</NavLink>
+                }
+                else
+                {
+                    <span title="@Strings.Locked">@title</span>
+                }
+                @if (e.Exercise.Manifest.Optional)
+                {
+                    <span class="hint">(@Strings.OptionalBadge)</span>
+                }
+                @if (e.Passed)
+                {
+                    <span class="ok" title="@Strings.Passed">✓</span>
+                }
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    /// <summary>The page's path relative to the base, e.g. <c>exercise/erste</c>.</summary>
+    [Parameter] public string Path { get; set; } = "";
+
+    private Module? CurrentModule() => Path.Split('?', '#')[0].Split('/') switch
+    {
+        ["module", var id, ..] => State.FindModule(id),
+        ["exercise", var id, ..] => State.FindExercise(id) is { } exercise ? State.ModuleOf(exercise) : null,
+        _ => null,
+    };
+
+    private static string Title(Module module) => string.Format(Strings.LevelTitle, module.Order, CourseState.Text(module.Manifest.Title));
+}

@@ -2,7 +2,12 @@
 @inject CourseState State
 @inject NavigationManager Nav
 
+@{
+    var path = Nav.ToBaseRelativePath(Nav.Uri);
+    var run = State.Course is null ? null : State.Store.ActiveRun();
+}
 <nav>
+    <button class="menu-toggle" @onclick="() => _menuOpen = !_menuOpen" aria-expanded="@(_menuOpen ? "true" : "false")">☰ @Strings.Menu</button>
     <span class="brand">@Strings.Title</span>
     <NavLink href="" Match="NavLinkMatch.All">@Strings.NavHome</NavLink>
     <NavLink href="modules">@Strings.NavModules</NavLink>
@@ -34,29 +39,40 @@
         }
     </span>
 </nav>
-<main>
-    @if (_newer is not null)
+<div class="shell">
+    @* No menu while an exam runs: every page it links to is closed then. *@
+    @if (State.Course is not null && run is null)
     {
-        <p class="card update">@string.Format(Strings.UpdateAvailable, _newer, UpdateCheck.Current) <code>dotnet tool update -g SeeSharp.Cli</code></p>
+        <aside class="side @(_menuOpen ? "open" : "")"><SideMenu Path="@path" /></aside>
     }
-    @* Without a course only the settings page makes sense; the other pages assume State.Course is set. *@
-    @if (State.Course is null && !Nav.ToBaseRelativePath(Nav.Uri).StartsWith("settings", StringComparison.Ordinal))
-    {
-        <p class="bad">@Strings.NoCourse <a href="settings">@Strings.GoToSettings</a></p>
-    }
-    else if (State.Course is not null && !Nav.ToBaseRelativePath(Nav.Uri).StartsWith("exam", StringComparison.Ordinal) && State.Store.ActiveRun() is { } run)
-    {
-        @* Exam mode: while a run is open the exercise pages would show test output for the same starters, so everything else is closed. *@
-        <p class="bad">@Strings.ExamActiveGate <a href="exam/@run.Id">@Strings.ExamResume</a></p>
-    }
-    else
-    {
-        @Body
-    }
-</main>
+    <main>
+        @if (_newer is not null)
+        {
+            <p class="card update">@string.Format(Strings.UpdateAvailable, _newer, UpdateCheck.Current) <code>dotnet tool update -g SeeSharp.Cli</code></p>
+        }
+        @* Without a course only the settings page makes sense; the other pages assume State.Course is set. *@
+        @if (State.Course is null && !path.StartsWith("settings", StringComparison.Ordinal))
+        {
+            <p class="bad">@Strings.NoCourse <a href="settings">@Strings.GoToSettings</a></p>
+        }
+        else if (run is not null && !path.StartsWith("exam", StringComparison.Ordinal))
+        {
+            @* Exam mode: while a run is open the exercise pages would show test output for the same starters, so everything else is closed. *@
+            <p class="bad">@Strings.ExamActiveGate <a href="exam/@run.Id">@Strings.ExamResume</a></p>
+        }
+        else
+        {
+            @Body
+        }
+    </main>
+</div>
 
 @code {
     private string? _newer;
+    private bool _menuOpen; // only matters on narrow screens, where the menu is hidden until toggled
+
+    // Every navigation hands the layout a new Body: close the menu so the page it opened is visible.
+    protected override void OnParametersSet() => _menuOpen = false;
 
     /// <summary>After the first interactive render: nuget.org must never hold up a page.</summary>
     protected override async Task OnAfterRenderAsync(bool firstRender)

@@ -67,6 +67,7 @@ internal static class Strings
     public static string NavHome => Resources.GetString(nameof(NavHome))!;
     public static string NavModules => Resources.GetString(nameof(NavModules))!;
     public static string NavSettings => Resources.GetString(nameof(NavSettings))!;
+    public static string Menu => Resources.GetString(nameof(Menu))!;
     public static string NoCourse => Resources.GetString(nameof(NoCourse))!;
     public static string GoToSettings => Resources.GetString(nameof(GoToSettings))!;
     public static string NotFound => Resources.GetString(nameof(NotFound))!;

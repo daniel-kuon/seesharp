@@ -6,11 +6,11 @@
 }
 @if (State.BookHref(Reading) is { } href)
 {
-    <a href="@href" target="_blank">@text</a>
+    <a class="book" href="@href" target="_blank">📖 @text</a>
 }
 else
 {
-    <span>@text</span>
+    <span class="book">📖 @text</span>
 }
 
 @code {

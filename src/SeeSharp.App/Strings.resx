@@ -13,6 +13,7 @@
   <data name="NavHome" xml:space="preserve"><value>Übersicht</value></data>
   <data name="NavModules" xml:space="preserve"><value>Module</value></data>
   <data name="NavSettings" xml:space="preserve"><value>Einstellungen</value></data>
+  <data name="Menu" xml:space="preserve"><value>Menü</value></data>
   <data name="NoCourse" xml:space="preserve"><value>Kein Kurs geladen.</value></data>
   <data name="GoToSettings" xml:space="preserve"><value>Zu den Einstellungen</value></data>
   <data name="NotFound" xml:space="preserve"><value>Nicht gefunden.</value></data>

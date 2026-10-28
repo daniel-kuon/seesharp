@@ -77,6 +77,39 @@ public sealed class ExamPageTests : IDisposable
         }
     }
 
+    [Fact]
+    public async Task Side_menu_lists_modules_or_the_exercises_of_the_current_module_and_home_groups_by_module()
+    {
+        Locale.Apply("de");
+        using var store = new ProgressStore(Path.Combine(_dir, "progress.db"));
+        var app = await AppHost.BuildAsync(WriteCourse(), port: 0, admin: false, store);
+        await app.StartAsync();
+        try
+        {
+            using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
+            var home = await http.GetStringAsync("/");
+            var side = Side(home);
+            Assert.Contains("href=\"module/basics\"", side);
+            Assert.DoesNotContain("exercise/", side);
+            Assert.Contains("<summary><a href=\"module/basics\">", home); // next up sits under its module
+            Assert.Contains("href=\"exercise/first\"", home);
+
+            side = Side(await http.GetStringAsync("/exercise/first"));
+            Assert.Contains("href=\"exercise/first\"", side);
+            Assert.Contains("Zweite", side);
+            Assert.DoesNotContain("href=\"exercise/second\"", side); // locked until a.one is held
+            Assert.Contains("href=\"module/basics\"", side);
+            Assert.Contains("href=\"exercise/first\"", Side(await http.GetStringAsync("/module/basics")));
+        }
+        finally
+        {
+            await app.StopAsync();
+            await app.DisposeAsync();
+        }
+
+        static string Side(string page) => page[page.IndexOf("<aside", StringComparison.Ordinal)..page.IndexOf("</aside>", StringComparison.Ordinal)];
+    }
+
     /// <summary>One level: a choice exercise and a coding exercise (no starter — the page only shows the path), two exams over it.</summary>
     private string WriteCourse()
     {
