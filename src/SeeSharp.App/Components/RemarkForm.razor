@@ -1,0 +1,27 @@
+@* A new supervisor remark; private unless the box is ticked, so nothing reaches the trainee by accident. *@
+@inject CourseState State
+
+<div class="remark-form">
+    <textarea rows="3" @bind="_text"></textarea>
+    <label><input type="checkbox" @bind="_shared" /> @Strings.RemarkShareLabel</label>
+    <button @onclick="Save">@Strings.RemarkSave</button>
+</div>
+
+@code {
+    /// <summary>Everything but text, visibility and time.</summary>
+    [Parameter, EditorRequired] public Remark Template { get; set; } = null!;
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private string _text = "";
+    private bool _shared;
+
+    private Task Save()
+    {
+        if (string.IsNullOrWhiteSpace(_text))
+            return Task.CompletedTask;
+        State.Store.AddRemark(Template with { Text = _text.Trim(), Shared = _shared, Timestamp = DateTimeOffset.UtcNow });
+        _text = "";
+        _shared = false;
+        return OnSaved.InvokeAsync();
+    }
+}

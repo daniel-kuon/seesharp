@@ -8,6 +8,7 @@ namespace SeeSharp.Progress;
 /// <summary>
 /// The bundle the trainee hands the supervisor. Layout:
 /// <code>
+/// trainee.txt                                    <see cref="Trainee"/>; remarks on the report are filed under it
 /// attempts.csv                                   id, exercise, item, timestamp, timeSpentSeconds, passed, answer, tutorVerdict
 /// skills.csv                                     skill, state, lastExercised, exercise
 /// &lt;exercise&gt;/&lt;item&gt;/&lt;id&gt;_&lt;timestamp&gt;/answer.txt   open/review/multipleChoice answers
@@ -22,6 +23,9 @@ namespace SeeSharp.Progress;
 /// </summary>
 public static class ReviewExport
 {
+    /// <summary>Who wrote the report: user and machine name. No accounts exist, and this is enough to tell 1–5 trainees apart.</summary>
+    public static string Trainee => $"{Environment.UserName}@{Environment.MachineName}";
+
     public static void Write(ProgressStore store, string zipPath)
     {
         var attempts = store.Attempts();
@@ -31,6 +35,7 @@ public static class ReviewExport
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(zipPath))!);
         using var zip = ZipFile.Open(zipPath, ZipArchiveMode.Create);
 
+        AddText(zip, "trainee.txt", Trainee);
         AddText(zip, "attempts.csv", AttemptsCsv(attempts, exchanges.Where(t => t.Verdict is not null).ToList()));
         AddText(zip, "skills.csv", Csv(
             ["skill", "state", "lastExercised", "exercise"],

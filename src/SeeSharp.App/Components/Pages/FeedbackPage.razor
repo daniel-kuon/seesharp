@@ -1,0 +1,77 @@
+@page "/feedback"
+@inject CourseState State
+
+<PageTitle>@Strings.FeedbackTitle</PageTitle>
+<h1>@Strings.FeedbackTitle</h1>
+
+<h2>@Strings.ReportTitle</h2>
+<p class="hint">@Strings.ReportHint</p>
+<p><button @onclick="WriteReport">@Strings.ReportWrite</button></p>
+@if (_report is { } report)
+{
+    <p class="ok">@string.Format(Strings.ReportWritten, report)
+        <button @onclick="() => CourseState.ShowInFolder(report)">@Strings.ShowInFolder</button></p>
+}
+
+<h2>@Strings.ReplyImportTitle</h2>
+<p class="hint">@Strings.ReplyImportHint</p>
+<p><InputFile OnChange="Import" accept=".json" /></p>
+@if (_error is not null)
+{
+    <p class="bad">@string.Format(Strings.ReplyError, _error)</p>
+}
+else if (_imported is { } imported)
+{
+    <p class="ok">@string.Format(Strings.ReplyImported, imported)</p>
+}
+
+@{
+    var remarks = State.Store.ReceivedRemarks();
+}
+@if (remarks.Count == 0)
+{
+    <p class="hint">@Strings.NoRemarks</p>
+}
+else
+{
+    <h2>@Strings.RemarksByExercise</h2>
+    <ul>
+        @foreach (var group in remarks.GroupBy(r => r.ExerciseId))
+        {
+            <li><a href="exercise/@group.Key">@(State.FindExercise(group.Key) is { } e ? CourseState.Text(e.Manifest.Title) : group.Key)</a>
+                <span class="badge">@group.Count()</span></li>
+        }
+    </ul>
+}
+
+@code {
+    private const long MaxReplyBytes = 16L * 1024 * 1024;
+
+    private string? _report, _error;
+    private int? _imported;
+
+    private void WriteReport()
+    {
+        _report = Path.Combine(State.OutboxFolder, $"seesharp-report-{DateTime.Now:yyyyMMdd-HHmm}.zip");
+        File.Delete(_report); // same minute twice: ZipFile.Open(Create) refuses an existing file
+        ReviewExport.Write(State.Store, _report);
+    }
+
+    private async Task Import(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            using var memory = new MemoryStream();
+            await e.File.OpenReadStream(MaxReplyBytes).CopyToAsync(memory);
+            memory.Position = 0;
+            var remarks = RemarksReply.Read(memory);
+            State.Store.ReplaceReceivedRemarks(remarks);
+            _imported = remarks.Count;
+            _error = null;
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or System.Text.Json.JsonException)
+        {
+            _error = ex.Message;
+        }
+    }
+}

@@ -4,8 +4,9 @@ using System.Text;
 
 namespace SeeSharp.Progress;
 
-/// <summary>The two CSV files of a bundle written by <see cref="ReviewExport"/>, read back for the admin review view.</summary>
-public sealed record ReviewBundle(IReadOnlyList<ReviewAttempt> Attempts, IReadOnlyList<ReviewSkill> Skills)
+/// <summary>A bundle written by <see cref="ReviewExport"/>, read back for the admin review view: the CSV files, who wrote it and the submitted sources.</summary>
+/// <param name="Trainee">Empty for bundles written before trainee.txt existed (2026-10-29).</param>
+public sealed record ReviewBundle(IReadOnlyList<ReviewAttempt> Attempts, IReadOnlyList<ReviewSkill> Skills, string Trainee = "")
 {
     /// <param name="zip">A seekable stream of the bundle.</param>
     public static ReviewBundle Read(Stream zip)
@@ -15,7 +16,24 @@ public sealed record ReviewBundle(IReadOnlyList<ReviewAttempt> Attempts, IReadOn
             int.Parse(r[0], CultureInfo.InvariantCulture), r[1], r[2], r[3], int.Parse(r[4], CultureInfo.InvariantCulture), r[5] == "true", r[6],
             r.Length > 7 && r[7] != "" ? r[7] : null)).ToList(); // bundles before 2026-10-25 have no tutorVerdict column
         var skills = Rows(archive, "skills.csv").Select(r => new ReviewSkill(r[0], r[1], r[2], r[3])).ToList();
-        return new ReviewBundle(attempts, skills);
+        var trainee = archive.GetEntry("trainee.txt") is { } t ? new StreamReader(t.Open(), Encoding.UTF8).ReadToEnd().Trim() : "";
+        // ponytail: every submitted source is held in memory; a trainee's text sources are small
+        var files = Sources(archive).ToLookup(f => f.AttemptId, f => f.File);
+        return new ReviewBundle(attempts.Select(a => a with { Files = files[a.Id].OrderBy(f => f.Path, StringComparer.Ordinal).ToList() }).ToList(), skills, trainee);
+    }
+
+    /// <summary>Text files under <c>&lt;exercise&gt;/&lt;item&gt;/&lt;id&gt;_&lt;timestamp&gt;/source/</c>; exam attempts are left out.</summary>
+    private static IEnumerable<(int AttemptId, SourceFile File)> Sources(ZipArchive archive)
+    {
+        foreach (var entry in archive.Entries)
+        {
+            var segments = entry.FullName.Split('/');
+            if (segments.Length < 5 || segments[0] is "exams" or "tutor" || segments[3] != "source"
+                || !int.TryParse(segments[2].Split('_')[0], CultureInfo.InvariantCulture, out var id))
+                continue;
+            if (SourceFile.Read(entry, string.Join('/', segments[4..])) is { } file)
+                yield return (id, file);
+        }
     }
 
     private static IEnumerable<string[]> Rows(ZipArchive archive, string name)
@@ -57,6 +75,38 @@ public sealed record ReviewBundle(IReadOnlyList<ReviewAttempt> Attempts, IReadOn
 }
 
 /// <param name="TutorVerdict"><c>pass</c> or <c>revise</c> when the tutor judged this open answer; null otherwise.</param>
-public sealed record ReviewAttempt(int Id, string Exercise, string Item, string Timestamp, int TimeSpentSeconds, bool Passed, string Answer, string? TutorVerdict = null);
+public sealed record ReviewAttempt(int Id, string Exercise, string Item, string Timestamp, int TimeSpentSeconds, bool Passed, string Answer, string? TutorVerdict = null)
+{
+    /// <summary>The submitted source of a coding attempt, sorted by path; empty for other items.</summary>
+    public IReadOnlyList<SourceFile> Files { get; init; } = [];
+}
+
+/// <summary>One text file of a submitted source tree, <paramref name="Path"/> relative with '/'.</summary>
+public sealed record SourceFile(string Path, string Text)
+{
+    /// <summary>The text of <paramref name="entry"/>, or null for a folder or a binary file (one with a NUL byte).</summary>
+    public static SourceFile? Read(ZipArchiveEntry entry, string path)
+    {
+        if (entry.Name == "")
+            return null;
+        using var buffer = new MemoryStream();
+        using (var stream = entry.Open())
+            stream.CopyTo(buffer);
+        if (buffer.GetBuffer().AsSpan(0, (int)buffer.Length).Contains((byte)0))
+            return null;
+        buffer.Position = 0;
+        return new SourceFile(path, new StreamReader(buffer, Encoding.UTF8).ReadToEnd());
+    }
+
+    /// <summary>The text files of an <see cref="SeeSharp.Core.Attempt.Source"/> snapshot.</summary>
+    public static IReadOnlyList<SourceFile> FromZip(byte[] zip)
+    {
+        using var archive = new ZipArchive(new MemoryStream(zip), ZipArchiveMode.Read);
+        return archive.Entries.Select(e => Read(e, e.FullName)).OfType<SourceFile>().OrderBy(f => f.Path, StringComparer.Ordinal).ToList();
+    }
+
+    /// <summary>Lines as the code view numbers them (1-based by index + 1); a trailing newline adds no empty last line.</summary>
+    public IReadOnlyList<string> Lines => Text.TrimEnd('\n', '\r').Split('\n').Select(l => l.TrimEnd('\r')).ToList();
+}
 
 public sealed record ReviewSkill(string Skill, string State, string LastExercised, string Exercise);

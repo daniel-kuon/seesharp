@@ -53,6 +53,7 @@ else
         }
         <article class="md">@CourseState.RenderMarkdown(instructions.Path)</article>
         <TutorPanel Exercise="exercise" />
+        <ReceivedRemarks Exercise="exercise" Attempts="_attempts" />
 
         @if (exercise.Manifest.Requires.Count > 0)
         {

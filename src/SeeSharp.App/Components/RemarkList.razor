@@ -1,0 +1,35 @@
+@* Supervisor remarks. Editable (admin review): private/shared badge, share toggle and delete. *@
+@inject CourseState State
+
+@foreach (var remark in Remarks)
+{
+    <div class="remark @(remark.Shared ? "shared" : "private")">
+        @if (Editable)
+        {
+            <p class="hint">
+                <span class="badge @(remark.Shared ? "ok" : "")">@(remark.Shared ? Strings.RemarkShared : Strings.RemarkPrivate)</span>
+                <button @onclick="() => Share(remark, !remark.Shared)">@(remark.Shared ? Strings.RemarkMakePrivate : Strings.RemarkMakeShared)</button>
+                <button @onclick="() => Delete(remark)">@Strings.RemarkDelete</button>
+            </p>
+        }
+        <p class="text">@remark.Text</p>
+    </div>
+}
+
+@code {
+    [Parameter] public IEnumerable<Remark> Remarks { get; set; } = [];
+    [Parameter] public bool Editable { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private Task Share(Remark remark, bool shared)
+    {
+        State.Store.SetRemarkShared(remark.Id, shared);
+        return OnChanged.InvokeAsync();
+    }
+
+    private Task Delete(Remark remark)
+    {
+        State.Store.DeleteRemark(remark.Id);
+        return OnChanged.InvokeAsync();
+    }
+}

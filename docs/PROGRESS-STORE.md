@@ -32,10 +32,14 @@ exam_run         id, exam_id, real, started, deadline, seed, items ("exercise/it
 tutor_exchange   id, exercise_id, timestamp, level (0 judgement, 1–3 hints), question, answer, provider, model,
                  input_tokens, output_tokens, cost_usd (null = price unknown)            (migration 3)
                  item_id, verdict ("pass"/"revise" for a judgement, else null)           (migration 4)
+remark           id, trainee, exercise_id, item_id, attempt_id, file, line, text, shared, received,
+                 timestamp                                                               (migration 5)
 ```
 
 Attempts are never updated or deleted. There is no `exercise passed` column,
-no `item passed` column, no `skill` table: all of that is derived.
+no `item passed` column, no `skill` table: all of that is derived. Remarks are
+not progress and not append-only: they are the supervisor's notes, shared or
+deleted at will (docs/UI.md "Reviewer mode").
 
 ## What an attempt stores
 
@@ -177,6 +181,7 @@ reload shows the same exam even after the course changed.
 Default name `seesharp-review-<yyyyMMdd-HHmm>.zip` in the current directory.
 
 ```
+trainee.txt                                     user@machine of the trainee (ReviewExport.Trainee)
 attempts.csv                                    id, exercise, item, timestamp, timeSpentSeconds, passed, answer, tutorVerdict
 skills.csv                                      skill, state, lastExercised, exercise
 <exercise>/<item>/<id>_<yyyyMMdd-HHmmss>/answer.txt

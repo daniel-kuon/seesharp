@@ -34,6 +34,25 @@ public sealed class CourseState(ProgressStore store, string? courseArgument, boo
     /// <summary>Required as <c>X-SeeSharp-Token</c> on every <c>/api</c> request; published in <see cref="PluginApi.ServerFile"/>. New per start.</summary>
     public string ApiToken { get; } = System.Security.Cryptography.RandomNumberGenerator.GetHexString(64, lowercase: true);
 
+    /// <summary>The report open on <c>/admin/review</c>; kept here so it survives navigating to another page and back.</summary>
+    public ReviewBundle? ReviewBundle { get; set; }
+    /// <summary>Where reports and reply files are written for the user to send on; tests point it at a temp folder.</summary>
+    public string OutboxFolder { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+
+    /// <summary>Opens Explorer on <paramref name="file"/> so it can be dragged into a mail or chat. Failure is not fatal — the path is shown.</summary>
+    public static void ShowInFolder(string file)
+    {
+        try
+        {
+            if (OperatingSystem.IsWindows())
+                System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{file}\"")?.Dispose();
+        }
+        catch (Exception)
+        {
+            // The page shows the path.
+        }
+    }
+
     private Dictionary<string, Skill> _skills = new();
     private Dictionary<string, Module> _taughtIn = new();
 

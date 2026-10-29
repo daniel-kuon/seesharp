@@ -1,0 +1,55 @@
+@* Source with line numbers and the remarks of each line under it. With a Template (supervisor) a click on a line number opens a remark form for that line. *@
+
+@{
+    var lines = File.Lines;
+}
+<table class="code">
+    @for (var i = 0; i < lines.Count; i++)
+    {
+        var line = i + 1;
+        var remarks = Remarks.Where(r => r.Line == line).ToList();
+        <tr class="@(remarks.Count > 0 ? "marked" : "")">
+            <td class="ln">
+                @if (Template is not null)
+                {
+                    <button title="@Strings.RemarkAddLine" @onclick="() => _open = _open == line ? null : line">@line</button>
+                }
+                else
+                {
+                    @line
+                }
+            </td>
+            <td><pre>@lines[i]</pre></td>
+        </tr>
+        @if (remarks.Count > 0 || _open == line)
+        {
+            <tr class="remarks">
+                <td></td>
+                <td>
+                    <RemarkList Remarks="remarks" Editable="Template is not null" OnChanged="OnChanged" />
+                    @if (_open == line)
+                    {
+                        <RemarkForm Template="Template! with { Line = line }" OnSaved="Saved" />
+                    }
+                </td>
+            </tr>
+        }
+    }
+</table>
+
+@code {
+    [Parameter, EditorRequired] public SourceFile File { get; set; } = null!;
+    /// <summary>Line remarks on this file.</summary>
+    [Parameter] public IReadOnlyList<Remark> Remarks { get; set; } = [];
+    /// <summary>Trainee, exercise, item, attempt and file of new remarks; null makes the view read-only.</summary>
+    [Parameter] public Remark? Template { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private int? _open;
+
+    private async Task Saved()
+    {
+        _open = null;
+        await OnChanged.InvokeAsync();
+    }
+}

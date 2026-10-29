@@ -257,7 +257,6 @@ internal static class Strings
     public static string BundleLoaded => Resources.GetString(nameof(BundleLoaded))!;
     public static string BundleError => Resources.GetString(nameof(BundleError))!;
     public static string UnknownExercises => Resources.GetString(nameof(UnknownExercises))!;
-    public static string OpenAnswers => Resources.GetString(nameof(OpenAnswers))!;
     public static string NoAnswers => Resources.GetString(nameof(NoAnswers))!;
     public static string RubricMissingNote => Resources.GetString(nameof(RubricMissingNote))!;
     public static string SkillMatrix => Resources.GetString(nameof(SkillMatrix))!;
@@ -383,4 +382,37 @@ internal static class Strings
     public static string ApiExerciseLocked => Resources.GetString(nameof(ApiExerciseLocked))!;
     public static string ApiNoCodingItem => Resources.GetString(nameof(ApiNoCodingItem))!;
     public static string ApiNotFound => Resources.GetString(nameof(ApiNotFound))!;
+
+    // Reviewer mode: report, remarks, reply file
+    public static string NavFeedback => Resources.GetString(nameof(NavFeedback))!;
+    public static string FeedbackTitle => Resources.GetString(nameof(FeedbackTitle))!;
+    public static string ReportTitle => Resources.GetString(nameof(ReportTitle))!;
+    public static string ReportHint => Resources.GetString(nameof(ReportHint))!;
+    public static string ReportWrite => Resources.GetString(nameof(ReportWrite))!;
+    public static string ReportWritten => Resources.GetString(nameof(ReportWritten))!;
+    public static string ShowInFolder => Resources.GetString(nameof(ShowInFolder))!;
+    public static string ReplyImportTitle => Resources.GetString(nameof(ReplyImportTitle))!;
+    public static string ReplyImportHint => Resources.GetString(nameof(ReplyImportHint))!;
+    public static string ReplyImported => Resources.GetString(nameof(ReplyImported))!;
+    public static string ReplyError => Resources.GetString(nameof(ReplyError))!;
+    public static string NoRemarks => Resources.GetString(nameof(NoRemarks))!;
+    public static string RemarksByExercise => Resources.GetString(nameof(RemarksByExercise))!;
+    public static string RemarksTitle => Resources.GetString(nameof(RemarksTitle))!;
+    public static string RemarkOnAttempt => Resources.GetString(nameof(RemarkOnAttempt))!;
+    public static string RemarkLine => Resources.GetString(nameof(RemarkLine))!;
+    public static string RemarkShared => Resources.GetString(nameof(RemarkShared))!;
+    public static string RemarkPrivate => Resources.GetString(nameof(RemarkPrivate))!;
+    public static string RemarkMakeShared => Resources.GetString(nameof(RemarkMakeShared))!;
+    public static string RemarkMakePrivate => Resources.GetString(nameof(RemarkMakePrivate))!;
+    public static string RemarkDelete => Resources.GetString(nameof(RemarkDelete))!;
+    public static string RemarkShareLabel => Resources.GetString(nameof(RemarkShareLabel))!;
+    public static string RemarkSave => Resources.GetString(nameof(RemarkSave))!;
+    public static string RemarkAddLine => Resources.GetString(nameof(RemarkAddLine))!;
+    public static string ReportFrom => Resources.GetString(nameof(ReportFrom))!;
+    public static string RemarkCounts => Resources.GetString(nameof(RemarkCounts))!;
+    public static string ReplyWrite => Resources.GetString(nameof(ReplyWrite))!;
+    public static string ReplyWritten => Resources.GetString(nameof(ReplyWritten))!;
+    public static string ExerciseRemarks => Resources.GetString(nameof(ExerciseRemarks))!;
+    public static string AttemptLabel => Resources.GetString(nameof(AttemptLabel))!;
+    public static string CodeViewHint => Resources.GetString(nameof(CodeViewHint))!;
 }

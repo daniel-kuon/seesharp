@@ -375,13 +375,14 @@ Screens (German default, every string in both resx files):
   The commit signature comes from the repo's `user.name`/`user.email`; a
   missing one surfaces as the LibGit2Sharp error.
 - `/admin/review`: `<InputFile>` for a bundle from `seesharp export-review`
-  (`ReviewBundle.Read` in `SeeSharp.Progress` parses `attempts.csv` and
-  `skills.csv`, round-trip tested with quotes, commas and newlines). For every
-  exercise in published order with answers to `open` or `review` items the
-  answers (timestamp + text, plus a "KI-Tutor: angenommen/überarbeiten" badge
-  from the bundle's `tutorVerdict`) are shown in a two-column grid next to the
-  rendered `rubric.md`; the skill matrix follows as a table. Attempts for
-  exercises missing from the course are only counted.
+  or the trainee's "Bericht erstellen" (`ReviewBundle.Read` in
+  `SeeSharp.Progress` parses `attempts.csv` and `skills.csv`, round-trip tested
+  with quotes, commas and newlines, plus `trainee.txt` and the source trees).
+  Exercises with attempts are listed on the left; the selected one shows its
+  rubric, every item's attempts (latest first selected) with answer, tutor
+  badge and code view, and remarks — see "Reviewer mode" below. The skill
+  matrix follows as a table. Attempts for exercises missing from the course are
+  only counted.
 
 Verified 2026-10-16 against a scratch copy of the course (git init, local bare
 remote): reorder, create exercise through the form (unknown skill refused),
@@ -646,3 +647,75 @@ course. It only lifts the lock in `CourseState.Progress()` — every page and th
 plugin API read progress through it; attempts are still recorded and credited
 as usual. The nav shows a "Review-Modus" badge. Exams keep their own rule
 (all covered exercises passed).
+
+## Reviewer mode
+
+The user's request (2026-10-29): the trainee sends the supervisor a report, the
+supervisor reviews it on their own machine, keeps private remarks and sends the
+ones they choose back; an in-page code viewer takes remarks on single lines.
+Transport is two files the users send themselves (mail, chat) — no server, no
+accounts.
+
+**Trainee → supervisor: the report.** `/feedback` ("Feedback" in the nav) has
+"Bericht erstellen": `ReviewExport.Write` (the same bundle as
+`seesharp export-review`) to `Downloads\seesharp-report-<yyyyMMdd-HHmm>.zip`,
+with "Im Ordner zeigen" (Explorer `/select`) so the file can be dragged into a
+mail. The bundle now carries `trainee.txt` = `ReviewExport.Trainee`
+(`user@machine`); remarks are filed under it, which tells 1–5 trainees apart
+without accounts. Bundles from before have no such file and file remarks under
+the empty name.
+
+**Supervisor: review.** `seesharp --admin`, `/admin/review`, pick the zip. The
+loaded bundle lives in `CourseState.ReviewBundle`, so it survives navigating
+away. Per exercise: remarks on the exercise; per item an attempt picker, the
+answer, remarks on that attempt (= the answer), and for coding attempts the
+submitted files (text only — a file with a NUL byte is skipped) as buttons with
+their remark count and a `CodeView`: line numbers plus the code, every line's
+remarks right under it. Clicking a line number opens the remark form for that
+line (click again to close).
+
+A remark (`Remark` record, `remark` table, migration 5) targets the exercise,
+or one attempt (`attempt_id` is the trainee's own attempt id from the bundle),
+or one `line` of one `file` of that attempt. The form's checkbox "Für Trainee
+sichtbar" is **off by default**: a remark is private until shared, so nothing
+reaches the trainee by accident. Every remark shows a badge (privat / für
+Trainee sichtbar) with "Teilen"/"Privat machen" and "Löschen". Remarks are kept
+in the supervisor's own `progress.db`, keyed by trainee, so the next report of
+the same trainee shows them again (attempt ids are stable: attempts are
+append-only).
+
+**Supervisor → trainee: the reply.** "Antwortdatei erstellen (nur geteilte
+Anmerkungen)" writes `RemarksReply.Write` to
+`Downloads\seesharp-remarks-<trainee>-<yyyyMMdd-HHmm>.json`: every shared remark
+on that trainee's reports, never a private one (`format` =
+`seesharp-remarks/1`; `RemarksReply.Read` refuses anything else).
+
+**Trainee: read the remarks.** `/feedback` → pick the `.json`. The reply
+replaces whatever the previous one brought (`ReplaceReceivedRemarks`): each
+reply is cumulative, so a remark the supervisor deleted or made private
+disappears on the next import. The page lists the exercises with remarks; the
+exercise page shows "Anmerkungen der Betreuung" under the tutor panel —
+exercise remarks, then per attempt its remarks and, for line remarks, the
+attempt's source from the trainee's own database in a read-only `CodeView`
+with each remark under its line. When the attempt is not in this database
+(another machine, a reset) the remarks still show with "Zeile N".
+
+**Decision — files go to Downloads, not a browser download.** The app window
+is a WebView (Photino); writing server-side to a known folder and showing the
+path works the same in the window and the browser. `CourseState.OutboxFolder`
+is the folder; a scratch host can point it elsewhere.
+
+Not built: editing a remark's text (delete and rewrite), remarks on exam
+attempts (the report's exam folders are not opened), a CLI for import.
+
+Tests: `RemarksTests` (Progress: `trainee.txt` and sources read back, binary
+skipped, line split; only shared remarks in the reply, re-import replaces,
+written remarks untouched; foreign JSON refused) and `ReviewerModeTests` (App,
+prerendered: the admin page shows code, line buttons, private and shared
+remarks and the counts; after importing the reply the trainee's exercise page
+shows the shared line remark under its line, read-only, and not the private
+one; `/feedback` links the exercise). Verified 2026-10-29 in a scratch host
+on temp databases against the real course (`werkzeuge-hallo-seesharp`): line
+click opens the form, a shared line remark and a private exercise remark saved,
+share/delete toggled the counts, the reply file written, and the trainee host
+showed the remark under line 1 of `Hallo.csproj`.

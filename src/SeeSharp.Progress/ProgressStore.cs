@@ -32,6 +32,20 @@ public sealed record TutorExchange(
     public long Id { get; init; }
 }
 
+/// <summary>
+/// A supervisor's remark on a trainee's report: on the exercise (<paramref name="ItemId"/> null), an item, one attempt, or one
+/// <paramref name="Line"/> (1-based) of a <paramref name="File"/> in the attempt's source. Only <paramref name="Shared"/> ones go
+/// into the reply file; <see cref="Received"/> marks the ones the trainee imported from it.
+/// </summary>
+/// <param name="Trainee"><see cref="ReviewExport.Trainee"/> of the report it was written on.</param>
+/// <param name="AttemptId">The attempt id in the trainee's own database, as the report carries it.</param>
+public sealed record Remark(
+    string Trainee, string ExerciseId, string? ItemId, long? AttemptId, string? File, int? Line, string Text, bool Shared, DateTimeOffset Timestamp)
+{
+    public long Id { get; init; }
+    public bool Received { get; init; }
+}
+
 public sealed record CourseProgress(IReadOnlyList<ModuleProgress> Modules, IReadOnlyDictionary<string, SkillStatus> HeldSkills)
 {
     public IEnumerable<ExerciseProgress> Exercises => Modules.SelectMany(m => m.Exercises);
@@ -101,6 +115,21 @@ public sealed class ProgressStore : IDisposable
         """
         ALTER TABLE tutor_exchange ADD COLUMN item_id TEXT;
         ALTER TABLE tutor_exchange ADD COLUMN verdict TEXT;
+        """,
+        // 2026-10-29: supervisor remarks on a trainee's report. Written ones carry the trainee; received ones came in a reply file.
+        """
+        CREATE TABLE remark (
+            id          INTEGER PRIMARY KEY,
+            trainee     TEXT    NOT NULL,
+            exercise_id TEXT    NOT NULL,
+            item_id     TEXT,
+            attempt_id  INTEGER,
+            file        TEXT,
+            line        INTEGER,
+            text        TEXT    NOT NULL,
+            shared      INTEGER NOT NULL,
+            received    INTEGER NOT NULL,
+            timestamp   TEXT    NOT NULL);
         """,
     ];
 
@@ -308,6 +337,75 @@ public sealed class ProgressStore : IDisposable
                     reader.IsDBNull(11) ? null : reader.GetString(11), reader.IsDBNull(12) ? null : reader.GetString(12))
                     { Id = reader.GetInt64(0) });
             return exchanges;
+        }
+    }
+
+    // ----- remarks (reviewer mode) -------------------------------------------------------------
+
+    /// <summary>A remark the supervisor writes on a trainee's report.</summary>
+    public Remark AddRemark(Remark remark)
+    {
+        lock (_lock)
+        {
+            var id = (long)Execute("""
+                INSERT INTO remark (trainee, exercise_id, item_id, attempt_id, file, line, text, shared, received, timestamp)
+                VALUES ($trainee, $exercise, $item, $attempt, $file, $line, $text, $shared, $received, $timestamp);
+                SELECT last_insert_rowid();
+                """,
+                ("$trainee", remark.Trainee), ("$exercise", remark.ExerciseId), ("$item", remark.ItemId), ("$attempt", remark.AttemptId),
+                ("$file", remark.File), ("$line", remark.Line), ("$text", remark.Text), ("$shared", remark.Shared ? 1 : 0),
+                ("$received", remark.Received ? 1 : 0), ("$timestamp", Iso(remark.Timestamp))).ExecuteScalar()!;
+            return remark with { Id = id };
+        }
+    }
+
+    public void SetRemarkShared(long id, bool shared)
+    {
+        lock (_lock)
+            Execute("UPDATE remark SET shared = $shared WHERE id = $id", ("$shared", shared ? 1 : 0), ("$id", id)).ExecuteNonQuery();
+    }
+
+    public void DeleteRemark(long id)
+    {
+        lock (_lock)
+            Execute("DELETE FROM remark WHERE id = $id", ("$id", id)).ExecuteNonQuery();
+    }
+
+    /// <summary>The remarks written on <paramref name="trainee"/>'s reports, private and shared, oldest first.</summary>
+    public IReadOnlyList<Remark> Remarks(string trainee) =>
+        ReadRemarks("WHERE received = 0 AND trainee = $trainee", ("$trainee", trainee));
+
+    /// <summary>The supervisor's shared remarks from the last imported reply, optionally for one exercise.</summary>
+    public IReadOnlyList<Remark> ReceivedRemarks(string? exerciseId = null) =>
+        ReadRemarks("WHERE received = 1 AND ($exercise IS NULL OR exercise_id = $exercise)", ("$exercise", exerciseId));
+
+    /// <summary>A reply carries every shared remark so far, so importing one replaces what the previous one brought.</summary>
+    public void ReplaceReceivedRemarks(IEnumerable<Remark> remarks)
+    {
+        lock (_lock)
+        {
+            using var tx = _connection.BeginTransaction();
+            Execute("DELETE FROM remark WHERE received = 1").ExecuteNonQuery();
+            foreach (var remark in remarks)
+                AddRemark(remark with { Received = true, Shared = true });
+            tx.Commit();
+        }
+    }
+
+    private List<Remark> ReadRemarks(string where, params (string Name, object? Value)[] parameters)
+    {
+        lock (_lock)
+        {
+            using var reader = Execute(
+                $"SELECT id, trainee, exercise_id, item_id, attempt_id, file, line, text, shared, received, timestamp FROM remark {where} ORDER BY id",
+                parameters).ExecuteReader();
+            var remarks = new List<Remark>();
+            while (reader.Read())
+                remarks.Add(new Remark(reader.GetString(1), reader.GetString(2), reader.IsDBNull(3) ? null : reader.GetString(3),
+                    reader.IsDBNull(4) ? null : reader.GetInt64(4), reader.IsDBNull(5) ? null : reader.GetString(5),
+                    reader.IsDBNull(6) ? null : reader.GetInt32(6), reader.GetString(7), reader.GetInt64(8) != 0, ParseIso(reader.GetString(10)))
+                    { Id = reader.GetInt64(0), Received = reader.GetInt64(9) != 0 });
+            return remarks;
         }
     }
 

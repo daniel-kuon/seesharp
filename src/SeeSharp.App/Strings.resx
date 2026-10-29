@@ -198,7 +198,6 @@
   <data name="BundleLoaded" xml:space="preserve"><value>{0} Versuche und {1} Skills geladen.</value></data>
   <data name="BundleError" xml:space="preserve"><value>Bundle konnte nicht gelesen werden: {0}</value></data>
   <data name="UnknownExercises" xml:space="preserve"><value>{0} Versuche gehören zu Übungen, die es in diesem Kurs nicht gibt.</value></data>
-  <data name="OpenAnswers" xml:space="preserve"><value>Freitext-Antworten neben der Rubrik</value></data>
   <data name="NoAnswers" xml:space="preserve"><value>Keine Freitext-Antworten im Bundle.</value></data>
   <data name="RubricMissingNote" xml:space="preserve"><value>Keine rubric.md vorhanden.</value></data>
   <data name="SkillMatrix" xml:space="preserve"><value>Skill-Matrix</value></data>
@@ -311,4 +310,36 @@
   <data name="ApiExerciseLocked" xml:space="preserve"><value>Diese Übung ist noch gesperrt.</value></data>
   <data name="ApiNoCodingItem" xml:space="preserve"><value>Diese Übung hat keine Programmieraufgabe.</value></data>
   <data name="ApiNotFound" xml:space="preserve"><value>Übung nicht gefunden.</value></data>
+  <!-- Reviewer mode: report, remarks, reply file -->
+  <data name="NavFeedback" xml:space="preserve"><value>Feedback</value></data>
+  <data name="FeedbackTitle" xml:space="preserve"><value>Bericht und Feedback</value></data>
+  <data name="ReportTitle" xml:space="preserve"><value>Bericht an die Betreuung</value></data>
+  <data name="ReportHint" xml:space="preserve"><value>Der Bericht enthält deine Antworten, alle Versuche und den abgegebenen Code. Schicke die Datei deiner Betreuung, z. B. per Mail oder Chat.</value></data>
+  <data name="ReportWrite" xml:space="preserve"><value>Bericht erstellen</value></data>
+  <data name="ReportWritten" xml:space="preserve"><value>Bericht gespeichert: {0}</value></data>
+  <data name="ShowInFolder" xml:space="preserve"><value>Im Ordner zeigen</value></data>
+  <data name="ReplyImportTitle" xml:space="preserve"><value>Anmerkungen der Betreuung importieren</value></data>
+  <data name="ReplyImportHint" xml:space="preserve"><value>Wähle die Antwortdatei (.json), die du von deiner Betreuung bekommen hast. Sie ersetzt die zuletzt importierten Anmerkungen.</value></data>
+  <data name="ReplyImported" xml:space="preserve"><value>{0} Anmerkungen importiert.</value></data>
+  <data name="ReplyError" xml:space="preserve"><value>Die Datei ist keine SeeSharp-Antwortdatei: {0}</value></data>
+  <data name="NoRemarks" xml:space="preserve"><value>Noch keine Anmerkungen importiert.</value></data>
+  <data name="RemarksByExercise" xml:space="preserve"><value>Übungen mit Anmerkungen</value></data>
+  <data name="RemarksTitle" xml:space="preserve"><value>Anmerkungen der Betreuung</value></data>
+  <data name="RemarkOnAttempt" xml:space="preserve"><value>{0} – Versuch vom {1}</value></data>
+  <data name="RemarkLine" xml:space="preserve"><value>Zeile {0}</value></data>
+  <data name="RemarkShared" xml:space="preserve"><value>für Trainee sichtbar</value></data>
+  <data name="RemarkPrivate" xml:space="preserve"><value>privat</value></data>
+  <data name="RemarkMakeShared" xml:space="preserve"><value>Teilen</value></data>
+  <data name="RemarkMakePrivate" xml:space="preserve"><value>Privat machen</value></data>
+  <data name="RemarkDelete" xml:space="preserve"><value>Löschen</value></data>
+  <data name="RemarkShareLabel" xml:space="preserve"><value>Für Trainee sichtbar (kommt in die Antwortdatei)</value></data>
+  <data name="RemarkSave" xml:space="preserve"><value>Anmerkung speichern</value></data>
+  <data name="RemarkAddLine" xml:space="preserve"><value>Anmerkung zu dieser Zeile</value></data>
+  <data name="ReportFrom" xml:space="preserve"><value>Bericht von {0}</value></data>
+  <data name="RemarkCounts" xml:space="preserve"><value>{0} private, {1} geteilte Anmerkungen</value></data>
+  <data name="ReplyWrite" xml:space="preserve"><value>Antwortdatei erstellen (nur geteilte Anmerkungen)</value></data>
+  <data name="ReplyWritten" xml:space="preserve"><value>{0} geteilte Anmerkungen gespeichert: {1} – schicke die Datei dem Trainee.</value></data>
+  <data name="ExerciseRemarks" xml:space="preserve"><value>Anmerkungen zur Übung</value></data>
+  <data name="AttemptLabel" xml:space="preserve"><value>Versuch</value></data>
+  <data name="CodeViewHint" xml:space="preserve"><value>Klicke auf eine Zeilennummer, um eine Anmerkung zu dieser Zeile zu schreiben.</value></data>
 </root>

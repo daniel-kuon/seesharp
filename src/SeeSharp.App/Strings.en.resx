@@ -198,7 +198,6 @@
   <data name="BundleLoaded" xml:space="preserve"><value>{0} attempts and {1} skills loaded.</value></data>
   <data name="BundleError" xml:space="preserve"><value>Could not read the bundle: {0}</value></data>
   <data name="UnknownExercises" xml:space="preserve"><value>{0} attempts belong to exercises that do not exist in this course.</value></data>
-  <data name="OpenAnswers" xml:space="preserve"><value>Free-text answers next to the rubric</value></data>
   <data name="NoAnswers" xml:space="preserve"><value>No free-text answers in the bundle.</value></data>
   <data name="RubricMissingNote" xml:space="preserve"><value>No rubric.md.</value></data>
   <data name="SkillMatrix" xml:space="preserve"><value>Skill matrix</value></data>
@@ -311,4 +310,36 @@
   <data name="ApiExerciseLocked" xml:space="preserve"><value>This exercise is still locked.</value></data>
   <data name="ApiNoCodingItem" xml:space="preserve"><value>This exercise has no coding task.</value></data>
   <data name="ApiNotFound" xml:space="preserve"><value>Exercise not found.</value></data>
+  <!-- Reviewer mode: report, remarks, reply file -->
+  <data name="NavFeedback" xml:space="preserve"><value>Feedback</value></data>
+  <data name="FeedbackTitle" xml:space="preserve"><value>Report and feedback</value></data>
+  <data name="ReportTitle" xml:space="preserve"><value>Report for your supervisor</value></data>
+  <data name="ReportHint" xml:space="preserve"><value>The report holds your answers, every attempt and the code you submitted. Send the file to your supervisor, e.g. by mail or chat.</value></data>
+  <data name="ReportWrite" xml:space="preserve"><value>Create report</value></data>
+  <data name="ReportWritten" xml:space="preserve"><value>Report saved: {0}</value></data>
+  <data name="ShowInFolder" xml:space="preserve"><value>Show in folder</value></data>
+  <data name="ReplyImportTitle" xml:space="preserve"><value>Import your supervisor's remarks</value></data>
+  <data name="ReplyImportHint" xml:space="preserve"><value>Pick the reply file (.json) your supervisor sent you. It replaces the remarks imported last time.</value></data>
+  <data name="ReplyImported" xml:space="preserve"><value>{0} remarks imported.</value></data>
+  <data name="ReplyError" xml:space="preserve"><value>The file is not a SeeSharp reply file: {0}</value></data>
+  <data name="NoRemarks" xml:space="preserve"><value>No remarks imported yet.</value></data>
+  <data name="RemarksByExercise" xml:space="preserve"><value>Exercises with remarks</value></data>
+  <data name="RemarksTitle" xml:space="preserve"><value>Remarks from your supervisor</value></data>
+  <data name="RemarkOnAttempt" xml:space="preserve"><value>{0} – attempt of {1}</value></data>
+  <data name="RemarkLine" xml:space="preserve"><value>Line {0}</value></data>
+  <data name="RemarkShared" xml:space="preserve"><value>visible to the trainee</value></data>
+  <data name="RemarkPrivate" xml:space="preserve"><value>private</value></data>
+  <data name="RemarkMakeShared" xml:space="preserve"><value>Share</value></data>
+  <data name="RemarkMakePrivate" xml:space="preserve"><value>Make private</value></data>
+  <data name="RemarkDelete" xml:space="preserve"><value>Delete</value></data>
+  <data name="RemarkShareLabel" xml:space="preserve"><value>Visible to the trainee (goes into the reply file)</value></data>
+  <data name="RemarkSave" xml:space="preserve"><value>Save remark</value></data>
+  <data name="RemarkAddLine" xml:space="preserve"><value>Remark on this line</value></data>
+  <data name="ReportFrom" xml:space="preserve"><value>Report from {0}</value></data>
+  <data name="RemarkCounts" xml:space="preserve"><value>{0} private, {1} shared remarks</value></data>
+  <data name="ReplyWrite" xml:space="preserve"><value>Create reply file (shared remarks only)</value></data>
+  <data name="ReplyWritten" xml:space="preserve"><value>{0} shared remarks saved: {1} – send the file to the trainee.</value></data>
+  <data name="ExerciseRemarks" xml:space="preserve"><value>Remarks on the exercise</value></data>
+  <data name="AttemptLabel" xml:space="preserve"><value>Attempt</value></data>
+  <data name="CodeViewHint" xml:space="preserve"><value>Click a line number to write a remark on that line.</value></data>
 </root>

@@ -9,7 +9,7 @@
     <p class="bad">@string.Format(Strings.BundleError, _error)</p>
 }
 
-@if (_bundle is { } bundle)
+@if (State.ReviewBundle is { } bundle)
 {
     var known = State.Course!.ExercisesInOrder.Select(e => e.Manifest.Id).ToHashSet(StringComparer.Ordinal);
     <p class="ok">@string.Format(Strings.BundleLoaded, bundle.Attempts.Count, bundle.Skills.Count)</p>
@@ -18,50 +18,107 @@
         <p class="hint">@string.Format(Strings.UnknownExercises, unknown)</p>
     }
 
-    <h2>@Strings.OpenAnswers</h2>
-    var any = false;
-    @foreach (var exercise in State.Course.ExercisesInOrder)
+    <div class="card">
+        <p><strong>@string.Format(Strings.ReportFrom, bundle.Trainee is "" ? "?" : bundle.Trainee)</strong>
+            · @string.Format(Strings.RemarkCounts, _remarks.Count(r => !r.Shared), _remarks.Count(r => r.Shared))</p>
+        <p><button @onclick="WriteReply">@Strings.ReplyWrite</button></p>
+        @if (_reply is { } reply)
+        {
+            <p class="ok">@string.Format(Strings.ReplyWritten, reply.Count, reply.Path)
+                <button @onclick="() => CourseState.ShowInFolder(reply.Path)">@Strings.ShowInFolder</button></p>
+        }
+    </div>
+
+    var exercises = State.Course.ExercisesInOrder.Where(e => bundle.Attempts.Any(a => a.Exercise == e.Manifest.Id)).ToList();
+    @if (exercises.Count == 0)
     {
-        var textItems = exercise.Manifest.Items.Where(i => i is OpenItem or ReviewItem).ToList();
-        var answers = bundle.Attempts.Where(a => a.Exercise == exercise.Manifest.Id && textItems.Any(i => i.Id == a.Item) && !string.IsNullOrWhiteSpace(a.Answer)).ToList();
-        if (answers.Count == 0)
-            continue;
-        any = true;
-        <section class="card">
-            <h3><a href="exercise/@exercise.Manifest.Id">@CourseState.Text(exercise.Manifest.Title)</a> <span class="hint">@exercise.Manifest.Id</span></h3>
-            <div class="split">
-                <div>
-                    @foreach (var item in textItems.Where(i => answers.Any(a => a.Item == i.Id)))
-                    {
-                        <p><strong>@item.Id</strong> – @CourseState.Text(item is OpenItem o ? o.Prompt : ((ReviewItem)item).Prompt)</p>
-                        @foreach (var a in answers.Where(a => a.Item == item.Id))
+        <p class="hint">@Strings.NoAnswers</p>
+    }
+    else
+    {
+        var current = exercises.FirstOrDefault(e => e.Manifest.Id == _exercise) ?? exercises[0];
+        <div class="review">
+            <ul class="review-list">
+                @foreach (var e in exercises)
+                {
+                    var count = _remarks.Count(r => r.ExerciseId == e.Manifest.Id);
+                    <li class="@(e == current ? "current" : "")">
+                        <a href="" @onclick="() => _exercise = e.Manifest.Id" @onclick:preventDefault>@CourseState.Text(e.Manifest.Title)</a>
+                        @if (count > 0)
                         {
-                            <p class="hint">@a.Timestamp
-                                @if (a.TutorVerdict is { } v)
-                                {
-                                    <span class="badge @(v == Tutor.Pass ? "ok" : "")">@(v == Tutor.Pass ? Strings.TutorVerdictPass : Strings.TutorVerdictRevise)</span>
-                                }
-                            </p>
-                            <pre class="answer">@a.Answer</pre>
+                            <span class="badge">@count</span>
                         }
-                    }
-                </div>
-                <article class="md preview">
-                    @if (File.Exists(exercise.RubricPath))
+                    </li>
+                }
+            </ul>
+            <section class="card">
+                @{ var id = current.Manifest.Id; }
+                <h2><a href="exercise/@id">@CourseState.Text(current.Manifest.Title)</a> <span class="hint">@id</span></h2>
+                <details>
+                    <summary>@Strings.RubricLabel</summary>
+                    @if (File.Exists(current.RubricPath))
                     {
-                        @CourseState.RenderMarkdown(exercise.RubricPath)
+                        <article class="md preview">@CourseState.RenderMarkdown(current.RubricPath)</article>
                     }
                     else
                     {
                         <p class="hint">@Strings.RubricMissingNote</p>
                     }
-                </article>
-            </div>
-        </section>
-    }
-    @if (!any)
-    {
-        <p class="hint">@Strings.NoAnswers</p>
+                </details>
+
+                <h3>@Strings.ExerciseRemarks</h3>
+                <RemarkList Remarks="_remarks.Where(r => r.ExerciseId == id && r.AttemptId is null)" Editable="true" OnChanged="Refresh" />
+                <RemarkForm Template="Template(id, null, null, null)" OnSaved="Refresh" />
+
+                @foreach (var item in current.Manifest.Items)
+                {
+                    var attempts = bundle.Attempts.Where(a => a.Exercise == id && a.Item == item.Id).ToList();
+                    if (attempts.Count == 0)
+                        continue;
+                    var attempt = attempts.FirstOrDefault(a => a.Id == _attemptOf.GetValueOrDefault(item.Id)) ?? attempts[^1];
+                    var itemRemarks = _remarks.Where(r => r.ExerciseId == id && r.AttemptId == attempt.Id).ToList();
+                    <div class="item">
+                        <h3>@item.Id <span class="hint">@Prompt(item)</span></h3>
+                        <p>
+                            <label>@Strings.AttemptLabel
+                                <select value="@attempt.Id" @onchange="e => _attemptOf[item.Id] = int.Parse((string)e.Value!)">
+                                    @foreach (var a in attempts)
+                                    {
+                                        <option value="@a.Id">@a.Timestamp @(a.Passed ? "✓" : "✗")</option>
+                                    }
+                                </select>
+                            </label>
+                            @if (attempt.TutorVerdict is { } v)
+                            {
+                                <span class="badge @(v == Tutor.Pass ? "ok" : "")">@(v == Tutor.Pass ? Strings.TutorVerdictPass : Strings.TutorVerdictRevise)</span>
+                            }
+                        </p>
+                        @if (!string.IsNullOrWhiteSpace(attempt.Answer))
+                        {
+                            <pre class="answer">@attempt.Answer</pre>
+                        }
+                        <RemarkList Remarks="itemRemarks.Where(r => r.File is null)" Editable="true" OnChanged="Refresh" />
+                        <RemarkForm Template="Template(id, item.Id, attempt.Id, null)" OnSaved="Refresh" />
+                        @if (attempt.Files.Count > 0)
+                        {
+                            var file = attempt.Files.FirstOrDefault(f => f.Path == _fileOf.GetValueOrDefault(attempt.Id))
+                                       ?? attempt.Files.FirstOrDefault(f => item is CodingItem c && f.Path == c.OpenFile.Replace('\\', '/'))
+                                       ?? attempt.Files[0];
+                            <p class="files">
+                                @foreach (var f in attempt.Files)
+                                {
+                                    var count = itemRemarks.Count(r => r.File == f.Path);
+                                    <button class="@(f == file ? "current" : "")" @onclick="() => _fileOf[attempt.Id] = f.Path">@f.Path@(count > 0 ? $" ({count})" : "")</button>
+                                }
+                            </p>
+                            <p class="hint">@Strings.CodeViewHint</p>
+                            <CodeView File="file" Remarks="itemRemarks.Where(r => r.File == file.Path && r.Line is not null).ToList()"
+                                      Template="Template(id, item.Id, attempt.Id, file.Path)" OnChanged="Refresh" />
+                        }
+                    </div>
+                }
+            </section>
+        </div>
     }
 
     <h2>@Strings.SkillMatrix</h2>
@@ -79,8 +136,27 @@
 @code {
     private const long MaxBundleBytes = 512L * 1024 * 1024; // bundles carry every submitted source tree
 
-    private ReviewBundle? _bundle;
     private string? _error;
+    private string? _exercise;
+    private IReadOnlyList<Remark> _remarks = [];
+    private (int Count, string Path)? _reply;
+    private readonly Dictionary<string, int> _attemptOf = new(); // item id → shown attempt; default is the latest
+    private readonly Dictionary<int, string> _fileOf = new();    // attempt id → shown file
+
+    protected override void OnInitialized() => Refresh();
+
+    private void Refresh() => _remarks = State.ReviewBundle is { } bundle ? State.Store.Remarks(bundle.Trainee) : [];
+
+    private Remark Template(string exercise, string? item, long? attempt, string? file) =>
+        new(State.ReviewBundle!.Trainee, exercise, item, attempt, file, null, "", false, default);
+
+    private static string Prompt(ExerciseItem item) => CourseState.Text(item switch
+    {
+        OpenItem o => o.Prompt,
+        ReviewItem r => r.Prompt,
+        MultipleChoiceItem m => m.Prompt,
+        _ => null,
+    });
 
     private async Task Import(InputFileChangeEventArgs e)
     {
@@ -89,12 +165,25 @@
             using var memory = new MemoryStream();
             await e.File.OpenReadStream(MaxBundleBytes).CopyToAsync(memory);
             memory.Position = 0;
-            _bundle = ReviewBundle.Read(memory);
+            State.ReviewBundle = ReviewBundle.Read(memory);
             _error = null;
+            _exercise = null;
+            _reply = null;
+            _attemptOf.Clear();
+            _fileOf.Clear();
+            Refresh();
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or FormatException)
         {
             _error = ex.Message;
         }
+    }
+
+    private void WriteReply()
+    {
+        var trainee = State.ReviewBundle!.Trainee;
+        var name = string.Concat((trainee is "" ? "trainee" : trainee).Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c));
+        var path = Path.Combine(State.OutboxFolder, $"seesharp-remarks-{name}-{DateTime.Now:yyyyMMdd-HHmm}.json");
+        _reply = (RemarksReply.Write(State.Store, trainee, path), path);
     }
 }

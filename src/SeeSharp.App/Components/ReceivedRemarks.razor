@@ -1,0 +1,43 @@
+@* The supervisor's shared remarks on this exercise, from the last imported reply; line remarks next to the lines of the attempt they were written on. *@
+@inject CourseState State
+
+@{
+    var remarks = State.Store.ReceivedRemarks(Exercise.Manifest.Id);
+}
+@if (remarks.Count > 0)
+{
+    <section class="card remarks">
+        <h2>@Strings.RemarksTitle</h2>
+        <RemarkList Remarks="remarks.Where(r => r.AttemptId is null)" />
+        @foreach (var group in remarks.Where(r => r.AttemptId is not null).GroupBy(r => r.AttemptId!.Value))
+        {
+            var attempt = Attempts.FirstOrDefault(a => a.Id == group.Key);
+            var files = attempt?.Source is { } zip ? SourceFile.FromZip(zip) : [];
+            <h3>@string.Format(Strings.RemarkOnAttempt, group.First().ItemId, attempt?.Timestamp.ToLocalTime().ToString("g") ?? "?")</h3>
+            <RemarkList Remarks="group.Where(r => r.File is null)" />
+            @foreach (var file in group.Where(r => r.File is not null).GroupBy(r => r.File!))
+            {
+                <p><code>@file.Key</code></p>
+                @if (files.FirstOrDefault(f => f.Path == file.Key) is { } source)
+                {
+                    <CodeView File="source" Remarks="file.ToList()" />
+                }
+                else
+                {
+                    @* The attempt is not in this database (another machine, a reset): the remarks still show, with their line. *@
+                    @foreach (var remark in file)
+                    {
+                        <p class="hint">@string.Format(Strings.RemarkLine, remark.Line)</p>
+                        <RemarkList Remarks="[remark]" />
+                    }
+                }
+            }
+        }
+    </section>
+}
+
+@code {
+    [Parameter, EditorRequired] public Exercise Exercise { get; set; } = null!;
+    /// <summary>The trainee's attempts on the exercise, for the source the line remarks point into.</summary>
+    [Parameter] public IReadOnlyList<Attempt> Attempts { get; set; } = [];
+}
