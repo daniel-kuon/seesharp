@@ -7,8 +7,8 @@ namespace SeeSharp.App;
 public static class AppHost
 {
     /// <summary>
-    /// Serves the UI on localhost (<paramref name="port"/> 0 = any free port), opens the browser and blocks until
-    /// Ctrl+C. <paramref name="courseArgument"/> is <c>--course</c>; see <see cref="CoursePaths.Resolve"/> for the fallbacks.
+    /// Serves the UI on localhost (<paramref name="port"/> 0 = any free port), opens the app window (the browser when no
+    /// window can be created) and blocks until the window is closed or Ctrl+C. <paramref name="courseArgument"/> is <c>--course</c>; see <see cref="CoursePaths.Resolve"/> for the fallbacks.
     /// </summary>
     public static async Task<int> RunAsync(string? courseArgument, int port, bool openBrowser, bool admin, TextWriter console, bool review = false)
     {
@@ -22,7 +22,7 @@ public static class AppHost
         try
         {
             console.WriteLine(string.Format(Strings.Listening, url));
-            if (openBrowser)
+            if (openBrowser && !await AppWindow.TryShowAsync(url, app.Lifetime))
                 OpenBrowser(url);
             await app.WaitForShutdownAsync();
         }

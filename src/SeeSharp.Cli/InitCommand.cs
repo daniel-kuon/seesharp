@@ -72,6 +72,7 @@ internal static class InitCommand
             settings.BookPdfPath = book;
         settings.Save();
         output.WriteLine(Strings.InitSettingsWritten, Settings.FilePath);
+        Launcher.EnsureShortcuts(desktop: true);
 
         var report = await CourseValidator.ValidateAsync(directory, new ValidationOptions(RunStarterCheck: false));
         foreach (var finding in report.Findings.Where(f => f.Severity == Severity.Error))

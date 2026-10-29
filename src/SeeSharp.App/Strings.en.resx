@@ -269,7 +269,7 @@
   <data name="TutorJudgeOff" xml:space="preserve"><value>No AI tutor available – your answer is saved and counts as passed; your supervisor will look at it.</value></data>
   <data name="TutorJudgeFailed" xml:space="preserve"><value>The AI tutor could not judge your answer: {0} Your answer is not saved yet – submit it again or save it without the tutor.</value></data>
   <data name="TutorJudgeUnreadable" xml:space="preserve"><value>Its reply contained no readable verdict.</value></data>
-  <data name="UpdateAvailable" xml:space="preserve"><value>SeeSharp {0} is available (you have {1}). Quit SeeSharp and update with</value></data>
+  <data name="UpdateAvailable" xml:space="preserve"><value>SeeSharp {0} is available (you have {1}). SeeSharp updates itself on the next start – or now: quit SeeSharp and run</value></data>
   <data name="TutorChecking" xml:space="preserve"><value>Checking the connection …</value></data>
   <data name="TutorCheckOk" xml:space="preserve"><value>Connected: key and model “{0}” work.</value></data>
   <data name="TutorModelNotFound" xml:space="preserve"><value>The provider does not know the model “{0}”. Check the model name in the settings.</value></data>

@@ -21,9 +21,10 @@ seesharp
 ```
 
 `seesharp init` clones the course to `%USERPROFILE%\seesharp-course` (change it with
-`--dir <folder>`), downloads the book PDFs and writes the settings. `seesharp`
-starts the app and opens it in the browser. Update later with
-`dotnet tool update -g SeeSharp.Cli`.
+`--dir <folder>`), downloads the book PDFs, writes the settings and puts a
+"SeeSharp" icon in the Start menu and on the desktop. From then on start SeeSharp
+with that icon: it opens in its own window, without a console. Updates install
+themselves on the next start when a newer version is out.
 
 ### IDE plugins (optional)
 

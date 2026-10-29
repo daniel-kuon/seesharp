@@ -8,6 +8,7 @@ internal static class Strings
 
     public static string Usage => Resources.GetString(nameof(Usage))!;
     public static string StartUsage => Resources.GetString(nameof(StartUsage))!;
+    public static string Updating => Resources.GetString(nameof(Updating))!;
     public static string GradeUsage => Resources.GetString(nameof(GradeUsage))!;
     public static string ValidateUsage => Resources.GetString(nameof(ValidateUsage))!;
     public static string ExportReviewUsage => Resources.GetString(nameof(ExportReviewUsage))!;

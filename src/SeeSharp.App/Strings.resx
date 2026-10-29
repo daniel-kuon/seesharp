@@ -269,7 +269,7 @@
   <data name="TutorJudgeOff" xml:space="preserve"><value>Kein KI-Tutor verfügbar – deine Antwort ist gespeichert und gilt als bestanden; die Betreuung sieht sie sich an.</value></data>
   <data name="TutorJudgeFailed" xml:space="preserve"><value>Der KI-Tutor konnte deine Antwort nicht bewerten: {0} Deine Antwort ist noch nicht gespeichert – sende sie erneut oder speichere sie ohne Tutor.</value></data>
   <data name="TutorJudgeUnreadable" xml:space="preserve"><value>Seine Antwort enthielt keine lesbare Bewertung.</value></data>
-  <data name="UpdateAvailable" xml:space="preserve"><value>SeeSharp {0} ist verfügbar (du hast {1}). Beende SeeSharp und aktualisiere mit</value></data>
+  <data name="UpdateAvailable" xml:space="preserve"><value>SeeSharp {0} ist verfügbar (du hast {1}). Beim nächsten Start aktualisiert sich SeeSharp selbst – oder sofort: beende SeeSharp und führe aus</value></data>
   <data name="TutorChecking" xml:space="preserve"><value>Prüfe die Verbindung …</value></data>
   <data name="TutorCheckOk" xml:space="preserve"><value>Verbunden: Schlüssel und Modell „{0}“ funktionieren.</value></data>
   <data name="TutorModelNotFound" xml:space="preserve"><value>Der Anbieter kennt das Modell „{0}“ nicht. Prüfe den Modellnamen in den Einstellungen.</value></data>

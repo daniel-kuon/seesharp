@@ -3,7 +3,7 @@ using SeeSharp.App;
 
 namespace SeeSharp.Cli;
 
-/// <summary><c>seesharp start [--course &lt;path&gt;] [--port &lt;n&gt;] [--no-browser] [--admin] [--review]</c>; also what a bare <c>seesharp</c> (with or without <c>--admin</c>) runs.</summary>
+/// <summary><c>seesharp start [--course &lt;path&gt;] [--port &lt;n&gt;] [--no-browser] [--no-update] [--admin] [--review]</c>; also what a bare <c>seesharp</c> (with or without <c>--admin</c>) runs.</summary>
 internal static class StartCommand
 {
     public static async Task<int> RunAsync(string[] args)
@@ -13,6 +13,7 @@ internal static class StartCommand
         var openBrowser = true;
         var admin = false;
         var review = false;
+        var update = true;
         for (var i = 0; i < args.Length; i++)
         {
             switch (args[i])
@@ -22,11 +23,17 @@ internal static class StartCommand
                 case "--no-browser": openBrowser = false; break;
                 case "--admin": admin = true; break;
                 case "--review": review = true; break;
+                case SelfUpdate.Flag: update = false; break;
                 default:
                     Console.Error.WriteLine(Strings.StartUsage);
                     return 2;
             }
         }
+        // Only a window start updates itself: a headless start belongs to an IDE plugin, which holds on to this process.
+        if (openBrowser && update && await SelfUpdate.TryHandOverAsync(args))
+            return 0;
+        if (openBrowser)
+            Launcher.EnsureShortcuts(desktop: false); // installs from before the shortcuts get theirs on the first start
         return await AppHost.RunAsync(course, port, openBrowser, admin, Console.Out, review);
     }
 }

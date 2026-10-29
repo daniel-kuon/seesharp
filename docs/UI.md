@@ -8,15 +8,39 @@ away; everything not spelled out there is marked **Decision**.
 
 ```
 seesharp                                   # same as `seesharp start`
-seesharp start [--course <path>] [--port <n>] [--no-browser] [--admin]
+seesharp start [--course <path>] [--port <n>] [--no-browser] [--no-update] [--admin]
 seesharp --admin                           # supervisor editor, see "Admin mode (task 7)"
 dotnet run --project src/SeeSharp.App -- [<course-path>]   # dev, no browser
 ```
 
 `StartCommand` (CLI) parses the flags and calls `AppHost.RunAsync`, which binds
 Kestrel to `http://127.0.0.1:<port>` (`0` = any free port), prints the URL,
-opens it with `Process.Start(UseShellExecute = true)` and blocks until Ctrl+C.
+opens the app window and blocks until the window is closed or Ctrl+C.
 ASP.NET logging is capped at Warning so the URL is the only line printed.
+
+**App window** (user request 2026-10-29, `AppWindow`): a Photino.NET window (WebView2 on
+Windows) on the local server, on its own STA thread. The server stays, because the IDE
+plugins talk to `/api`; the window is only the face. Closing the window stops the server,
+Ctrl+C closes the window. WebView2 keeps its profile in `%LOCALAPPDATA%\SeeSharp\window`,
+not next to the executable, which is the tool store an update replaces. No window possible
+(no WebView2 runtime) → the default browser as before. `--no-browser` (the IDE plugins'
+headless start) opens neither.
+
+**Start without a console** (`Launcher`): `seesharp` is a console program, so the
+shortcuts run it as `conhost.exe --headless "%USERPROFILE%\.dotnet\tools\seesharp.exe"`,
+which gives it a console that never shows, even with Windows Terminal as the default
+terminal. `seesharp init` writes "SeeSharp" to the Start menu and the desktop; a window
+start adds a missing Start menu entry only, so a deleted desktop icon stays deleted. The
+icon (`seesharp.ico`, embedded) is written to `%LOCALAPPDATA%\SeeSharp\seesharp.ico`
+for the shortcuts and the window. The command line is only needed to install.
+
+**Update on start** (`SelfUpdate`): a window start asks nuget.org (at most 5 s). With a
+newer release a PowerShell window opens (visible on purpose: a click on the icon should not
+seem to do nothing), this process exits, the script waits for it, runs
+`dotnet tool update -g SeeSharp.Cli` and starts `seesharp start … --no-update` headless.
+`--no-update` keeps a failed update (offline, files held by a second instance) from
+looping: the old version then just starts. Headless starts (`--no-browser`) never update,
+because an IDE plugin holds on to that process.
 
 **Course path** (`CoursePaths.Resolve`, tested): `--course`, else
 `SEESHARP_COURSE`, else `coursePath` from `%LOCALAPPDATA%\SeeSharp\settings.json`,
@@ -41,8 +65,8 @@ one folder deeper, so set `bookPdfPath` on the settings page to use it.
 
 On start the layout asks nuget.org once (`UpdateCheck`, `GET v3-flatcontainer/seesharp.cli/index.json`, after
 the first render) for the newest stable `SeeSharp.Cli`. When it is newer than the running tool's version, a
-banner above every page names both versions and `dotnet tool update -g SeeSharp.Cli` (user decision
-2026-10-27). Only a version lookup: nothing about the trainee is sent. Offline, an odd reply or a dev build
+banner above every page names both versions, says the next start updates (see "Update on start") and
+names `dotnet tool update -g SeeSharp.Cli` for updating right away (user decision 2026-10-27). Only a version lookup: nothing about the trainee is sent. Offline, an odd reply or a dev build
 (csproj version `0.0.0-dev`; releases stamp the tag's version) show nothing.
 
 ## Loading and state
