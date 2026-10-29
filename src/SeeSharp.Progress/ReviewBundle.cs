@@ -25,14 +25,19 @@ public sealed record ReviewBundle(IReadOnlyList<ReviewAttempt> Attempts, IReadOn
     /// <summary>Text files under <c>&lt;exercise&gt;/&lt;item&gt;/&lt;id&gt;_&lt;timestamp&gt;/source/</c>; exam attempts are left out.</summary>
     private static IEnumerable<(int AttemptId, SourceFile File)> Sources(ZipArchive archive)
     {
+        const long maxTotalChars = 64L * 1024 * 1024; // all sources together; the rest of an oversized bundle shows no code
+        long total = 0;
         foreach (var entry in archive.Entries)
         {
             var segments = entry.FullName.Split('/');
             if (segments.Length < 5 || segments[0] is "exams" or "tutor" || segments[3] != "source"
                 || !int.TryParse(segments[2].Split('_')[0], CultureInfo.InvariantCulture, out var id))
                 continue;
-            if (SourceFile.Read(entry, string.Join('/', segments[4..])) is { } file)
-                yield return (id, file);
+            if (SourceFile.Read(entry, string.Join('/', segments[4..])) is not { } file)
+                continue;
+            if ((total += file.Text.Length) > maxTotalChars)
+                yield break;
+            yield return (id, file);
         }
     }
 
@@ -84,15 +89,24 @@ public sealed record ReviewAttempt(int Id, string Exercise, string Item, string 
 /// <summary>One text file of a submitted source tree, <paramref name="Path"/> relative with '/'.</summary>
 public sealed record SourceFile(string Path, string Text)
 {
-    /// <summary>The text of <paramref name="entry"/>, or null for a folder or a binary file (one with a NUL byte).</summary>
+    /// <summary>Larger files are skipped: no source file of an exercise comes near it, and a bundle comes from another machine.</summary>
+    public const int MaxBytes = 1024 * 1024;
+
+    /// <summary>The text of <paramref name="entry"/>, or null for a folder, a binary file (one with a NUL byte) or one over <see cref="MaxBytes"/>.</summary>
     public static SourceFile? Read(ZipArchiveEntry entry, string path)
     {
-        if (entry.Name == "")
+        if (entry.Name == "" || entry.Length > MaxBytes)
             return null;
         using var buffer = new MemoryStream();
         using (var stream = entry.Open())
-            stream.CopyTo(buffer);
-        if (buffer.GetBuffer().AsSpan(0, (int)buffer.Length).Contains((byte)0))
+        {
+            // The header's Length can lie; stop reading one byte past the cap.
+            var chunk = new byte[81920];
+            int read;
+            while ((read = stream.Read(chunk, 0, (int)Math.Min(chunk.Length, MaxBytes + 1 - buffer.Length))) > 0)
+                buffer.Write(chunk, 0, read);
+        }
+        if (buffer.Length > MaxBytes || buffer.GetBuffer().AsSpan(0, (int)buffer.Length).Contains((byte)0))
             return null;
         buffer.Position = 0;
         return new SourceFile(path, new StreamReader(buffer, Encoding.UTF8).ReadToEnd());

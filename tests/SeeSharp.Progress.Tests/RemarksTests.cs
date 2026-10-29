@@ -23,6 +23,7 @@ public sealed class RemarksTests : IDisposable
         Directory.CreateDirectory(Path.Combine(source, "Spiel"));
         File.WriteAllText(Path.Combine(source, "Spiel", "Program.cs"), "var a = 1;\r\nvar b = 2;\r\n");
         File.WriteAllBytes(Path.Combine(source, "icon.bin"), [1, 0, 2]);
+        File.WriteAllText(Path.Combine(source, "huge.txt"), new string('a', SourceFile.MaxBytes + 1)); // compresses to almost nothing
         var attempt = store.RecordAttempt(new Attempt("ex", "code", DateTimeOffset.UtcNow, TimeSpan.Zero, false, Source: Attempts.Zip(source)));
         store.RecordAttempt(new Attempt("ex", "q1", DateTimeOffset.UtcNow, TimeSpan.Zero, true, "Antwort"));
         var zip = Path.Combine(_dir, "report.zip");
@@ -33,7 +34,7 @@ public sealed class RemarksTests : IDisposable
 
         Assert.Equal(ReviewExport.Trainee, bundle.Trainee);
         var coding = bundle.Attempts.Single(a => a.Id == attempt.Id);
-        var file = Assert.Single(coding.Files); // the binary file is left out
+        var file = Assert.Single(coding.Files); // the binary and the oversized file are left out
         Assert.Equal("Spiel/Program.cs", file.Path);
         Assert.Equal(["var a = 1;", "var b = 2;"], file.Lines);
         Assert.Empty(bundle.Attempts.Single(a => a.Item == "q1").Files);
